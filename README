@@ -24,6 +24,7 @@ the test.
 --> _gdocs.py - Methods to interact with Google Docs and Google Drive.
 --> _jsonparser.py - Methods to parse and handle JSON formatted docs and strings.
 --> _log.py - Provides a logger to ensure proper logging of all activities.
+--> _mdns.py - Provides support for monitoring mdns advertisements.
 --> _oauth2.py - Provides support to get oauth2 tokens.
 --> _privet.py - Provides privet structures.
 --> _sheets.py - Uses _gdocs.py to create and populate a Google spreadsheet.
@@ -36,12 +37,15 @@ are:
 2. Pre-registration Tests
 3. Cloud Print Registration
 4. Post-registration Tests
-5. Printing Tests
-6. Printer Capabilities
-7. Printer State Tests
-8. Job State Tests
-9. Cloud Print Unregistration
-10. Post-unregistration Tests
+5. Local Discovery Tests
+6. Local Print Tests
+7. Chrome Print Dialog Tests
+8. Printing Tests
+9. Printer Capabilities
+10. Printer State Tests
+11. Job State Tests
+12. Cloud Print Unregistration
+13. Post-unregistration Tests
 
 DEPENDENCIES:
 
