@@ -1,0 +1,203 @@
+Google Cloud Print Logo Certification Tool
+
+The Logo Certification tool is a group of tests designed to aide in running
+Logo Certification tests that printers must pass in order to obtain Logo
+Certification. The tool is made up of a number of python files, and utilizes
+the python UnitTest module to actually execute the tests.
+
+List of modules and their purpose:
+
+--> testcert.py - the entry point and driver of the tests. All of the actual tests
+are located in this file.
+--> _chrome.py - Routines and methods to execute jobs that are specific to Chrome.
+Printing jobs, uploading files, etc.
+--> _chromedriver.py - Methods to support start and stopping ChromeDriver, and
+all of the various search methods that ChromeDriver supports, to search and
+interact with elements in web pages.
+--> _cloudprintmgr.py - Methods to support interacting with Google Cloud Print
+properties like the management page.
+--> _common.py - some shared functions within the package.
+--> _config.py - configuration information. This needs to be updated for each
+specific device under test. This file needs to be edited by the user executing
+the test.
+--> _device.py - Methods to support populating the device attributes.
+--> _gdocs.py - Methods to interact with Google Docs and Google Drive.
+--> _jsonparser.py - Methods to parse and handle JSON formatted docs and strings.
+--> _log.py - Provides a logger to ensure proper logging of all activities.
+--> _oauth2.py - Provides support to get oauth2 tokens.
+--> _privet.py - Provides privet structures.
+--> _sheets.py - Uses _gdocs.py to create and populate a Google spreadsheet.
+--> _transport.py - Provides HTTP support for accessing web services.
+
+The tests are divided into suites the focus on specific areas. The areas tested
+are:
+
+1. Privet Protocol Integration
+2. Pre-registration Tests
+3. Cloud Print Registration
+4. Post-registration Tests
+5. Printing Tests
+6. Printer Capabilities
+7. Printer State Tests
+8. Job State Tests
+9. Cloud Print Unregistration
+10. Post-unregistration Tests
+
+DEPENDENCIES:
+
+In order to execute the tests, ChromeDriver is required on the system used to
+execute the tests. ChromeDriver can be downloaded from:
+
+https://sites.google.com/a/chromium.org/chromedriver/
+
+Install ChromeDriver and ensure the binary is in the system path. Make sure you
+get at least version 2.17, which has a feature that allows access the Chrome
+Print Dialog. Earlier versions of ChromeDriver cannot access the print dialog.
+
+ChromeDriver 2.17 requires Chrome version 43 or higher. Install at least version
+43 on your system.
+
+Selenium is also required, as ChromeDriver has a dependency on Selenium. To
+install Selenium, use the commands:
+
+sudo pip install selenium
+
+or download Selenium from:
+http://docs.seleniumhq.org/download/
+
+The Python Zeroconf package is used to execute some of the mDNS tests. Install
+ZeroConf from the package located here:
+
+Using PIP:
+sudo pip install zeroconf
+
+Or download from one of the following:
+https://pypi.python.org/pypi/zeroconf
+https://github.com/jstasiak/python-zeroconf
+
+The tool will also store test results into a Google Spreadsheet. If you want
+to use this functionality, you will need to install gdata. Install gdata from:
+
+https://github.com/google/gdata-python-client
+
+gdata also depends on ElementTree; however, most systems will have ElementTree
+installed already. To test if it's installed, from a Python shell try:
+
+from xml.etree import ElementTree
+
+Before executing the Logo Certification Tool, a number of prepatory steps are
+required to get your test environment set up correctly.
+
+1. Test Account - Use a test account that uses Gmail, in order to properly
+authenticate against Google properties and also use OAuth2 credentials. Once
+you have obtained a test account, obtain OAuth2 credentials from the Google
+Developers Console. You'll also need a 2nd test account, without the OAuth2
+credentials.
+
+- Log in with your test account at https://accounts.google.com/
+- Access the Google Developers Console: https://console.developers.google.com
+- Create a project
+- Access the project you just created
+- Select the APIs & auth tab
+- Select the Credentials link
+- Two tokens are needed: under Client ID for native applications, copy the
+-- Client ID
+-- Client Secret
+
+2. Edit _config.py
+
+The following sections should be edited:
+
+- AUTOMODE --> You should probably set this to False, as this will cause each
+print test to wait for user input to determine if it passed or failed. If
+AUTOMODE = True, then all jobs will be printed out and regardless of how they
+look, the test will pass.
+- CAPS --> this should reflect the actual capabilities of the printer. Set the
+following values to True or False, depending on if the printer supports them
+or not: COLLATE, COLOR (False if monochrome printer), COPIES (True if copies
+are supported), DUPLEX, LAYOUT_ISSUE (Currently Chrome has a bug so that the
+printer must still provide page_orientation), LOCAL_PRINT (set to True if your
+printer supports local printing before the printer is registered).
+- GOOGLE_DOCS (note: your links will have your own ids in them):
+    DOC1: should be a one page Google Doc. The value should look like:
+    --> ('https://docs.google.com/document/d/'
+         '1HepfcAZ3DassmfM6mgoUzdbAf3KeinWerbLhyif7DGQ/edit'),
+    SHEET1: a 1 page Google Spreadsheet. Value should look like:
+    --> ('https://docs.google.com/spreadsheets/d/'
+         '19Kq-4B2x4vT2iveAZLBWGqtAmFA9FrZfG3sfPPqb7pg/edit#gid=0'),
+    PREZ1: a 1 page slide (presentation). The value should look like:
+    --> ('https://docs.google.com/presentation/d/'
+         '1-_tc7W1HLh-f7YJT6r1VZWDlHg_Q4O0gxBw9BEoVPM0/edit#slide=id.p'),
+    GMAIL1: a 1 page gmail message. The value should look like:
+    --> 'https://mail.google.com/mail/u/0/#inbox/14470e55054eec70',
+    GMAIL2: a 1 page gmail message containing non U.S. characters. Our test
+    mail has about 10 different languages in it.
+    GMAIL3: a 1 page gmail message with an embedded image.
+
+The documents and emails must belong to the USER account you set up below.
+USER2 does not need those documents or mail messages.
+
+- LOGFILES --> change this from /tmp/logocert if you want the log files to be
+stored in a different location.
+- PRINTER --> add the correct values for CERTID (Certification ID), FIRMWARE,
+IP address, MANUFACTURER, MODEL, PORT (integer, not string), SERIAL, and STATUS.
+- TEST --> If you don't want the test results to be written to a Google
+Spreadsheet, then change SPREADSHEET to False.
+- TESTENV --> add the versions used during testing, for Android, Chrome, the
+Chromebook, Firefox, IE, and tablet used.
+- USER --> add the client id, client secret of the test account from step 1.
+Also add the email address and password of this user.
+- USER2 --> add the email address and password of the 2nd test account.
+
+Save the _config.py and then all of the prepatory work is completed. Now simply
+execute testcert.py:
+
+./testcert.py
+
+Note that the first time Chrome signs in, you may need to sign in manually, as
+ChromeDriver cannot access the fields in chrome://chrome-signin field. Watch the
+command line prompt for instructions. During the tests, sometimes you'll be
+prompted to accept printer registration, and other times to ignore or cancel
+registration requests. Pay attention to the testcert.py output as it will ask
+you to turn the printer on and off at various times during the test process.
+
+If you need to remove some of the test suites, edit testcert.py, and comment out
+the the suite.addTest lines of the suites you don't want to run. The following
+suites require the printer to be registered:
+
+- LocalDiscovery
+- LocalPrinting
+- ChromePrinting
+- Printer
+- PrinterState
+- JobState
+- Printing
+- RunAfter24Hours
+- Unregister
+
+The order that the tests run in is not deterministic, but the suites will run
+in the order they are placed in.
+
+Once the test has run, results will be placed in a log file. Log files are
+created with a date-time stamp in the logname. All of the test results will be
+annotated with passed, skipped, blocked, or failed, and possibly some other
+debug information. And if TEST['SPREADSHEET'] = True, then the results will be
+placed in a spreadsheet for easy reading of the test results.
+
+Known Issues
+
+There are a number of conditions that might cause the automation to fail.
+Here are some known conditions that might cause failures:
+
+1. If you have a large printer list, the automation may not find the printer, as
+it will only search for the printer under test on the first page.
+
+2. If a page gets updated after chromedriver finds an element, it may error with
+the message: "stale element reference". There is no way to prevent this type of
+error, so just be aware it may occur from time to time.
+
+3. When you finish running tests, if Chrome does not entirely close (like on
+OS X), then you may need to close Chrome completely before running the tests
+again.
+
+
