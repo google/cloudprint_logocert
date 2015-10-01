@@ -1,0 +1,453 @@
+<html> <STYLE TYPE="text/css"> H1 {font-size: 18pt; font-style: bold;
+font-family: arial; color: #3d85c6} H2 {font-size: 16pt; font-style: bold;
+font-family: arial; color: #3d85c6} H3 {font-size: 14pt; font-style: bold;
+font-family: arial} H4 {font-size: 12pt; font-style: bold; font-family: arial} P
+{font-size:10pt; font-family:verdana} UL {font-size:10pt; font-family:verdana}
+.toc {list-style-type:none;} OL {font-size:10pt; font-family:verdana}
+BODY {margin-left:1in; margin-right:1in; margin-top:1in} TEXT {line-height: 20px} /*
+- numbering.css */ body { counter-reset: mynum-h2; } h2{ counter-reset:
+mynum-h3; } h2:before { content: counter(mynum-h2) " "; counter-increment:
+mynum-h2; } h3 { counter-reset: mynum-h4; } h3:before { content:
+counter(mynum-h2) "." counter(mynum-h3) " "; counter-increment: mynum-h3; } h4 {
+counter-reset: mynum-h5; } h4:before { content: counter(mynum-h2) "."
+counter(mynum-h3) "." counter(mynum-h4) " "; counter-increment: mynum-h4; } /*
+No support for h5   */ h5 { } h5:before { content: counter(mynum-h2) "."
+counter(mynum-h3) "." counter(mynum-h4) "." counter(mynum-h5) " ";
+counter-increment: mynum-h5; }
+td {font-size:10pt; font-family:verdana} </STYLE>
+
+<head> <title>Chrome OS Power Management Specification</title> </head>
+
+<body> <h1>Chrome OS Power Management Specification</h1>
+
+<p><b>Version: 1.0</b></p>
+
+<p><b>Change History</b></p>
+
+<p>05/17/12 .. V1.0 First version.</p>
+
+<h2>Terminology</h2>
+
+<p>Two form factors are defined for this document:</p>
+
+<ul>
+<li><b>Notebook:</b> A complete system that contains an internal keyboard,
+display, and battery.</li>
+<li><b>Desktop:</b> All complete systems that do not fall into the Notebook form
+factor.</li>
+</ul>
+
+<p>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be
+interpreted as described in RFC 2119.</p>
+
+<p>The key word "SUGGESTED" is used to indicate items that are optional but
+which enhance the user experience and are expected to be used in most
+systems.</p>
+
+<h2>Internal and External Peripheral Behavior</h2>
+<h3>Notebook</h3>
+<p>The power policy for internal and external peripherals is as follows:</p>
+
+<table border="1" cellpadding="6" rules="rows" summary="internal
+and external peripheral behavior for each power state on a notebook">
+  <tbody>
+    <tr>
+      <td></td>
+      <td><b>On (AC)</b></td>
+      <td><b>On (Battery)</b></td>
+      <td><b>Suspend</b></td>
+      <td><b>Off</b></td>
+    </tr>
+    <tr>
+      <td><b>Display</b></td>
+      <td>See Section 3.2.1</td>
+      <td>See Section 3.1.1</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Backlight</b></td>
+      <td>See Section 3.2.1</td>
+      <td>See Section 3.1.1</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Wifi</b></td>
+      <td>On</td>
+      <td>Power saving mode (module dependent)</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>3G</b></td>
+      <td>On</td>
+      <td>Power M enabled</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Ethernet</b></td>
+      <td>On</td>
+      <td>On</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>USB (Charging, Wake, etc.)</b></td>
+      <td>On</td>
+      <td>Auto-suspend for internal devices only after 2 seconds of
+inactivity</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>External Display Port</b></td>
+      <td>On</td>
+      <td>On</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>CPU</b></td>
+      <td>OS-controlled frequency and low-power states</td>
+      <td>OS-controlled frequency and low-power states</td>
+      <td>Suspend</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Audio</b></td>
+      <td>Low power state* after 10s idle</td>
+      <td>Low power after 10s idle</td>
+       <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Storage (SATA)</b></td>
+      <td>max_performance</td>
+      <td>min_power (SATA ALPM) or equivalent power saving mode</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Internal Keyboard</b></td>
+      <td>On</td>
+      <td>On</td>
+      <td>On</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Trackpad</b></td>
+      <td>On</td>
+      <td>On</td>
+      <td>Low power mode</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Embedded Controller</b></td>
+      <td>On</td>
+      <td>On</td>
+      <td>Sleep</td>
+      <td>Deep-sleep</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>* Audio low power state depends on device/driver. Example is D3 on
+x86/HDA.</p>
+
+<h3>Desktop</h3>
+
+<p>The following table details the current behavior of both internal and
+external peripherals for each power state on a desktop system.</p>
+
+<table border="1" cellpadding="6" rules="rows" summary="internal
+and external peripheral behavior for each power state on a desktop system">
+  <tbody>
+    <tr>
+      <td></td>
+      <td><b>On</b></td>
+      <td><b>Suspend</b></td>
+      <td><b>Off</b></td>
+    </tr>
+    <tr>
+      <td><b>Display</b></td>
+      <td>See Section 3.2.2</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Backlight</b></td>
+      <td>See Section 3.2.2</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Wifi</b></td>
+      <td>On</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>3G</b></td>
+      <td>On</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Ethernet</b></td>
+      <td>On</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>USB (Charging, Wake, etc.)</b></td>
+      <td>On</td>
+      <td>Auto-suspend for internal devices only</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>CPU</b></td>
+      <td>OS-controlled frequency and low-power states</td>
+      <td>Suspend</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Audio</b></td>
+      <td>Low power after 10s idle</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+     <tr>
+      <td><b>Storage</b></td>
+      <td>max_performance</td>
+      <td>Off</td>
+      <td>Off</td>
+    </tr>
+    <tr>
+      <td><b>Embedded Controller</b></td>
+      <td>On</td>
+      <td>Sleep</td>
+      <td>Deep-sleep</td>
+    </tr>
+  </tbody>
+</table>
+
+<p></p>
+
+<h2>Power Timeout Values</h2>
+
+
+<h3>Power Timeout Values on Battery</h3>
+
+<p><b>Notebook:</b> Timeout values must meet the parameters specified below.<br>
+<b>Desktop:</b> Not applicable.</p>
+
+<h4>Notebook</h4>
+
+<table border="1" cellpadding="6" rules="rows" summary="power
+timeout values for notebook when running on battery" >
+   <tbody>
+      <tr>
+        <td></td>
+        <td><b>Dim screen</b></td>
+        <td><b>Screen Off</b></td>
+        <td><b>Suspend to RAM</b></td>
+      </tr>
+      <tr>
+        <td><b>Idle</b></td>
+        <td>5m</td>
+        <td>6m</td>
+        <td>10m</td>
+      </tr>
+      <tr>
+        <td><b>Playing Audio</b></td>
+        <td>5m</td>
+        <td>6m</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td><b>Playing Video</b></td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td><b>Projecting</b></td>
+        <td>10m</td>
+        <td>12m</td>
+        <td>20m</td>
+      </tr>
+    </tbody>
+  </table>
+
+<p>Power policy timeouts are determined based on user data.  Power policy may
+change if data about user interaction changes. All timeouts above are set to
+meet the interaction behaviors of 80 to 90% of users tested.</p>
+
+<p>In a usage survey in early 2012:</p>
+
+<ul>
+<li>Approximately 80% of users will start using their device again within 5m of idle.</li>
+<li>Users complained when the screen dimming time was set at 3m.</li>
+<li>Approximately 90% of users act on the device within 1m after the screen has dimmed.</li>
+<li>Approximately 90% of users act on the device within 10m of going idle.</li>
+</ul>
+
+<h3>Power Timeout Values on AC Power</h3>
+
+<h4>Notebook</h4>
+
+<table border="1" cellpadding="6" rules="rows" summary="power
+timeout values for notebook when running on AC power">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td></td>
+      <td><b>Dim screen</b></td>
+      <td><b>Screen Off</b></td>
+      <td><b>Suspend to RAM</b></td>
+    </tr>
+    <tr>
+      <td><b>Idle</td>
+      <td>7m</td>
+      <td>8m</td>
+      <td>30m*</td>
+    </tr>
+    <tr>
+      <td><b>Playing Audio</b></td>
+      <td>7m</td>
+      <td>8m</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><b>Playing Video</b></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><b>Projecting</b></td>
+      <td>14m</td>
+      <td>16m</td>
+      <td>60m</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>* Energy Star specifies 30m as the maximum allowed suspend time for default usage.</p>
+
+<h4>Desktop</h4>
+
+<table border="1" cellpadding="6" rules="rows" summary="power
+timeout values for desktop when running on AC power">
+  <tbody>
+    <tr>
+      <td></td>
+      <td><b>Dim screen</b></td>
+      <td><b>Screen Off</b></td>
+      <td><b>Suspend to RAM</b></td>
+    </tr>
+    <tr>
+      <td><b>Idle</b></td>
+      <td>7m</td>
+      <td>8m</td>
+      <td>30m</td>
+    </tr>
+    <tr>
+      <td><b>Playing Audio</b></td>
+      <td>7m</td>
+      <td>8m</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><b>Playing Video</b></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Power policy is not changed for desktops that are outputting video on an
+external display, as this is the majority case.</p>
+
+<h2>Wake Sources</h2>
+
+<h3>Notebook</h3>
+
+<p>The table below describes the expected supported wake sources in the
+different power states on a notebook. It is not the case that all of these will
+be implemented on the device.</p>
+
+<table border="1" cellpadding="6" rules="rows" summary="wake
+sources in different power states on a notebook">
+    <tbody>
+      <tr>
+        <td><b>Power State</b></td>
+        <td><b>Wake Sources</b></td>
+      </tr>
+      <tr>
+        <td>Suspend to RAM</td>
+        <td>Power Button</br>Lid Open</br>Internal
+Keyboard</br>Trackpad</br>RTC</br>USB (keyboard,mouse,
+insertion,removal)*</br>AC Power*</td>
+      </tr>
+      <tr>
+        <td>System off</td>
+        <td>Power Button</br>Lid Open</td>
+      </tr>
+    </tbody>
+  </table>
+
+<p>* It must be possible to disable these wakes from the OS level.</p>
+
+<h3>Desktop</h3>
+
+<p>The table below describes the expected supported wake sources in the
+different power states on a desktop system. It is not the case that all of these
+will be utilized on the device.</p>
+
+<table border="1" cellpadding="6" rules="rows" summary="wake
+sources in different power states on a desktop">
+  <tbody>
+    <tr>
+      <td><b>Power State</b></td>
+      <td><b>Wake Sources</b></td>
+    </tr>
+    <tr>
+      <td>Suspend to RAM</td>
+      <td>Power Button</br>USB Keyboard</br>USB Mouse</br>RTC</br>USB
+Insertion/Removal*</br>Wake-on-LAN*</td>
+    </tr>
+    <tr>
+      <td>System off</td>
+      <td>Power Button</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>* It must be possible to disable these wakes from the OS level.</p>
+
+<h2>USB Charging</h2>
+
+<p>All USB ports must default to being Standard Downstream Ports (SDP). To allow
+for higher power charging, it is suggested that systems support switching ports
+to be Charging Downstream Ports (CDP). Switching the state of ports is done
+under OS control (not automatically). The OS will identify devices that
+correctly implement the CDP protocol and enable fast charging for those devices.
+If multiple devices request charging, then the OS may limit total system power by
+only enabling fast charging for some of them.</p>
+
+<p>Ports should not advertise themselves as Dedicated Charging Ports (DCP)
+because in all states where USB port power is provided, the USB data lines could
+be active.</p>
+
+<p>On notebook systems, USB charging is enabled when the device is on, under OS
+control when in suspend, and powered down when the
+device is off.</p>
+
+<p>On desktop systems, USB charging is permitted when the device is on or
+suspended, and the USB ports are powered down only when the system is off.</p>
