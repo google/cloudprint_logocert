@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Cloudprint logocert by google</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Cloudprint logocert</h1>
+      <h2 class="project-tagline">Google Cloud Print Logo Certification Automation</h2>
+      <a href="https://github.com/google/cloudprint_logocert" class="btn">View on GitHub</a>
+      <a href="https://github.com/google/cloudprint_logocert/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/google/cloudprint_logocert/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="google-cloud-print-logo-certification-tool" class="anchor" href="#google-cloud-print-logo-certification-tool" aria-hidden="true"><span class="octicon octicon-link"></span></a>Google Cloud Print Logo Certification Tool</h1>
+
+<p>The Logo Certification tool is a group of tests designed to aide in running
+Logo Certification tests that printers must pass in order to obtain Logo
+Certification. The tool is made up of a number of python files, and utilizes
+the python UnitTest module to actually execute the tests.</p>
+
+<h2>
+<a id="list-of-modules-and-their-purpose" class="anchor" href="#list-of-modules-and-their-purpose" aria-hidden="true"><span class="octicon octicon-link"></span></a>List of modules and their purpose</h2>
+
+<ul>
+<li>testcert.py - the entry point and driver of the tests. All of the actual tests
+are located in this file.</li>
+<li>_chrome.py - Routines and methods to execute jobs that are specific to Chrome.
+Printing jobs, uploading files, etc.</li>
+<li>_chromedriver.py - Methods to support start and stopping ChromeDriver, and
+all of the various search methods that ChromeDriver supports, to search and
+interact with elements in web pages.</li>
+<li>_cloudprintmgr.py - Methods to support interacting with Google Cloud Print
+properties like the management page.</li>
+<li>_common.py - some shared functions within the package.</li>
+<li>_config.py - configuration information. This needs to be updated for each
+specific device under test. This file needs to be edited by the user executing
+the test.</li>
+<li>_device.py - Methods to support populating the device attributes.</li>
+<li>_gdocs.py - Methods to interact with Google Docs and Google Drive.</li>
+<li>_jsonparser.py - Methods to parse and handle JSON formatted docs and strings.</li>
+<li>_log.py - Provides a logger to ensure proper logging of all activities.</li>
+<li>_mdns.py - Provides support for monitoring mdns broadcasts.</li>
+<li>_oauth2.py - Provides support to get oauth2 tokens.</li>
+<li>_privet.py - Provides privet structures.</li>
+<li>_sheets.py - Uses _gdocs.py to create and populate a Google spreadsheet.</li>
+<li>_transport.py - Provides HTTP support for accessing web services.</li>
+</ul>
+
+<h2>
+<a id="test-suites" class="anchor" href="#test-suites" aria-hidden="true"><span class="octicon octicon-link"></span></a>Test Suites</h2>
+
+<p>The tests are divided into suites the focus on specific areas. The areas tested
+are:</p>
+
+<ul>
+<li>Privet Protocol Integration</li>
+<li>Pre-registration Tests</li>
+<li>Cloud Print Registration</li>
+<li>Post-registration Tests</li>
+<li>Local Discovery Tests</li>
+<li>Local Print Tests</li>
+<li>Chrome Dialog Print Tests</li>
+<li>Printing Tests</li>
+<li>Printer Capabilities</li>
+<li>Printer State Tests</li>
+<li>Job State Tests</li>
+<li>Cloud Print Unregistration</li>
+<li>Post-unregistration Tests</li>
+</ul>
+
+<h2>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>DEPENDENCIES</h2>
+
+<h3>
+<a id="chromedriver" class="anchor" href="#chromedriver" aria-hidden="true"><span class="octicon octicon-link"></span></a>ChromeDriver</h3>
+
+<p>In order to execute the tests, ChromeDriver is required on the system used to
+execute the tests. ChromeDriver can be downloaded from:</p>
+
+<pre><code>https://sites.google.com/a/chromium.org/chromedriver/
+</code></pre>
+
+<p>Install ChromeDriver and ensure the binary is in the system path. Make sure you
+get at least version 2.17, which has a feature that allows access the Chrome
+Print Dialog. Earlier versions of ChromeDriver cannot access the print dialog.</p>
+
+<p>ChromeDriver 2.17 requires Chrome version 43 or higher. Install at least version
+43 on your system.</p>
+
+<h3>
+<a id="selenium" class="anchor" href="#selenium" aria-hidden="true"><span class="octicon octicon-link"></span></a>Selenium</h3>
+
+<p>Selenium is also required, as ChromeDriver has a dependency on Selenium. To
+install Selenium, use the commands:</p>
+
+<pre><code>sudo pip install selenium
+</code></pre>
+
+<p>or download Selenium from:
+    <a href="http://docs.seleniumhq.org/download/">http://docs.seleniumhq.org/download/</a></p>
+
+<h3>
+<a id="zeroconf" class="anchor" href="#zeroconf" aria-hidden="true"><span class="octicon octicon-link"></span></a>ZeroConf</h3>
+
+<p>The Python Zeroconf package is used to execute some of the mDNS tests. Install
+ZeroConf from the package located here:</p>
+
+<p>Using PIP:</p>
+
+<pre><code>sudo pip install zeroconf
+</code></pre>
+
+<p>Or download from one of the following:</p>
+
+<pre><code>https://pypi.python.org/pypi/zeroconf
+https://github.com/jstasiak/python-zeroconf
+</code></pre>
+
+<h3>
+<a id="gdata" class="anchor" href="#gdata" aria-hidden="true"><span class="octicon octicon-link"></span></a>Gdata</h3>
+
+<p>The tool will also store test results into a Google Spreadsheet. If you want
+to use this functionality, you will need to install gdata. Install gdata from:</p>
+
+<pre><code>https://github.com/google/gdata-python-client
+</code></pre>
+
+<p>gdata also depends on ElementTree; however, most systems will have ElementTree
+installed already. To test if it's installed, from a Python shell try:</p>
+
+<pre><code>from xml.etree import ElementTree
+</code></pre>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h2>
+
+<p>Before executing the Logo Certification Tool, a number of steps are
+required to get your test environment set up correctly.</p>
+
+<ol>
+<li><p>Test Account - Use a test account that uses Gmail, in order to properly
+authenticate against Google properties and also use OAuth2 credentials. Once
+you have obtained a test account, obtain OAuth2 credentials from the Google
+Developers Console. You'll also need a 2nd test account, without the OAuth2
+credentials.</p></li>
+</ol>
+
+<ul>
+<li>Log in with your test account at <a href="https://accounts.google.com/">https://accounts.google.com/</a>
+</li>
+<li>
+<p>Access the Google Developers Console: </p>
+
+<p><a href="https://console.developers.google.com">https://console.developers.google.com</a></p>
+</li>
+<li><p>Create a project</p></li>
+<li>Access the project you just created</li>
+<li>Select the APIs &amp; auth tab</li>
+<li>Select the Credentials link</li>
+<li><p>Two tokens are needed: under Client ID for native applications, copy the
+<strong>Client ID</strong> and <strong>Client Secret</strong></p></li>
+</ul>
+
+<ol>
+<li>Edit _config.py</li>
+</ol>
+
+<p>The following sections should be edited:</p>
+
+<ul>
+<li>AUTOMODE --&gt; You should probably set this to False, as this will cause each
+print test to wait for user input to determine if it passed or failed. If
+AUTOMODE = True, then all jobs will be printed out and regardless of how they
+look, the test will pass.</li>
+<li>CAPS --&gt; this should reflect the actual capabilities of the printer. Set the
+following values to True or False, depending on if the printer supports them
+or not: COLLATE, COLOR (False if monochrome printer), COPIES (True if copies
+are supported), DUPLEX, LAYOUT_ISSUE (Currently Chrome has a bug so that the
+printer must still provide page_orientation), LOCAL_PRINT (set to True if your
+printer supports local printing before the printer is registered).</li>
+<li>GOOGLE_DOCS (note: your links will have your own ids in them):
+
+<ul>
+<li>
+<strong>DOC1</strong>: should be a one page Google Doc. The value should look like:
+'<a href="https://docs.google.com/document/d/1HepfcAZ3DassmfM6mgoUzdbAf3KeinWerbLhyif7DGQ/edit">https://docs.google.com/document/d/1HepfcAZ3DassmfM6mgoUzdbAf3KeinWerbLhyif7DGQ/edit</a>',</li>
+<li>
+<strong>SHEET1</strong>: a 1 page Google Spreadsheet. Value should look like:
+'<a href="https://docs.google.com/spreadsheets/d/19Kq-4B2x4vT2iveAZLBWGqtAmFA9FrZfG3sfPPqb7pg/edit#gid=0">https://docs.google.com/spreadsheets/d/19Kq-4B2x4vT2iveAZLBWGqtAmFA9FrZfG3sfPPqb7pg/edit#gid=0</a>',</li>
+<li>
+<strong>PREZ1</strong>: a 1 page slide (presentation). The value should look like:
+'<a href="https://docs.google.com/presentation/d/1-_tc7W1HLh-f7YJT6r1VZWDlHg_Q4O0gxBw9BEoVPM0/edit#slide=id.p">https://docs.google.com/presentation/d/1-_tc7W1HLh-f7YJT6r1VZWDlHg_Q4O0gxBw9BEoVPM0/edit#slide=id.p</a>',</li>
+<li>
+<strong>GMAIL1</strong>: a 1 page gmail message. The value should look like:
+'<a href="https://mail.google.com/mail/u/0/#inbox/14470e55054eec70">https://mail.google.com/mail/u/0/#inbox/14470e55054eec70</a>',</li>
+<li>
+<strong>GMAIL2</strong>: a 1 page gmail message containing non U.S. characters. Our test mail has about 10 different languages in it.</li>
+<li>
+<strong>GMAIL3</strong>: a 1 page gmail message with an embedded image.</li>
+</ul>
+</li>
+</ul>
+
+<p>The documents and emails must belong to the USER account you set up below.
+USER2 does not need those documents or mail messages.</p>
+
+<ul>
+<li>LOGFILES --&gt; change this from /tmp/logocert if you want the log files to be
+stored in a different location.</li>
+<li>PRINTER --&gt; add the correct values for CERTID (Certification ID), FIRMWARE,
+IP address, MANUFACTURER, MODEL, PORT (integer, not string), SERIAL, and STATUS.</li>
+<li>TEST --&gt; If you don't want the test results to be written to a Google
+Spreadsheet, then change SPREADSHEET to False.</li>
+<li>TESTENV --&gt; add the versions used during testing, for Android, Chrome, the
+Chromebook, Firefox, IE, and tablet used.</li>
+<li>USER --&gt; add the client id, client secret of the test account from step 1.
+Also add the email address and password of this user.</li>
+<li>USER2 --&gt; add the email address and password of the 2nd test account.</li>
+</ul>
+
+<p>Save the _config.py and then all of the prepatory work is completed. Now simply
+execute testcert.py:</p>
+
+<h2>
+<a id="execution" class="anchor" href="#execution" aria-hidden="true"><span class="octicon octicon-link"></span></a>Execution</h2>
+
+<pre><code>./testcert.py
+</code></pre>
+
+<p>Note that the first time Chrome signs in, you may need to sign in manually, as
+ChromeDriver cannot access the fields in chrome://chrome-signin field. Watch the
+command line prompt for instructions. During the tests, sometimes you'll be
+prompted to accept printer registration, and other times to ignore or cancel
+registration requests. Pay attention to the testcert.py output as it will ask
+you to turn the printer on and off at various times during the test process.</p>
+
+<p>If you need to remove some of the test suites, edit testcert.py, and comment out
+the the suite.addTest lines of the suites you don't want to run. The following
+suites require the printer to be registered:</p>
+
+<ul>
+<li>LocalDiscovery</li>
+<li>LocalPrinting</li>
+<li>ChromePrinting</li>
+<li>Printer</li>
+<li>PrinterState</li>
+<li>JobState</li>
+<li>Printing</li>
+<li>RunAfter24Hours</li>
+<li>Unregister</li>
+</ul>
+
+<p>The order that the tests run in is not deterministic, but the suites will run
+in the order they are placed in.</p>
+
+<p>Once the test has run, results will be placed in a log file. Log files are
+created with a date-time stamp in the logname. All of the test results will be
+annotated with passed, skipped, blocked, or failed, and possibly some other
+debug information. And if TEST['SPREADSHEET'] = True, then the results will be
+placed in a spreadsheet for easy reading of the test results.</p>
+
+<h2>
+<a id="known-issues" class="anchor" href="#known-issues" aria-hidden="true"><span class="octicon octicon-link"></span></a>Known Issues</h2>
+
+<p>There are a number of conditions that might cause the automation to fail.
+Here are some known conditions that might cause failures:</p>
+
+<p>1 If you have a large printer list, the automation may not find the printer, as
+it will only search for the printer under test on the first page.</p>
+
+<p>2 If a page gets updated after chromedriver finds an element, it may error with
+the message: "stale element reference". There is no way to prevent this type of
+error, so just be aware it may occur from time to time.</p>
+
+<p>3 When you finish running tests, if Chrome does not entirely close (like on
+OS X), then you may need to close Chrome completely before running the tests
+again.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/google/cloudprint_logocert">Cloudprint logocert</a> is maintained by <a href="https://github.com/google">google</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("4201052");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
