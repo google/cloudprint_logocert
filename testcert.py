@@ -293,7 +293,7 @@ class SystemUnderTest(LogoCert):
 
   def testRecordTestEnv(self):
     """Record test environment details."""
-    test_id = 33808
+    test_id = '5e5e44cd-4e37-4f16-b1ec-1874912c7449'
     test_name = 'testRecordTestEnv'
     notes = 'Android: %s\n' % Constants.TESTENV['ANDROID']
     notes += 'Chrome: %s\n' % Constants.TESTENV['CHROME']
@@ -304,7 +304,7 @@ class SystemUnderTest(LogoCert):
 
   def testRecordManufacturer(self):
     """Record device manufacturer."""
-    test_id = 28420
+    test_id = '9b9d158d-da11-4b6b-9181-dafcbd8b49c5'
     test_name = 'testRecordManufacturer'
     notes = 'Manufacturer: %s' % Constants.PRINTER['MANUFACTURER']
 
@@ -312,7 +312,7 @@ class SystemUnderTest(LogoCert):
 
   def testRecordModel(self):
     """Record device model number."""
-    test_id = 28422
+    test_id = '9627ef75-0a15-422b-9d90-a1012d03b1dc'
     test_name = 'testRecordModel'
     notes = 'Model: %s' % Constants.PRINTER['MODEL']
 
@@ -320,7 +320,7 @@ class SystemUnderTest(LogoCert):
 
   def testRecordDeviceStatus(self):
     """Record device status: released, internal, prototype, unknown."""
-    test_id = 87015
+    test_id = '62f0e328-52e2-4077-bffe-1bf67b160f7a'
     test_name = 'testRecordDeviceStatus'
     notes = 'Device Status: %s' % Constants.PRINTER['STATUS']
 
@@ -328,7 +328,7 @@ class SystemUnderTest(LogoCert):
 
   def testRecordFirmware(self):
     """Record device firmware version reported by device UI."""
-    test_id = 28424
+    test_id = '74bd2b38-35ee-48fa-aa92-ffc93b1357fe'
     test_name = 'testRecordFirmware'
     notes = 'Firmware: %s' % Constants.PRINTER['FIRMWARE']
 
@@ -336,7 +336,7 @@ class SystemUnderTest(LogoCert):
 
   def testRecordSerialNumber(self):
     """Record device serial number."""
-    test_id = 28429
+    test_id = '2feb2c3d-e02a-4c9e-b23a-9b9558591924'
     test_name = 'testRecordSerialNumber'
     notes = 'Serial Number: %s' % Constants.PRINTER['SERIAL']
 
@@ -351,7 +351,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPI(self):
     """Verify device responds to PrivetInfo API requests."""
-    test_id = 88118
+    test_id = '612051fb-f156-4846-8924-e62f70273643'
     test_name = 'testPrivetInfoAPI'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -367,7 +367,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIManufacturer(self):
     """Verify device PrivetInfo API contains manufacturer field."""
-    test_id = 88119
+    test_id = '0da3de50-2541-4585-8314-d3593be7a2d9'
     test_name = 'testPrivetInfoAPIManufacturer'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -383,7 +383,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIModel(self):
     """Verify device PrivetInfo API contains model field."""
-    test_id = 88432
+    test_id = 'd2725e0d-033a-45b2-b528-cb00f8729e5b'
     test_name = 'testPrivetInfoAPIModel'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -399,7 +399,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIFirmware(self):
     """Verify device PrivetInfo API contains firmware field."""
-    test_id = 88120
+    test_id = '9ab29ed3-cbed-458e-9cd7-0021c1da37d2'
     test_name = 'testPrivetInfoAPIFirmware'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -415,7 +415,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIUpdateUrl(self):
     """Verify device PrivetInfo API contains update_url field."""
-    test_id = 88121
+    test_id = 'd7f67d75-9f9d-49ad-b3b2-5557c8c51470'
     test_name = 'testPrivetInfoAPIUpdateUrl'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -431,7 +431,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIVersion(self):
     """Verify device PrivetInfo API contains version field."""
-    test_id = 88122
+    test_id = 'daef86f2-f979-4960-8d57-677ce2b237d7'
     test_name = 'testPrivetInfoAPIVersion'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -456,7 +456,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoDeviceState(self):
     """Verify device PrivetInfo API contains DeviceState and valid value."""
-    test_id = 122851
+    test_id = '3d0fdb69-d14c-4628-a45d-54048465f741'
     test_name = 'testPrivetInfoDeviceState'
     valid_states = ['idle', 'processing', 'stopped']
     try:
@@ -479,7 +479,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoConnectionState(self):
     """Verify device PrivetInfo contains ConnectionState and valid value."""
-    test_id = 122852
+    test_id = '2f4b5912-fa44-4e37-b4a5-01cd2ea7fcfc'
     test_name = 'testPrivetInfoConnectionState'
     valid_states = ['online', 'offline', 'connecting', 'not-configured']
     try:
@@ -502,7 +502,7 @@ class Privet(LogoCert):
 
   def testPrivetAccessTokenAPI(self):
     """Verify unregistered device Privet AccessToken API returns correct rc."""
-    test_id = 88123
+    test_id = '74b0548c-5932-4aaa-a363-56dd9d44268b'
     test_name = 'testPrivetAccessTokenAPI'
     api = 'accesstoken'
     if Constants.CAPS['LOCAL_PRINT']:
@@ -530,7 +530,7 @@ class Privet(LogoCert):
 
   def testPrivetCapsAPI(self):
     """Verify unregistered device Privet Capabilities API returns correct rc."""
-    test_id = 88124
+    test_id = '82bd4d7d-e70b-45fb-9ecb-41f267ef9b24'
     test_name = 'testPrivetCapsAPI'
     api = 'capabilities'
     if Constants.CAPS['LOCAL_PRINT']:
@@ -558,7 +558,7 @@ class Privet(LogoCert):
 
   def testPrivetPrinterAPI(self):
     """Verify unregistered device Privet Printer API returns correct rc."""
-    test_id = 88125
+    test_id = 'c6e56ee1-eb55-478b-a495-dbdfeb7fe1ae'
     test_name = 'testPrivetPrinterAPI'
     api = 'printer'
     if Constants.CAPS['LOCAL_PRINT']:
@@ -586,7 +586,7 @@ class Privet(LogoCert):
 
   def testPrivetUnknownURL(self):
     """Verify device returns 404 return code for unknown url requests."""
-    test_id = 88126
+    test_id = 'caf2f4e7-df0d-4093-8303-73eff5ab9024'
     test_name = 'testPrivetUnknownURL'
     response = transport.HTTPReq(device.privet_url['INVALID'],
                                  headers=device.headers)
@@ -609,7 +609,7 @@ class Privet(LogoCert):
 
   def testPrivetRegisterAPI(self):
     """Verify unregistered device exposes register API."""
-    test_id = 88127
+    test_id = '48f09590-03b1-4068-a902-c21290026247'
     test_name = 'testPrivetRegisterAPI'
     response = transport.HTTPReq(
         device.privet_url['register']['start'], data='',
@@ -633,7 +633,7 @@ class Privet(LogoCert):
 
   def testPrivetRegistrationInvalidParam(self):
     """Verify device return error if invalid registration param given."""
-    test_id = 88128
+    test_id = 'fec798b2-ed5f-44ac-8752-e44fd47462e2'
     test_name = 'testPrivetRegistrationInvalidParam'
     response = transport.HTTPReq(
         device.privet_url['register']['invalid'], data='',
@@ -659,7 +659,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIEmptyToken(self):
     """Verify device returns code 200 if Privet Token is empty."""
-    test_id = 88129
+    test_id = '9cce6158-7b68-42b3-94b2-9bacadac07c9'
     test_name = 'testPrivetInfoAPIEmptyToken'
     response = transport.HTTPReq(device.privet_url['info'],
                                  headers=device.privet.headers_empty)
@@ -682,7 +682,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIInvalidToken(self):
     """Verify device returns code 200 if Privet Token is invalid."""
-    test_id = 88130
+    test_id = 'f568feee-4693-4643-a61a-73a705288808'
     test_name = 'testPrivetInfoAPIInvalidToken'
     response = transport.HTTPReq(device.privet_url['info'],
                                  headers=device.privet.headers_invalid)
@@ -705,7 +705,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIMissingToken(self):
     """Verify device returns code 400 if Privet Token is missing."""
-    test_id = 88131
+    test_id = '271a2089-be2e-4237-b0c1-e64f4e636c35'
     test_name = 'testPrivetInfoAPIMissingToken'
     response = transport.HTTPReq(device.privet_url['info'],
                                  headers=device.privet.headers_missing)
@@ -728,7 +728,7 @@ class Privet(LogoCert):
 
   def testDeviceRegistrationInvalidClaimToken(self):
     """Verify a device will not register if the claim token in invalid."""
-    test_id = 88132
+    test_id = 'a48518b0-bc96-480b-a8f2-f26cbb42e1b8'
     test_name = 'testDeviceRegistrationInvalidClaimToken'
     try:
       self.assertTrue(device.StartPrivetRegister())
@@ -760,7 +760,7 @@ class Privet(LogoCert):
 
   def testDeviceRegistrationInvalidUserAuthToken(self):
     """Verify a device will not register is user auth token is invalid."""
-    test_id = 88133
+    test_id = 'da3d4ce4-5b81-4bb4-a487-7c8e92b552c6'
     test_name = 'testDeviceRegistrationInvalidUserAuthToken'
     try:
       self.assertTrue(device.StartPrivetRegister())
@@ -799,7 +799,7 @@ class Printer(LogoCert):
 
   def testPrinterName(self):
     """Verify printer provides a name."""
-    test_id = 85669
+    test_id = '79f45999-b9e7-4f95-8992-79c06eaa1b76'
     test_name = 'testPrinterName'
     try:
       self.assertIsNotNone(device.name)
@@ -835,7 +835,7 @@ class Printer(LogoCert):
 
   def testPrinterStatus(self):
     """Verify printer has online status."""
-    test_id = 85675
+    test_id = 'f04dfb47-5745-498b-b366-c79d37536904'
     test_name = 'testPrinterStatus'
     try:
       self.assertIsNotNone(device.status)
@@ -855,7 +855,7 @@ class Printer(LogoCert):
 
   def testPrinterModel(self):
     """Verify printer provides a model string."""
-    test_id = 27734
+    test_id = '145f1c07-0e9d-4a5e-ae17-ff31f62c94e3'
     test_name = 'testPrinterModel'
     try:
       self.assertIn('Model', device.details)
@@ -888,7 +888,7 @@ class Printer(LogoCert):
 
   def testPrinterManufacturer(self):
     """Verify printer provides a manufacturer string."""
-    test_id = 27733
+    test_id = '68134ba3-5a05-4a77-82ca-b06ae6195cd8'
     test_name = 'testPrinterManufacturer'
     try:
       self.assertIn('Manufacturer', device.details)
@@ -924,7 +924,7 @@ class Printer(LogoCert):
 
   def testPrinterSerialNumber(self):
     """Verify printer provides a serial number."""
-    test_id = 85686
+    test_id = '3996db1d-93ea-4f4c-b70c-dfd9355d5e5d'
     test_name = 'testPrinterSerialNumber'
     try:
       self.assertIn('Serial Number', device.details)
@@ -944,7 +944,7 @@ class Printer(LogoCert):
 
   def testPrinterGCPVersion(self):
     """Verify printer provides GCP Version supported."""
-    test_id = 27732
+    test_id = '7a8ec212-52d2-441d-8e18-383ac850f567'
     test_name = 'testPrinterGCPVersion'
     try:
       self.assertIn('Google Cloud Print Version', device.details)
@@ -978,7 +978,7 @@ class Printer(LogoCert):
 
   def testPrinterFirmwareVersion(self):
     """Verify printer provides a firmware version."""
-    test_id = 27799
+    test_id = '96b2fc8d-708d-4be8-b439-7fec563c44d9'
     test_name = 'testPrinterFirmwareVersion'
     try:
       self.assertIn('Firmware Version', device.details)
@@ -1010,7 +1010,7 @@ class Printer(LogoCert):
 
   def testPrinterType(self):
     """Verify printer provides a type."""
-    test_id = 85770
+    test_id = 'f4fb09a4-527b-4fa7-8629-0171037db113'
     test_name = 'testPrinterType'
     try:
       self.assertIn('Printer Type', device.details)
@@ -1043,7 +1043,7 @@ class Printer(LogoCert):
 
   def testPrinterFirmwareUpdateUrl(self):
     """Verify printer provides a firmware update URL."""
-    test_id = 27736
+    test_id = '27a06940-2f82-4550-8231-69615aa516c8'
     test_name = 'testPrinterFirmwareUpdateUrl'
     try:
       self.assertIn('Firmware Update URL', device.details)
@@ -1077,7 +1077,7 @@ class Printer(LogoCert):
 
   def testPrinterProxy(self):
     """Verify that printer provides a proxy."""
-    test_id = 85795
+    test_id = 'd01c84fd-6310-47f0-a464-60997a8e3d68'
     test_name = 'testPrinterProxy'
     try:
       self.assertIn('Proxy', device.details)
@@ -1109,7 +1109,7 @@ class Printer(LogoCert):
 
   def testSetupUrl(self):
     """Verify the printer provides a setup URL."""
-    test_id = 85796
+    test_id = 'd03c034d-2deb-42d9-a6fd-1685c2472e97'
     test_name = 'testSetupUrl'
     try:
       self.assertIn('setupUrl', device.cdd)
@@ -1129,7 +1129,7 @@ class Printer(LogoCert):
 
   def testPrinterID(self):
     """Verify Printer has a PrinterID."""
-    test_id = 85801
+    test_id = '5bc5d513-3a1f-441a-8acd-d007fe0e0e35'
     test_name = 'testPrinterID'
     try:
       self.assertIn('Printer ID', device.details)
@@ -1161,7 +1161,7 @@ class Printer(LogoCert):
 
   def testLocalSettings(self):
     """Verify the printer contains local settings."""
-    test_id = 27800
+    test_id = 'cede3eec-41fb-43de-b1f1-76d17443b6f3'
     test_name = 'testLocalSettings'
     try:
       self.assertIn('local_settings', device.cdd)
@@ -1181,7 +1181,7 @@ class Printer(LogoCert):
 
   def testCaps(self):
     """Verify the printer contains capabilities."""
-    test_id = 85836
+    test_id = '1977ab77-27af-4702-a6f3-5b66fc1b5720'
     test_name = 'testCaps'
     try:
       self.assertIn('caps', device.cdd)
@@ -1200,7 +1200,7 @@ class Printer(LogoCert):
 
   def testUuid(self):
     """Verify the printer contains a UUID."""
-    test_id = 27737
+    test_id = 'e53df4c2-d208-41d0-bb62-ec6be6ebac9f'
     test_name = 'testUuid'
     try:
       self.assertIn('uuid', device.cdd)
@@ -1220,7 +1220,7 @@ class Printer(LogoCert):
 
   def testDefaultDisplayName(self):
     """Verify Default Display Name is present."""
-    test_id = 27798
+    test_id = '1cb52261-cf01-45ed-b447-8ec8902b36f2'
     test_name = 'testDefaultDisplayName'
     try:
       self.assertIn('defaultDisplayName', device.cdd)
@@ -1233,7 +1233,7 @@ class Printer(LogoCert):
 
   def testCapsSupportedContentType(self):
     """Verify supported_content_type contains needed types."""
-    test_id = 46048
+    test_id = 'aa7c157e-bd0a-4048-a8a9-88ce3e9a96b8'
     test_name = 'testCapsSupportedContentType'
     try:
       self.assertIn('supported_content_type', device.cdd['caps'])
@@ -1260,7 +1260,7 @@ class Printer(LogoCert):
 
   def testCapsPwgRasterConfig(self):
     """Verify printer CDD contains a pwg_raster_config parameter."""
-    test_id = 46049
+    test_id = 'e3565806-2320-48ef-8eab-2f48fbcffc33'
     test_name = 'testCapsPwgRasterConfig'
     try:
       self.assertIn('pwg_raster_config', device.cdd['caps'])
@@ -1275,7 +1275,7 @@ class Printer(LogoCert):
 
   def testCapsInputTrayUnit(self):
     """Verify input_tray_unit is in printer capabilities."""
-    test_id = 46050
+    test_id = 'e10b7314-fc04-4a4a-ae59-8bf4a3ae165d'
     test_name = 'testCapsInputTrayUnit'
     try:
       self.assertIn('input_tray_unit', device.cdd['caps'])
@@ -1289,7 +1289,7 @@ class Printer(LogoCert):
 
   def testCapsOutputBinUnit(self):
     """Verify output_bin_unit is in printer capabilities."""
-    test_id = 46051
+    test_id = '0f329dba-75c3-45f0-a3a1-4d63f5d195b0'
     test_name = 'testCapsOutputBinUnit'
     try:
       self.assertIn('output_bin_unit', device.cdd['caps'])
@@ -1303,7 +1303,7 @@ class Printer(LogoCert):
 
   def testCapsMarker(self):
     """Verify marker is in printer capabilities."""
-    test_id = 46052
+    test_id = '35005c07-3b18-48b2-a3a2-20fe78bedff2'
     test_name = 'testCapsMarker'
     try:
       self.assertIn('marker', device.cdd['caps'])
@@ -1317,7 +1317,7 @@ class Printer(LogoCert):
 
   def testCapsCover(self):
     """Verify cover is in printer capabilities."""
-    test_id = 46053
+    test_id = 'c5564d8b-d811-4510-b031-b761bb094631'
     test_name = 'testCapsCover'
     try:
       self.assertIn('cover', device.cdd['caps'])
@@ -1331,7 +1331,7 @@ class Printer(LogoCert):
 
   def testCapsColor(self):
     """Verify color is in printer capabilities."""
-    test_id = 46055
+    test_id = '01bd068d-0b8f-41a4-82ea-39ef5fb09994'
     test_name = 'testCapsColor'
     try:
       self.assertIn('color', device.cdd['caps'])
@@ -1345,7 +1345,7 @@ class Printer(LogoCert):
 
   def testCapsDuplex(self):
     """Verify duplex is in printer capabilities."""
-    test_id = 46056
+    test_id = '7bda6263-a629-4e1a-84e9-28e84fa2b014'
     test_name = 'testCapsDuplex'
     try:
       self.assertIn('duplex', device.cdd['caps'])
@@ -1359,7 +1359,7 @@ class Printer(LogoCert):
 
   def testCapsCopies(self):
     """Verify copies is in printer capabilities."""
-    test_id = 46057
+    test_id = '9d1464d1-46fb-4d1c-a8fb-3fa0e7dc9509'
     test_name = 'testCapsCopies'
     if not Constants.CAPS['COPIES']:
       self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
@@ -1376,7 +1376,7 @@ class Printer(LogoCert):
 
   def testCapsDpi(self):
     """Verify dpi is in printer capabilities."""
-    test_id = 46058
+    test_id = 'cd4c9dbc-da9d-4de7-a5b7-74e4618ce1b7'
     test_name = 'testCapsDpi'
     try:
       self.assertIn('dpi', device.cdd['caps'])
@@ -1390,7 +1390,7 @@ class Printer(LogoCert):
 
   def testCapsMediaSize(self):
     """Verify media_size is in printer capabilities."""
-    test_id = 46059
+    test_id = 'dae470da-ac50-47cb-8ef7-073cc856cfed'
     test_name = 'testCapsMediaSize'
     try:
       self.assertIn('media_size', device.cdd['caps'])
@@ -1404,7 +1404,7 @@ class Printer(LogoCert):
 
   def testCapsCollate(self):
     """Verify collate is in printer capabilities."""
-    test_id = 46060
+    test_id = '550f72b4-4eb0-4869-87bf-197a9ef1cf09'
     test_name = 'testCapsCollate'
     if not Constants.CAPS['COLLATE']:
       notes = 'Printer does not support collate.'
@@ -1422,7 +1422,7 @@ class Printer(LogoCert):
 
   def testCapsPageOrientation(self):
     """Verify page_orientation is not in printer capabilities."""
-    test_id = 46069
+    test_id = '79c696e5-33eb-4a47-a173-c698c4423b7c'
     test_name = 'testCapsPageOrientation'
     if Constants.CAPS['LAYOUT_ISSUE']:
       notes = 'Chrome issue in local printing requires orientation in caps.'
@@ -1440,7 +1440,7 @@ class Printer(LogoCert):
 
   def testCapsMargins(self):
     """Verify margin is not in printer capabilities."""
-    test_id = 46070
+    test_id = '674b3b1a-282a-4e41-a4d2-046ce65e7403'
     test_name = 'testCapsMargins'
     try:
       self.assertIsNot('margins', device.cdd['caps'])
@@ -1454,7 +1454,7 @@ class Printer(LogoCert):
 
   def testCapsFitToPage(self):
     """Verify fit_to_page is not in printer capabilities."""
-    test_id = 46071
+    test_id = '86c99c63-1581-470f-b771-94e389a5fc32'
     test_name = 'testCapsFitToPage'
     try:
       self.assertIsNot('fit_to_page', device.cdd['caps'])
@@ -1468,7 +1468,7 @@ class Printer(LogoCert):
 
   def testCapsPageRange(self):
     """Verify page_range is not in printer capabilities."""
-    test_id = 46072
+    test_id = 'f80b2077-2ed2-4fc1-a2d6-2fa3b90e9c9f'
     test_name = 'testCapsPageRange'
     try:
       self.assertIsNot('page_range', device.cdd['caps'])
@@ -1482,7 +1482,7 @@ class Printer(LogoCert):
 
   def testCapsReverseOrder(self):
     """Verify reverse_order is not in printer capabilities."""
-    test_id = 46073
+    test_id = 'f24797e4-090c-42fd-98e7-f19ea3d39ebf'
     test_name = 'testCapsReverseOrder'
     try:
       self.assertIsNot('reverse_order', device.cdd['caps'])
@@ -1496,7 +1496,7 @@ class Printer(LogoCert):
 
   def testCapsHash(self):
     """Verify printer CDD contains a capsHash."""
-    test_id = 31012
+    test_id = 'd39db864-3e18-46f3-8c16-d367f155c1e0'
     test_name = 'testCapsHash'
     try:
       self.assertIn('capsHash', device.cdd)
@@ -1510,7 +1510,7 @@ class Printer(LogoCert):
 
   def testCapsCertificationID(self):
     """Verify printer has a certificaionID and it is correct."""
-    test_id = 49538
+    test_id = '8885e5c7-50a1-4667-aa25-4f40588e396f'
     test_name = 'testCapsCertificationID'
     try:
       self.assertIn('certificationId', device.cdd)
@@ -1533,7 +1533,7 @@ class Printer(LogoCert):
 
   def testCapsResolvedIssues(self):
     """Verify printer contains resolvedIssues in printer capabilities."""
-    test_id = 110904
+    test_id = '5a1ef1e7-26ba-458b-a72f-a5ebf26e437c'
     test_name = 'testCapsResolvedIssues'
     try:
       self.assertIn('resolvedIssues', device.cdd)
@@ -1563,7 +1563,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceAdvertisePrivet(self):
     """Verify printer under test advertises itself using Privet."""
-    test_id = 87000
+    test_id = '3382acca-15f7-46d1-9b43-2d36defa9443'
     test_name = 'testDeviceAdvertisePrivet'
     position = chrome.FindDevice('printers', self.printer)
     try:
@@ -1578,7 +1578,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceSleepingAdvertisePrivet(self):
     """Verify sleeping printer advertises itself using Privet."""
-    test_id = 88096
+    test_id = 'fffb765b-bb62-4927-82d4-209928ef7d23'
     test_name = 'testDeviceSleepingAdvertisePrivet'
     print 'Put the printer in sleep mode.'
     raw_input('Select enter when printer is sleeping.')
@@ -1597,7 +1597,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceOffNoAdvertisePrivet(self):
     """Verify powered off device does not advertise using Privet."""
-    test_id = 88098
+    test_id = '35ce7a3d-3403-499e-9a60-4d17e1693178'
     test_name = 'testDeviceOffNoAdvertisePrivet'
     print 'Power off the test device.'
     raw_input('Select enter once device is off.')
@@ -1616,7 +1616,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceOffPowerOnAdvertisePrivet(self):
     """Verify powered on device advertises itself using Privet."""
-    test_id = 88097
+    test_id = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
     test_name = 'testDeviceOffPowerOnAdvertisePrivet'
     print 'Start with device powered off.'
     print 'Turn on device and wait for device to fully initialize.'
@@ -1636,7 +1636,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceRegistrationNotLoggedIn(self):
     """Test printer cannot be registered if user not logged in."""
-    test_id = 27638
+    test_id = '984be779-3ca4-4bb7-a2e1-e1868f687905'
     test_name = 'testDeviceRegistrationNotLoggedIn'
     result = self.chrome3.RegisterPrinter(self.printer)
     try:
@@ -1651,7 +1651,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceCancelRegistration(self):
     """Test printer cancellation prevents registration."""
-    test_id = 27596
+    test_id = 'ce1c9c46-3164-4f07-aa41-241867a4a28b'
     test_name = 'testDeviceCancelRegistration'
     logger.info('Testing printer registration cancellation.')
     print 'Testing printer registration cancellation.'
@@ -1674,7 +1674,7 @@ class PreRegistration(LogoCert):
 
   def testLocalPrintGuestUserUnregisteredPrinter(self):
     """Verify local print for unregistered printer is correct."""
-    test_id = 95740
+    test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
     data_dir = 'guest_user'
     cd3 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
@@ -1708,7 +1708,7 @@ class Registration(LogoCert):
     a device can still be registered if a user does not select accept/cancel
     for a registration attempt.
     """
-    test_id = 87001
+    test_id = 'b36f4085-f14f-49e0-adc0-cdbaae45bd9f'
     test_name = 'testDeviceRegistration'
     test_id2 = 90201
     test_name2 = 'testDeviceRegistrationNoAccept'
@@ -1744,7 +1744,7 @@ class Registration(LogoCert):
 
   def testDeviceAcceptRegistration(self):
     """Verify printer must accept registration requests on printer panel."""
-    test_id = 27597
+    test_id = '6968e44b-3c2d-4b14-8fd5-06c94f1e8c41'
     test_name = 'testDeviceAcceptRegistration'
     print 'Validate if printer required user to accept registration request'
     print 'If printer does not have accept/cancel on printer panel,'
@@ -1753,7 +1753,7 @@ class Registration(LogoCert):
 
   def User2RegistrationAttempt(self):
     """Verify multiple registration attempts are not allowed by device."""
-    test_id = 88095
+    test_id = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
     test_name = 'testMultipleRegistrationAttempt'
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
     cd2 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
@@ -1795,7 +1795,7 @@ class LocalDiscovery(LogoCert):
 
   def testLocalDiscoveryToggle(self):
     """Verify printer respects GCP Mgt page when local discovery toggled."""
-    test_id = 45041
+    test_id = '54131136-9e03-4b17-acd2-7ca72e2ad732'
     test_name = 'testLocalDiscoveryToggle'
     notes = None
     notes2 = None
@@ -1858,7 +1858,7 @@ class LocalDiscovery(LogoCert):
 
   def testPrinterOnAdvertiseLocally(self):
     """Verify printer advertises self using Privet when turned on."""
-    test_id = 116032
+    test_id = 'e979119e-5a35-4065-89cf-1c4ef795c5b9'
     test_name = 'testPrinterOnAdvertiseLocally'
     printer_found = False
     failed = False
@@ -1891,7 +1891,7 @@ class LocalDiscovery(LogoCert):
 
   def testPrinterOffSendGoodbyePacket(self):
     """Verify printer sends goodbye packet when turning off."""
-    test_id = 1609168
+    test_id = '074cf049-a13c-4a7e-91ed-a0ce9457b4f4'
     test_name = 'testPrinterOffSendGoodbyePacket'
     failed = False
     printer_found = False
@@ -1920,7 +1920,7 @@ class LocalDiscovery(LogoCert):
 
   def testPrinterIdleNoBroadcastPrivet(self):
     """Verify idle printer doesn't send mDNS broadcasts."""
-    test_id = 116041
+    test_id = '703a55d2-7291-4637-b257-dc885fdb5abd'
     test_name = 'testPrinterIdleNoBroadcastPrivet'
     printer_found = False
     print 'Ensure printer stays is on and remains in idle state.'
@@ -1947,7 +1947,7 @@ class LocalDiscovery(LogoCert):
 
   def testUpdateLocalSettings(self):
     """Verify printer's local settings can be updated with Update API."""
-    test_id = 116311
+    test_id = '9a2fde45-ea02-4cdd-90ab-af752cbdd394'
     test_name = 'testUpdateLocalSettings'
     # Get the current xmpp timeout value.
     orig = device.cdd['local_settings']['current']['xmpp_timeout_value']
@@ -1993,7 +1993,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintEnabled(self):
     """Verify local print is available from Chrome Print Dialog."""
-    test_id = 88105
+    test_id = 'a47b904c-d7a2-4112-832b-59035d117404'
     test_name = 'testLocalPrintingEnabled'
     chrome.Print()
     found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
@@ -2011,7 +2011,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintNotOwner(self):
     """Verify local print available to non owner of printer."""
-    test_id = 88106
+    test_id = 'ea9b1e01-f792-4627-bf84-2db5db513da4'
     test_name = 'testLocalPrintNotOwner'
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
     cd2 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
@@ -2033,7 +2033,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGuestUser(self):
     """Verify local print available to guest user."""
-    test_id = 88107
+    test_id = '8ba6f1ba-66cc-4d9e-aa3c-1d2e611ddb38'
     test_name = 'testLocalPrintGuestUser'
     data_dir = 'guest_user'
     cd3 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
@@ -2054,7 +2054,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintingToggle(self):
     """Verify printer respects GCP Mgt page when local printing toggled."""
-    test_id = 45042
+    test_id = '533d4ac6-5c1d-4c99-a91e-2bac7c31864f'
     test_name = 'testLocalPrintingToggle'
     failed = False
     if gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing',
@@ -2101,7 +2101,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintHeadersFooters(self):
     """Verify printer respects headers and footers option in local print."""
-    test_id = 116193
+    test_id = '26cd8c36-3107-426b-9e49-2f1beea076f9'
     test_name = 'testLocalPrintHeadersFooters'
     # First navigate to a web page to print.
     chromedriver.driver.get(chrome.devices)
@@ -2128,7 +2128,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintTwoSided(self):
     """Verify printer respects two-sided option in local print."""
-    test_id = 116194
+    test_id = 'e235f70d-2f81-4ea4-9d0d-b56db2174a57'
     test_name = 'testLocalPrintTwoSided'
     if not Constants.CAPS['DUPLEX']:
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
@@ -2148,7 +2148,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintBackground(self):
     """Verify printer respects background-graphics in local print."""
-    test_id = 116195
+    test_id = '4ff48cf9-7329-4757-9f30-d5c30586c225'
     test_name = 'testLocalPrintBackground'
     # First navigate to a web page to print.
     chromedriver.driver.get(Constants.GOOGLE)
@@ -2174,7 +2174,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintMargins(self):
     """Verify printer respects margins selected in local print."""
-    test_id = 116466
+    test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0b8e'
     test_name = 'testLocalPrintMargins'
     # Navigate to a page to print.
     chromedriver.driver.get(chrome.version)
@@ -2201,7 +2201,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintLayout(self):
     """Verify printer respects layout settings in local print."""
-    test_id = 116467
+    test_id = 'fb522a69-2454-40ab-9453-270553664fea'
     test_name = 'testLocalPrintLayout'
     chromedriver.driver.get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait',
@@ -2227,7 +2227,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintPageRange(self):
     """Verify printer respects page range in local print."""
-    test_id = 116468
+    test_id = '1580f47d-4115-462d-b85e-bd4d5fd4d7e3'
     test_name = 'testLocalPrintPageRange'
     chromedriver.driver.get(chrome.flags)
     printed = chrome.PrintFromPrintDialog(self.printer, page_range='2-3',
@@ -2244,7 +2244,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintCopies(self):
     """Verify printer respects copy option in local print."""
-    test_id = 116469
+    test_id = 'c849ce7a-07e0-488e-b266-e002bdbde4d6'
     test_name = 'testLocalPrintCopies'
     if not Constants.CAPS['COPIES']:
       notes = 'Printer does not support copies option.'
@@ -2266,7 +2266,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintColorSelect(self):
     """Verify printer respects color option in local print."""
-    test_id = 116470
+    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14684'
     test_name = 'testLocalPrintColorSelect'
     if not Constants.CAPS['COLOR']:
       notes = 'Printer does not support color printing.'
@@ -2288,7 +2288,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintUpdateMgtPage(self):
     """Verify printer updates GCP MGT page when Local Printing."""
-    test_id = 48535
+    test_id = '530c74f7-2764-405e-916b-21fc943ea1f8'
     test_name = 'testLocalPrintUpdateMgtPage'
     filepath = 'file://' + Constants.IMAGES['GIF4']
 
@@ -2317,7 +2317,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintLongUrl(self):
     """Verify printer can local print a long URL."""
-    test_id = 116859
+    test_id = '8b89286b-a5aa-4936-a7d8-e768962930d8'
     test_name = 'testLocalPrintLongUrl'
     url = ('http://www-10.lotus.com/ldd/portalwiki.nsf/dx/'
            'Determining_the_best_IBM_Lotus_Web_Content_Management_delivery'
@@ -2337,7 +2337,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintHTML(self):
     """Verify printer can local print HTML file."""
-    test_id = 114300
+    test_id = '8745d54b-045a-4378-a024-d331785ac62e'
     test_name = 'testLocalPrintHTML'
     filepath = 'file://' + Constants.IMAGES['HTML1']
 
@@ -2357,7 +2357,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintJPG(self):
     """Verify a 1 page JPG file prints using Local Printing."""
-    test_id = 114301
+    test_id = '01a0aa7e-80e3-4336-8183-0c5cbf8e9f19'
     test_name = 'testLocalPrintJPG'
     filepath = 'file://' + Constants.IMAGES['JPG12']
 
@@ -2377,7 +2377,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintPNG(self):
     """Verify a 1 page PNG file prints using Local Printing."""
-    test_id = 114302
+    test_id = 'a4588515-2c18-4f57-80c6-9c23cb57f074'
     test_name = 'testLocalPrintPNG'
     filepath = 'file://' + Constants.IMAGES['PNG6']
 
@@ -2397,7 +2397,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGIF(self):
     """Verify a 1 page GIF file prints using Local Printing."""
-    test_id = 114303
+    test_id = '7b61815b-5719-4114-bdf7-8fce6e0d8dc5'
     test_name = 'testLocalPrintGIF'
     filepath = 'file://' + Constants.IMAGES['GIF4']
 
@@ -2417,7 +2417,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintPDF(self):
     """Verify a 1 page PDF file prints using Local Printing."""
-    test_id = 114301
+    test_id = '0a02c47a-32b0-47b4-af7a-810c002d282d'
     test_name = 'testLocalPrintPDF'
     filepath = 'file://' + Constants.IMAGES['PDF9']
 
@@ -2437,7 +2437,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGmail(self):
     """Verify 1 Page Gmail prints using Local Printing."""
-    test_id = 117332
+    test_id = '20828e70-a724-4446-8932-84b7cf3adaf9'
     test_name = 'testLocalPrintGmail'
 
     chromedriver.driver.get('about:blank')
@@ -2457,7 +2457,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGmailI18n(self):
     """Verify Gmail with attachement prints using foreign characters."""
-    test_id = 116885
+    test_id = '5fa31002-b726-4a6a-b0d5-e21e3cc2ccf5'
     test_name = 'testLocalPrintGmailI18n'
 
     chromedriver.driver.get('about:blank')
@@ -2477,7 +2477,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGmailWithAttachment(self):
     """Verify Gmail with image attachment prints using Local Print."""
-    test_id = 116902
+    test_id = '4a01ed35-2758-4ed3-ab5e-8af5dc658999'
     test_name = 'testLocalPrintGmailWithAttachment'
 
     chromedriver.driver.get('about:blank')
@@ -2497,7 +2497,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGoogleDoc(self):
     """Verify Google Doc prints using Local Print."""
-    test_id = 116886
+    test_id = '07e05f71-9d4d-4760-93dd-471a87445261'
     test_name = 'testLocalPrintGoogleDoc'
 
     chromedriver.driver.get('about:blank')
@@ -2517,7 +2517,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGoogleSheet(self):
     """Verify Google Spreadsheet prints using Local Print."""
-    test_id = 116887
+    test_id = '5cc856dc-4257-4d1e-89f3-71722a1a75a3'
     test_name = 'testLocalPrintGoogleDoc'
 
     chromedriver.driver.get('about:blank')
@@ -2537,7 +2537,7 @@ class LocalPrinting(LogoCert):
 
   def testLocalPrintGoogleSlide(self):
     """Verify Google Presentation prints using Local Print."""
-    test_id = 116886
+    test_id = 'e2603a90-e749-42ed-b8c3-971e7079a5bf'
     test_name = 'testLocalPrintGoogleSlide'
 
     chromedriver.driver.get('about:blank')
@@ -2570,7 +2570,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintPageRange(self):
     """Verify printer respects page range when printing from Chrome."""
-    test_id = 33111
+    test_id = '553fbcb6-0d98-45a4-a0d7-308297852135'
     test_name = 'testChromePrintPageRange'
     chromedriver.driver.get(chrome.flags)
     printed = chrome.PrintFromPrintDialog(self.printer, page_range='2-3')
@@ -2586,7 +2586,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintColorSelect(self):
     """Verify printer respects color option when printing from Chrome."""
-    test_id = 33114
+    test_id = '3be1b5e6-cc96-417c-a131-ef96b0576c21'
     test_name = 'testChromePrintColorSelect'
     if not Constants.CAPS['COLOR']:
       notes = 'Printer does not support color printing.'
@@ -2607,7 +2607,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintHeadersFooters(self):
     """Verify printer respects headers and footers in Chrome Print Dialog."""
-    test_id = 116677
+    test_id = '05b8d603-4d60-4259-af11-8681ebc71ede'
     test_name = 'testChromePrintHeadersFooters'
     # First navigate to a web page to print.
     chromedriver.driver.get(chrome.devices)
@@ -2633,7 +2633,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintTwoSided(self):
     """Verify printer respects two-sided option in Chrome Print Dialog."""
-    test_id = 116678
+    test_id = '32c0eb04-247f-4b12-a663-66bb2a2c7920'
     test_name = 'testChromePrintTwoSided'
     if not Constants.CAPS['DUPLEX']:
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support.')
@@ -2652,7 +2652,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintBackground(self):
     """Verify printer respects two-sided option in Chrome Print Dialog."""
-    test_id = 116679
+    test_id = 'd8ea8089-3d6c-44ea-89d9-3d048a5f68f2'
     test_name = 'testChromePrintBackground'
     # First navigate to a web page to print.
     chromedriver.driver.get(Constants.GOOGLE)
@@ -2677,7 +2677,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintMargins(self):
     """Verify printer respects margins selected in Chrome Print Dialog."""
-    test_id = 33112
+    test_id = 'e2178d3a-4664-4d69-a7aa-f7ac50d296a0'
     test_name = 'testChromePrintMargins'
     # Navigate to a page to print.
     chromedriver.driver.get(chrome.version)
@@ -2702,7 +2702,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintLayout(self):
     """Verify printer respects layout settings using Chrome Print Dialog."""
-    test_id = 33113
+    test_id = '96267e29-1718-4b15-9436-d94f91568048'
     test_name = 'testChromePrintLayout'
     chromedriver.driver.get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait')
@@ -2726,7 +2726,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintCopies(self):
     """Verify printer respects copy option using Chrome Print Dialog."""
-    test_id = 33115
+    test_id = '2c3c48c4-35f0-4a97-a985-87211d7f2d3e'
     test_name = 'testChromePrintCopies'
     if not Constants.CAPS['COPIES']:
       notes = 'Printer does not support copies option.'
@@ -2747,7 +2747,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintGoogleDoc(self):
     """Verify a Google Doc prints from Chrome Print Dialog."""
-    test_id = 115760
+    test_id = '598dca3d-70e4-483e-bfc2-d62a89715a11'
     test_name = 'testChromePrintGoogleDoc'
 
     chromedriver.driver.get('about:blank')
@@ -2767,7 +2767,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintGoogleSheet(self):
     """Verify a Google Spreadsheet prints from Chrome Print Dialog."""
-    test_id = 115761
+    test_id = 'caf2c6a3-9486-4ffe-b6f1-fa1ed8147a48'
     test_name = 'testChromePrintGoogleSheet'
 
     chromedriver.driver.get('about:blank')
@@ -2787,7 +2787,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintGoogleSlide(self):
     """Verify a Google Presentation prints from Chrome Print Dialog."""
-    test_id = 115762
+    test_id = '74fb87af-e399-4fce-8bbf-af65a4b48af2'
     test_name = 'testChromePrintGoogleSlide'
 
     chromedriver.driver.get('about:blank')
@@ -2807,7 +2807,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintURL(self):
     """Verify a URL prints from Chrome Print Dialog."""
-    test_id = 115767
+    test_id = '109b3834-e119-4518-bf76-c7f6b6896934'
     test_name = 'testChromePrintURL'
 
     chromedriver.driver.get('http://www.google.com')
@@ -2826,7 +2826,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintGmail(self):
     """Verify simple 1 page Gmail prints from Chrome Print Dialog."""
-    test_id = 115768
+    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testChromePrintGmail'
 
     chromedriver.driver.get('about:blank')
@@ -2846,7 +2846,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintGmailI18n(self):
     """Verify Gmail with foreign characters prints from Chrome Print Dialog."""
-    test_id = 115769
+    test_id = '2af97351-0fb5-4cdc-9f71-d4666c2393d4'
     test_name = 'testChromePrintGmailI18n'
 
     chromedriver.driver.get('about:blank')
@@ -2866,7 +2866,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintGmailWithAttachment(self):
     """Verify Gmail with image attachment prints from Chrome Print Dialog."""
-    test_id = 115770
+    test_id = '24f290e8-42c6-4710-8758-54b623ca51f4'
     test_name = 'testChromePrintGmailWithAttachment'
 
     chromedriver.driver.get('about:blank')
@@ -2895,7 +2895,7 @@ class PostRegistration(LogoCert):
 
   def testDeviceDetails(self):
     """Verify printer details are provided to Cloud Print Service."""
-    test_id = 0
+    test_id = '6bcf8903-af2c-439c-9c8b-1dd829521905'
     test_name = 'testDeviceDetails'
     device.GetDeviceDetails()
     try:
@@ -2912,7 +2912,7 @@ class PostRegistration(LogoCert):
 
   def testRegisteredDeviceNoPrivetAdvertise(self):
     """Verify printer does not advertise itself once it is registered."""
-    test_id = 88351
+    test_id = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
     test_name = 'testRegisteredDeviceNoPrivetAdvertise'
     position = chrome.FindDevice('printers', self.printer)
     try:
@@ -2927,7 +2927,7 @@ class PostRegistration(LogoCert):
 
   def testRegisteredDevicePoweredOffShowsOffline(self):
     """Verify device shows offline that is powered off."""
-    test_id = 88099
+    test_id = 'ba6b2c0c-10da-4910-bb6f-63c826087054'
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
     print 'Power off device.'
     raw_input('Select enter once the printer is completely off.')
@@ -2961,7 +2961,7 @@ class PostRegistration(LogoCert):
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
-    test_id = 88100
+    test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
     test_name = 'testRegisteredDeviceNotDiscovereableAfterPowerOn'
     print 'Power off registered device.'
     print 'After device powers down, turn on device.'
@@ -2990,7 +2990,7 @@ class PrinterState(LogoCert):
 
   def testLostNetworkConnection(self):
     """Verify printer that loses network connection reconnects properly."""
-    test_id = 116287
+    test_id = '0af4301e-bacb-40c4-8b95-a8b29aefc8dd'
     test_name = 'testLostNetworkConnection'
     print 'Test printer handles connection status when reconnecting to network.'
     raw_input('Select enter once printer loses network connection.')
@@ -3013,7 +3013,7 @@ class PrinterState(LogoCert):
 
   def testOpenPaperTray(self):
     """Verifuy if open paper tray is reported correctly."""
-    test_id = 108792
+    test_id = '519969fa-97d1-4116-84e7-4f1f689e1df7'
     test_name = 'testOpenPaperTray'
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have paper tray sensor.'
@@ -3036,7 +3036,7 @@ class PrinterState(LogoCert):
 
   def testClosedPaperTray(self):
     """Verify open to closed paper tray is reported correctly."""
-    test_id = 108793
+    test_id = '5041f9a4-0b58-451a-906f-dec2375d93a4'
     test_name = 'testClosedPaperTray'
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have paper tray sensor.'
@@ -3062,7 +3062,7 @@ class PrinterState(LogoCert):
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
-    test_id = 108794
+    test_id = 'e8001a2a-e403-4f5a-94e5-59e61528d161'
     test_name = 'testNoMediaInTray'
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
@@ -3085,7 +3085,7 @@ class PrinterState(LogoCert):
 
   def testMediaInTray(self):
     """Verify when media put in empty tray, printer state is updated."""
-    test_id = 108795
+    test_id = '64e592be-d6c4-424e-9e69-021c92b09953'
     test_name = 'testMediaInTray'
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
@@ -3110,7 +3110,7 @@ class PrinterState(LogoCert):
 
   def testRemoveTonerCartridge(self):
     """Verify missing toner cartridge is reported correctly."""
-    test_id = 108796
+    test_id = '3be1a76e-b60f-4166-aeb2-0feed9de67c8'
     test_name = 'testRemoveTonerCartridge'
     print 'Remove the (or one) toner cartridge from the printer.'
     raw_input('Select enter once the toner cartridge is removed.')
@@ -3129,7 +3129,7 @@ class PrinterState(LogoCert):
 
   def testExhaustTonerCartridge(self):
     """Verify empty toner is reported correctly."""
-    test_id = 108797
+    test_id = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name = 'testExhaustTonerCartridge'
     print 'Insert an empty toner cartridge in printer.'
     raw_input('Select enter once an empty toner cartridge is in printer.')
@@ -3148,7 +3148,7 @@ class PrinterState(LogoCert):
 
   def testReplaceMissingToner(self):
     """Verify correct printer state after replacing missing toner cartridge."""
-    test_id = 108798
+    test_id = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name = 'testReplaceMissingToner'
     print 'Start test with missing toner cartridge'
     raw_input('Select enter once toner is removed from printer.')
@@ -3169,7 +3169,7 @@ class PrinterState(LogoCert):
 
   def testCoverOpen(self):
     """Verify that an open door or cover is reported correctly."""
-    test_id = 108799
+    test_id = 'b4d4f888-2a97-4ab4-aab8-c847046616f8'
     test_name = 'testCoverOpen'
     print 'Open a cover on your printer.'
     raw_input('Select enter once the cover has been opened.')
@@ -3188,7 +3188,7 @@ class PrinterState(LogoCert):
 
   def testCoverClosed(self):
     """Verify that printer updates state from open to closed cover."""
-    test_id = 108800
+    test_id = 'a26b7d34-15b4-4819-84a5-4b8e5bc3a30e'
     test_name = 'testCoverClosed'
     print 'Start with open cover to printer.'
     raw_input('Select enter once you see open cover indicator on GCP MGT page')
@@ -3209,7 +3209,7 @@ class PrinterState(LogoCert):
 
   def testPaperJam(self):
     """Verify printer properly reports a paper jam with correct state."""
-    test_id = 108801
+    test_id = 'fe089b80-0e1b-4f28-9239-42b8d65724ac'
     test_name = 'testPaperJam'
     print 'Cause the printer to become jammed with paper.'
     raw_input('Select enter once the printer has become jammed.')
@@ -3228,7 +3228,7 @@ class PrinterState(LogoCert):
 
   def testRemovePaperJam(self):
     """Verify removing paper jam in printer reports correct state."""
-    test_id = 108802
+    test_id = 'ff7e0f11-4955-4510-8a5c-91f809f6b263'
     test_name = 'testRemovePaperJam'
     print 'Start with paper jam in printer.'
     raw_input('Select enter once paper jam is reported on GCP Mgt page.')
@@ -3258,7 +3258,7 @@ class JobState(LogoCert):
 
   def testOnePagePrintJob(self):
     """Verify a 1 page print job is reported correctly."""
-    test_id = 28383
+    test_id = '345f2083-ec94-4548-9c01-ad7d8f1840ec'
     test_name = 'testOnePagePrintJobState'
     print 'Wait for this one page print job to finish.'
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG6'])
@@ -3285,7 +3285,7 @@ class JobState(LogoCert):
 
   def testMultiPagePrintJob(self):
     """Verify a multi-page print job is reported with correct state."""
-    test_id = 28384
+    test_id = '7bbf3e1f-c972-4414-ad7c-e6054aa7416f'
     test_name = 'testMultiPageJobState'
     print 'Wait until job starts printing 7 page PDF file...'
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7'])
@@ -3321,7 +3321,7 @@ class JobState(LogoCert):
 
   def testJobDeletionRecovery(self):
     """Verify printer recovers from an In-Progress job being deleted."""
-    test_id = 100230
+    test_id = 'd270088d-0a95-416c-98ab-c703cadde1c3'
     test_name = 'testJobDeletionRecovery'
     if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
       raw_input('Select enter once the first page prints out.')
@@ -3352,7 +3352,7 @@ class JobState(LogoCert):
 
   def testJobStateEmptyInputTray(self):
     """Validate proper /control msg when input tray is empty."""
-    test_id = 100232
+    test_id = '3e178014-b2b6-4ee0-b9b5-f2df24be10b0'
     test_name = 'testJobStateEmptyInputTray'
     print 'Empty the input tray of all paper.'
     raw_input('Select enter once input tray has been emptied.')
@@ -3411,7 +3411,7 @@ class JobState(LogoCert):
 
   def testJobStateMissingToner(self):
     """Validate proper /control msg when toner or ink cartridge is missing."""
-    test_id = 28392
+    test_id = '88ae0238-c866-41eb-b5c1-dea43b902335'
     test_name = 'testJobStateMissingToner'
     print 'Remove ink cartridge or toner from the printer.'
     raw_input('Select enter once the toner is removed.')
@@ -3471,7 +3471,7 @@ class JobState(LogoCert):
 
   def testJobStateNetworkOutage(self):
     """Validate proper /control msg when there is network outage."""
-    test_id = 100450
+    test_id = '0f3a6cb5-bc4c-4fe9-858a-799d58082b23'
     test_name = 'testJobStateNetworkOutage'
     print 'Once the printer prints 1 page, disconnect printer from network.'
     if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
@@ -3519,7 +3519,7 @@ class JobState(LogoCert):
 
   def testJobStateIncorrectMediaSize(self):
     """Validate proper behavior when incorrect media size is selected."""
-    test_id = 100446
+    test_id = '0c5a757c-ab57-4383-b286-1503c09ad81f'
     test_name = 'testJobStateIncorrectMediaSize'
     print 'This test is designed to select media size that is not available.'
     print 'The printer should prompt the user to enter the requested size.'
@@ -3540,7 +3540,7 @@ class JobState(LogoCert):
 
   def testMultipleJobsPrint(self):
     """Verify multiple jobs in queue are all printed."""
-    test_id = 27774
+    test_id = '50790aa4-f276-4c12-9a06-fc0fdf446d7e'
     test_name = 'testMultipleJobsPrint'
     print 'This tests that multiple jobs in print queue are printed.'
     for _ in xrange(3):
@@ -3559,7 +3559,7 @@ class JobState(LogoCert):
 
   def testPrintToOfflinePrinter(self):
     """Validate offline printer prints all queued jobs when back online."""
-    test_id = 117412
+    test_id = '0f3a6cb5-bc4c-4fe9-858a-799d58082b23'
     test_name = 'testPrintToOfflinePrinter'
 
     print 'This tests that an offline printer will print all jobs'
@@ -3591,7 +3591,7 @@ class JobState(LogoCert):
 
   def testDeleteJobFromMgtPage(self):
     """Verify deleting job from Mgt Page is properly handled by printer."""
-    test_id = 117417
+    test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
     test_name = 'testDeleteJobFromMgtPage'
 
     print 'Start with printer power off.'
@@ -3629,7 +3629,7 @@ class JobState(LogoCert):
 
   def testMalformattedFile(self):
     """Verify print recovers from malformatted print job."""
-    test_id = 117418
+    test_id = 'eb71a35f-3fc8-4e3b-a4c8-6cda4cf4f3b4'
     test_name = 'testMalformattedFile'
 
     print 'Submitting a malformatted PDF file.'
@@ -3659,7 +3659,7 @@ class JobState(LogoCert):
 
   def testPagesPrinted(self):
     """Verify printer properly reports number of pages printed."""
-    test_id = 33809
+    test_id = 'e078c865-738a-44a7-bf32-cff5c47d0857'
     test_name = 'testPagesPrinted'
 
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'])
@@ -3695,7 +3695,7 @@ class RunAfter24Hours(LogoCert):
 
   def testPrinterOnline(self):
     """validate printer has online status."""
-    test_id = 45007
+    test_id = '5e0bf694-086a-4258-b23a-aa0d9a746dd7'
     test_name = 'testPrinterOnline'
     device.GetDeviceDetails()
     try:
@@ -3714,9 +3714,9 @@ class Unregister(LogoCert):
 
   def testUnregisterDevice(self):
     """Delete printer using the Cloud Print Management page."""
-    test_id = 27883
+    test_id = 'bd9cdf91-431a-4534-a747-55ef8cbd8391'
     test_name = 'testUnregisterDevice'
-    test_id2 = 88101
+    test_id2 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
     test_name2 = 'testOffDeviceIsDeleted'
     print 'Power down registered device.'
     raw_input('Select return once device is completely powered down.')
@@ -3752,7 +3752,7 @@ class PostUnregister(LogoCert):
 
   def testUnregisteredDevicePrivetAdvertise(self):
     """Verify an unregistered device advertises itself using Privet."""
-    test_id = 27666
+    test_id = '015c45ee-ba09-47b0-ab2d-53453410de4d'
     test_name = 'testUnregisteredDevicePrivetAdvertise'
     position = chrome.FindDevice('printers', self.printer)
     try:
@@ -3775,7 +3775,7 @@ class Printing(LogoCert):
     LogoCert.GetDeviceDetails()
 
   def testPrintJpg2Copies(self):
-    test_id = 45045
+    test_id = '734537e6-c075-4d38-bc4b-dd1b6ad1a7ca'
     test_name = 'testPrintJpg2Copies'
     if not Constants.CAPS['COPIES']:
       notes = 'Copies not supported.'
@@ -3794,7 +3794,7 @@ class Printing(LogoCert):
         self.ManualPass(test_id, test_name)
 
   def testPrintLandscape(self):
-    test_id = 33129
+    test_id = '2b7c81a9-9014-4236-8a1f-5daf4824a41a'
     test_name = 'testPrintJpgLandscape'
     logger.info('Setting orientation to landscape...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG7'],
@@ -3809,7 +3809,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintPdfDuplexLongEdge(self):
-    test_id = 33126
+    test_id = 'cb86137b-943d-47fc-adcd-663ad9f0dce8'
     test_name = 'testPrintPdfDuplexLongEdge'
     if not Constants.CAPS['DUPLEX']:
       notes = 'Duplex not supported.'
@@ -3828,7 +3828,7 @@ class Printing(LogoCert):
         self.ManualPass(test_id, test_name)
 
   def testPrintPdfDuplexShortEdge(self):
-    test_id = 86800
+    test_id = '651588ca-c4aa-4710-b203-64085834dd17'
     test_name = 'testPrintPdfDuplexShortEdge'
     if not Constants.CAPS['DUPLEX']:
       notes = 'Duplex not supported.'
@@ -3847,7 +3847,7 @@ class Printing(LogoCert):
         self.ManualPass(test_id, test_name)
 
   def testPrintMediaSizeSelect(self):
-    test_id = 33127
+    test_id = '14ee1e62-7b38-423c-8637-50a2ae460ddc'
     test_name = 'testPrintMediaSizeSelect'
     logger.info('Testing the selection of A4 media size.')
     raw_input('Load printer with A4 size paper. Select return when ready.')
@@ -3864,7 +3864,7 @@ class Printing(LogoCert):
     raw_input('Load printer with letter size papaer. Select return when ready.')
 
   def testPrintPdfReverseOrder(self):
-    test_id = 33235
+    test_id = '1c2610c9-4f16-42ca-9d4a-018f127c4b58'
     test_name = 'testPrintPdfReverseOrder'
     logger.info('Print with reverse order flag set...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
@@ -3879,7 +3879,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintPdfPageRangePage2(self):
-    test_id = 33111
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
     test_name = 'testPrintPdfPageRangePage2'
     logger.info('Setting page range to page 2...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1'],
@@ -3894,7 +3894,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintPngColor(self):
-    test_id = 33130
+    test_id = '8f66270d-64df-49c7-bb49-01705b65d089'
     test_name = 'testPrintPngColor'
     if not Constants.CAPS['COLOR']:
       notes = 'Printer does not support color.'
@@ -3913,7 +3913,7 @@ class Printing(LogoCert):
         self.ManualPass(test_id, test_name)
 
   def testPrintJpgDpiSetting(self):
-    test_id = 87101
+    test_id = '93c42b61-30e9-407c-bcd5-df50f418c53b'
     test_name = 'testPrintJpgDpiSetting'
     dpi_settings = chrome.GetOptions('dpi', self.printer)
     for dpi_option in dpi_settings:
@@ -3929,7 +3929,7 @@ class Printing(LogoCert):
     self.ManualPass(test_id, test_name)
 
   def testPrintPngFillPage(self):
-    test_id = 87103
+    test_id = '0f911f5f-7001-4d87-933f-c15f42823da6'
     test_name = 'testPrintPngFillPage'
     logger.info('Setting print option to Fill Page...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
@@ -3944,7 +3944,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintPngFitToPage(self):
-    test_id = 87102
+    test_id = '5f2ab7d7-663b-4b86-b4e5-c38979baad11'
     test_name = 'testPrintPngFitToPage'
     logger.info('Setting print option to Fit to Page...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
@@ -3959,7 +3959,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintPngGrowToPage(self):
-    test_id = 87104
+    test_id = '09532b30-f853-458e-99bf-5c1c532573c8'
     test_name = 'testPrintPngGrowToPage'
     logger.info('Setting print option to Grow to Page...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
@@ -3974,7 +3974,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintPngShrinkToPage(self):
-    test_id = 87105
+    test_id = '3309482d-d23a-4ad7-8161-8c474ab1e6de'
     test_name = 'testPrintPngShrinkToPage'
     logger.info('Setting print option to Shrink to Page...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
@@ -3989,7 +3989,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintPngNoFitting(self):
-    test_id = 87106
+    test_id = '0c8c1bd5-7d2a-4f51-9219-36d1f6957b57'
     test_name = 'testPrintPngNoFitting'
     logger.info('Setting print option to No Fitting...')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
@@ -4004,7 +4004,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgPortrait(self):
-    test_id = 87414
+    test_id = '6e36efd8-fb5b-4fce-8d24-2cc1097a88f5'
     test_name = 'testPrintJpgPortrait'
     logger.info('Print simple JPG file with portrait orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG14'],
@@ -4019,7 +4019,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgLandscape(self):
-    test_id = 87415
+    test_id = '1d97a167-bc37-4e24-adf9-7e4bdbfff553'
     test_name = 'testPrintJpgLandscape'
     logger.info('Print simple JPG file with landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG7'],
@@ -4034,7 +4034,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgBlacknWhite(self):
-    test_id = 87416
+    test_id = 'bbd3c533-fcc2-4bf1-adc9-9cd63cc35a80'
     test_name = 'testPrintJpgBlacknWhite'
     logger.info('Print black and white JPG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG1'],
@@ -4049,7 +4049,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgColorTestLandscape(self):
-    test_id = 87417
+    test_id = '26076864-6aad-44e5-96a6-4f455e751fe7'
     test_name = 'testPrintJpgColorTestLandscape'
     logger.info('Print color test JPG file with landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG2'],
@@ -4064,7 +4064,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgPhoto(self):
-    test_id = 87418
+    test_id = '1f0e4b40-a164-4441-b3cb-182e2a5a5cdb'
     test_name = 'testPrintJpgPhoto'
     logger.info('Print JPG photo in landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG5'],
@@ -4079,7 +4079,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgSingleObject(self):
-    test_id = 87424
+    test_id = '03a22a19-8089-4150-8f1b-ceb78180713e'
     test_name = 'testPrintJpgSingleObject'
     logger.info('Print JPG file single object in landscape.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG7'],
@@ -4094,7 +4094,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgProgressive(self):
-    test_id = 135194
+    test_id = '8ce44d03-ba45-40c5-af0f-2aacb8a6debf'
     test_name = 'testPrintJpgProgressive'
     logger.info('Print a Progressive JPG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG8'],
@@ -4109,7 +4109,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgMultiImageWithText(self):
-    test_id = 87420
+    test_id = '2d7ba1af-917b-467b-9e09-72f77cf58a56'
     test_name = 'testPrintJpgMultiImageWithText'
     logger.info('Print multi image with text JPG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG9'],
@@ -4124,7 +4124,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgMaxComplex(self):
-    test_id = 87421
+    test_id = 'c8208125-e720-406a-9308-bc80d461b08e'
     test_name = 'testPrintJpgMaxComplex'
     logger.info('Print complex JPG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG10'],
@@ -4139,7 +4139,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgMultiTargetPortrait(self):
-    test_id = 87422
+    test_id = '3ff201de-77f3-4be1-9cf2-60dc29698f0b'
     test_name = 'testPrintJpgMultiTargetPortrait'
     logger.info('Print multi-target JPG file with portrait orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG11'],
@@ -4154,7 +4154,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgStepChartLandscape(self):
-    test_id = 87423
+    test_id = 'f2f2cae4-e835-48e0-8632-953dd50be0ca'
     test_name = 'testPrintJpgStepChartLandscape'
     logger.info('Print step chart JPG file in landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG13'],
@@ -4169,7 +4169,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgLarge(self):
-    test_id = 87541
+    test_id = 'c45e7ebf-241b-4fdf-8d0b-4d7f850a2b1a'
     test_name = 'testPrintJpgLarge'
     logger.info('Print large JPG file with landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG3'],
@@ -4184,7 +4184,7 @@ class Printing(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testPrintJpgLargePhoto(self):
-    test_id = 87425
+    test_id = 'e30fefe9-1a32-4b22-9088-0af5fe2ffd57'
     test_name = 'testPrintJpgLargePhoto'
     logger.info('Print large photo JPG file with landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG4'],
@@ -4200,7 +4200,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdf(self):
     """Test a standard, 1 page b&w PDF file."""
-    test_id = 27528
+    test_id = '0d4d0d33-b170-414d-a722-00e848bede10'
     test_name = 'testPrintFilePdf'
     logger.info('Printing a black and white 1 page PDF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF4'],
@@ -4216,7 +4216,7 @@ class Printing(LogoCert):
 
   def testPrintFileColorPdf(self):
     """Test an ICC version 4 test color PDF file."""
-    test_id = 27529
+    test_id = 'd81fe624-c6ec-4e72-9535-9cead873a4fa'
     test_name = 'testPrintFileColorPdf'
     logger.info('Printing a color, 1 page PDF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF13'],
@@ -4232,7 +4232,7 @@ class Printing(LogoCert):
 
   def testPrintFileMultiPagePdf(self):
     """Test a standard, 3 page color PDF file."""
-    test_id = 27530
+    test_id = '84e4d761-594d-4930-8a91-b43d037a7422'
     test_name = 'testPrintFileMultiPagePdf'
     logger.info('Printing a 3 page, color PDF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
@@ -4248,7 +4248,7 @@ class Printing(LogoCert):
 
   def testPrintFileLargeColorPdf(self):
     """Test printing a 20 page, color PDF file."""
-    test_id = 27531
+    test_id = '005a9954-b55e-40f9-8a66-aa06b5528a78'
     test_name = 'testPrintFileLargeColorPdf'
     logger.info('Printing a 20 page, color PDF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1'],
@@ -4264,7 +4264,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfV1_2(self):
     """Test printing PDF version 1.2 file."""
-    test_id = 27532
+    test_id = '7cd98a62-d209-4d5a-934d-f951e0db9666'
     test_name = 'testPrintFilePdfV1_2'
     logger.info('Printing a PDF v1.2 file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.2'])
@@ -4279,7 +4279,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfV1_3(self):
     """Test printing PDF version 1.3 file."""
-    test_id = 27533
+    test_id = 'dec3eebc-75b3-47c2-8619-0451e172cb08'
     test_name = 'testPrintFilePdfV1_3'
     logger.info('Printing a PDF v1.3 file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.3'])
@@ -4294,7 +4294,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfV1_4(self):
     """Test printing PDF version 1.4 file."""
-    test_id = 27534
+    test_id = '881cdd22-49e8-4560-ae13-b8c79741f7d1'
     test_name = 'testPrintFilePdfV1_4'
     logger.info('Printing a PDF v1.4 file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.4'])
@@ -4309,7 +4309,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfV1_5(self):
     """Test printing PDF version 1.5 file."""
-    test_id = 27535
+    test_id = '518c3a4b-1335-4979-b1e6-2b06acad8905'
     test_name = 'testPrintFilePdfV1_5'
     logger.info('Printing a PDF v1.5 file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.5'])
@@ -4324,7 +4324,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfV1_6(self):
     """Test printing PDF version 1.6 file."""
-    test_id = 27536
+    test_id = '94dbee8a-e02c-4926-ad7e-a83dbff716dd'
     test_name = 'testPrintFilePdfV1_6'
     logger.info('Printing a PDF v1.6 file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.6'])
@@ -4339,7 +4339,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfV1_7(self):
     """Test printing PDF version 1.7 file."""
-    test_id = 27537
+    test_id = '2ee12493-eeaf-43cd-a136-d01227d63e9a'
     test_name = 'testPrintFilePdfV1_7'
     logger.info('Printing a PDF v1.7 file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7'])
@@ -4354,7 +4354,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfColorTicket(self):
     """Test printing PDF file of Color Ticket in landscape orientation."""
-    test_id = 87367
+    test_id = '4bddcf56-984b-4c4d-9c39-63459b295247'
     test_name = 'testPrintFilePdfColorTicket'
     logger.info('Printing PDF Color ticket in with landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF2'],
@@ -4370,7 +4370,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfLetterMarginTest(self):
     """Test printing PDF Letter size margin test file."""
-    test_id = 87368
+    test_id = 'a7328247-84ab-4a8f-865a-f8f30ed20fc2'
     test_name = 'testPrintFilePdfLetterMarginTest'
     logger.info('Printing PDF Letter Margin Test.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF3'])
@@ -4385,7 +4385,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfMarginTest2(self):
     """Test printing PDF margin test 2 file."""
-    test_id = 87369
+    test_id = '215a7db8-ae4b-4784-b49a-49c30cf82b53'
     test_name = 'testPrintFilePdfMarginTest2'
     logger.info('Printing PDF Margin Test 2 file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF6'])
@@ -4400,7 +4400,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfSimpleLandscape(self):
     """Test printing PDF with landscape layout."""
-    test_id = 87370
+    test_id = '2aaa222a-7d35-4f88-bfc0-8cf2eb5f8373'
     test_name = 'testPrintFilePdfSimpleLandscape'
     logger.info('Printing simple PDF file in landscape.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF8'],
@@ -4416,7 +4416,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfCupsTestPage(self):
     """Test printing PDF CUPS test page."""
-    test_id = 87371
+    test_id = 'ae2a075b-ee7c-409c-8d2d-d08f5c2e868b'
     test_name = 'testPrintFilePdfCupsTestPage'
     logger.info('Printing PDF CUPS test page.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'],
@@ -4432,7 +4432,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfColorTest(self):
     """Test printing PDF Color Test file."""
-    test_id = 87372
+    test_id = '882efbf9-47f2-43cd-9ee9-d4b026679406'
     test_name = 'testPrintFilePdfColorTest'
     logger.info('Printing PDF Color Test page.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF11'],
@@ -4448,7 +4448,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfBarCodeTicket(self):
     """Test printing Barcoded Ticket PDF file."""
-    test_id = 87373
+    test_id = 'b38c0113-095e-4e73-8efe-7352852cafb7'
     test_name = 'testPrintFilePdfBarCodeTicket'
     logger.info('Printing PDF Bar coded ticket.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF12'],
@@ -4464,7 +4464,7 @@ class Printing(LogoCert):
 
   def testPrintFilePdfComplexTicket(self):
     """Test printing complex ticket PDF file."""
-    test_id = 87374
+    test_id = '12555398-4e1f-4305-bcc6-b2b82d665634'
     test_name = 'testPrintFilePdfComplexTicket'
     logger.info('Printing PDF of complex ticket.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF14'],
@@ -4480,7 +4480,7 @@ class Printing(LogoCert):
 
   def testPrintFileSimpleGIF(self):
     """Test printing simple GIF file."""
-    test_id = 27538
+    test_id = '7c346ab2-d8b4-407b-b477-755a0432ace5'
     test_name = 'testPrintFileSimpleGIF'
     logger.info('Printing simple GIF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF2'],
@@ -4496,7 +4496,7 @@ class Printing(LogoCert):
 
   def testPrintFileSmallGIF(self):
     """Test printing a small GIF file."""
-    test_id = 87487
+    test_id = '2e81decf-e364-4651-af1b-a516ac51f4bb'
     test_name = 'testPrintFileSmallGIF'
     logger.info('Printing small GIF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF4'],
@@ -4512,7 +4512,7 @@ class Printing(LogoCert):
 
   def testPrintFileLargeGIF(self):
     """Test printing a large GIF file."""
-    test_id = 87486
+    test_id = '72ed6bc4-1b42-4bc1-921c-4ab205dd56cd'
     test_name = 'testPrintFileLargeGIF'
     logger.info('Printing large GIF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF1'],
@@ -4528,7 +4528,7 @@ class Printing(LogoCert):
 
   def testPrintFileBlackNWhiteGIF(self):
     """Test printing a black & white GIF file."""
-    test_id = 87488
+    test_id = '7fa69496-542e-4f71-8538-7f67b907a2ec'
     test_name = 'testPrintBlackNWhiteGIF'
     logger.info('Printing black and white GIF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF3'],
@@ -4544,7 +4544,7 @@ class Printing(LogoCert):
 
   def testPrintFileHTML(self):
     """Test printing HTML file."""
-    test_id = 28386
+    test_id = '46164630-7c6e-4b37-b829-5edac13888ac'
     test_name = 'testPrintFileHTML'
     logger.info('Printing HTML file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['HTML1'])
@@ -4559,7 +4559,7 @@ class Printing(LogoCert):
 
   def testPrintFilePngA4Test(self):
     """Test printing A4 Test PNG file."""
-    test_id = 87426
+    test_id = '4c1e7474-3471-46b2-8e0d-2e605f89c129'
     test_name = 'testPrintFilePngA4Test'
     logger.info('Printing A4 Test PNG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG1'],
@@ -4575,7 +4575,7 @@ class Printing(LogoCert):
 
   def testPrintFilePngPortrait(self):
     """Test printing PNG portrait file."""
-    test_id = 87433
+    test_id = '7f1e0a95-767e-4302-8225-61d93e127a41'
     test_name = 'testPrintFilePngPortrait'
     logger.info('Printing PNG portrait file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG8'],
@@ -4591,7 +4591,7 @@ class Printing(LogoCert):
 
   def testPrintFileColorPngLandscape(self):
     """Test printing color PNG file."""
-    test_id = 87427
+    test_id = '6b386438-d5cd-46c5-9b25-4ac50faf169c'
     test_name = 'testPrintFileColorPngLandscape'
     logger.info('Printing Color PNG file in landscape.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG2'],
@@ -4607,7 +4607,7 @@ class Printing(LogoCert):
 
   def testPrintFileSmallPng(self):
     """Test printing a small PNG file."""
-    test_id = 87428
+    test_id = '213b84ed-6ddb-4d9b-ab27-be8d5f6d8370'
     test_name = 'testPrintFileSmallPng'
     logger.info('Printing a small PNG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
@@ -4623,7 +4623,7 @@ class Printing(LogoCert):
 
   def testPrintFilePngWithLetters(self):
     """Test printing PNG containing letters."""
-    test_id = 87429
+    test_id = '83b38406-74f2-4b2e-a74c-54998956ee18'
     test_name = 'testPrintFilePngWithLetters'
     logger.info('Printing PNG file with letters.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG4'],
@@ -4639,7 +4639,7 @@ class Printing(LogoCert):
 
   def testPrintFilePngColorTest(self):
     """Test printing PNG Color Test file."""
-    test_id = 87430
+    test_id = '8f66270d-64df-49c7-bb49-01705b65d089'
     test_name = 'testPrintFilePngColorTest'
     logger.info('Printing PNG Color Test file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG5'],
@@ -4655,7 +4655,7 @@ class Printing(LogoCert):
 
   def testPrintFilePngColorImageWithText(self):
     """Test printing color images with text PNG file."""
-    test_id = 87431
+    test_id = '931f1994-eebf-4fa6-9549-f8811b4ed641'
     test_name = 'testPrintFilePngColorImageWithText'
     logger.info('Printing color images with text PNG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG6'],
@@ -4671,7 +4671,7 @@ class Printing(LogoCert):
 
   def testPrintFilePngCupsTest(self):
     """Test printing Cups Test PNG file."""
-    test_id = 87432
+    test_id = '055898ba-25f7-4b4b-b116-ff7d499c8994'
     test_name = 'testPrintFilePngCupsTest'
     logger.info('Printing Cups Test PNG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'],
@@ -4687,7 +4687,7 @@ class Printing(LogoCert):
 
   def testPrintFileLargePng(self):
     """Test printing Large PNG file."""
-    test_id = 87436
+    test_id = '852fab66-af6b-4f06-b94f-9d04508be3c6'
     test_name = 'testPrintFileLargePng'
     logger.info('Printing large PNG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG9'],
@@ -4703,7 +4703,7 @@ class Printing(LogoCert):
 
   def testPrintFileSvgSimple(self):
     """Test printing simple SVG file."""
-    test_id = 87437
+    test_id = 'f10c0c3c-0d44-440f-8058-a0643235e2f8'
     test_name = 'testPrintFileSvgSimple'
     logger.info('Printing simple SVG file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['SVG2'])
@@ -4718,7 +4718,7 @@ class Printing(LogoCert):
 
   def testPrintFileSvgWithImages(self):
     """Test printing SVG file with images."""
-    test_id = 87438
+    test_id = '613e3f50-365f-4d4e-be72-d04202f74de4'
     test_name = 'testPrintFileSvgWithImages'
     logger.info('Printing SVG file with images.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['SVG1'],
@@ -4734,7 +4734,7 @@ class Printing(LogoCert):
 
   def testPrintFileTiffRegLink(self):
     """Test printing TIFF file of GCP registration link."""
-    test_id = 87439
+    test_id = 'ff85ffb1-7032-4006-948d-1725d93c5c5a'
     test_name = 'testPrintFileTiffRegLink'
     logger.info('Printing TIFF file of GCP registration link.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['TIFF1'])
@@ -4749,7 +4749,7 @@ class Printing(LogoCert):
 
   def testPrintFileTiffPhoto(self):
     """Test printing TIFF file of photo."""
-    test_id = 87440
+    test_id = '983ba7b4-ced0-4144-81cc-6abe89e63f78'
     test_name = 'testPrintFileTiffPhoto'
     logger.info('Printing TIFF file of photo.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['TIFF2'],
