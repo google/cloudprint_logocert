@@ -1710,7 +1710,7 @@ class Registration(LogoCert):
     """
     test_id = 'b36f4085-f14f-49e0-adc0-cdbaae45bd9f'
     test_name = 'testDeviceRegistration'
-    test_id2 = 90201
+    test_id2 = '64f31b27-0779-4c94-8f8a-ec9d44ce6171'
     test_name2 = 'testDeviceRegistrationNoAccept'
     print 'Do not select accept/cancel registration from the printer U/I.'
     print 'Wait for the registration request to time out.'
