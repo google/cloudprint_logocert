@@ -2651,7 +2651,7 @@ class ChromePrinting(LogoCert):
     self.ManualPass(test_id, test_name)
 
   def testChromePrintBackground(self):
-    """Verify printer respects two-sided option in Chrome Print Dialog."""
+    """Verify printer respects background option in Chrome Print Dialog."""
     test_id = 'd8ea8089-3d6c-44ea-89d9-3d048a5f68f2'
     test_name = 'testChromePrintBackground'
     # First navigate to a web page to print.
@@ -2726,7 +2726,7 @@ class ChromePrinting(LogoCert):
 
   def testChromePrintCopies(self):
     """Verify printer respects copy option using Chrome Print Dialog."""
-    test_id = '2c3c48c4-35f0-4a97-a985-87211d7f2d3e'
+    test_id = '345affa2-796a-43e2-bc0e-2978d847d7b4'
     test_name = 'testChromePrintCopies'
     if not Constants.CAPS['COPIES']:
       notes = 'Printer does not support copies option.'
@@ -3471,7 +3471,7 @@ class JobState(LogoCert):
 
   def testJobStateNetworkOutage(self):
     """Validate proper /control msg when there is network outage."""
-    test_id = '0f3a6cb5-bc4c-4fe9-858a-799d58082b23'
+    test_id = '52f25929-6970-400f-93b1-e1542309f31f'
     test_name = 'testJobStateNetworkOutage'
     print 'Once the printer prints 1 page, disconnect printer from network.'
     if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
@@ -3516,6 +3516,27 @@ class JobState(LogoCert):
       notes = 'Error printing PDF file.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
+
+  def testJobStateWithPaperJam(self):
+    """Validate proper behavior of print job when paper is jammed."""
+    test_id = '664a8841-14d0-483e-a91a-34722dfdb298'
+    test_name = 'testJobStateWithPaperJam'
+    print 'This test will validate job state when there is a paper jam.'
+    print 'Place page inside print path to cause a paper jam.'
+    raw_input('Select enter once printer reports paper jam.')
+    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'])
+    print 'Verify job is reported in error state.'
+    print 'Now clear the print path so the printer is no longer jammed.'
+    raw_input('Select enter once printer is clear of jam.')
+    print 'Verify print job prints after paper jam is cleared.'
+    try:
+      self.assertTrue(output)
+    except AssertionError:
+      notes = 'Error printing %s' % Constants.IMAGES['PDF9']
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+    else:
+      self.ManualPass(test_id, test_name)
 
   def testJobStateIncorrectMediaSize(self):
     """Validate proper behavior when incorrect media size is selected."""
@@ -3631,6 +3652,8 @@ class JobState(LogoCert):
     """Verify print recovers from malformatted print job."""
     test_id = 'eb71a35f-3fc8-4e3b-a4c8-6cda4cf4f3b4'
     test_name = 'testMalformattedFile'
+    test_id2 = '2e9d33c1-7611-4d5c-90b5-dd5282b36479'
+    test_name2 = 'testErrorRecovery'
 
     print 'Submitting a malformatted PDF file.'
 
@@ -3654,8 +3677,10 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'Verify print test page printed correctly.'
+      print 'Verify malformatted file did not put printer in error state.'
       self.ManualPass(test_id, test_name)
+      print 'Verify print test page printed correctly.'
+      self.ManualPass(test_id2, test_name2)
 
   def testPagesPrinted(self):
     """Verify printer properly reports number of pages printed."""
@@ -3841,6 +3866,26 @@ class Printing(LogoCert):
         self.assertTrue(output)
       except AssertionError:
         notes = 'Error printing in duplex short edge.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        self.ManualPass(test_id, test_name)
+
+  def testPrintColorSelect(self):
+    """Verify the management page has color options."""
+    test_id = '52686084-5ae2-4bda-b715-aba6a8972268'
+    test_name = 'testPrintColorSelect'
+    if not Constants.CAPS['COLOR']:
+      notes = 'Color is not supported.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+    else:
+      logger.info('Printing with color selected.')
+      output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF13'],
+                                color='Color')
+      try:
+        self.assertTrue(output)
+      except AssertionError:
+        notes = 'Error printing color PDF with color selected.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
