@@ -50,14 +50,17 @@ class Constants(object):
       'COLLATE': False,
       'COLOR': False,
       'COPIES': True,
+      'COVER': True,  # Not all printers have a cover.
       'DUPLEX': True,
       'LAYOUT_ISSUE': True,  # Printer must set page orientation for local
                              # printing, so page_orientation is still needed
                              # in the printer capabilities.
       'LOCAL_PRINT': True,   # If a Printer supports local printing without
                              # being registered, set this to True.
+      'TONER': True,  # Set to false if printer is thermal or has no toner.
       'TRAY_SENSOR': False,  # Set this to True if printer has sensor to detect
-                             # if the paper tray is open or empty.
+                             # if the paper tray is open or empty. Set this to
+                             # false if the printer has no paper tray.
       }
 
   # Carriage return.
