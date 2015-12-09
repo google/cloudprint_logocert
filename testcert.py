@@ -254,10 +254,10 @@ class LogoCert(unittest.TestCase):
       result: string, ["Passed", "Failed", "Blocked", "Skipped", "Not Run"]
       notes: string, notes to include with the test result.
     """
-    logger.info('test_id: %d: %s', test_id, result)
-    logger.info('%d: %s', test_id, test_name)
+    logger.info('test_id: %s: %s', test_id, result)
+    logger.info('%s: %s', test_id, test_name)
     if notes:
-      logger.info('%d: %s', test_id, notes)
+      logger.info('%s: %s', test_id, notes)
     else:
       notes = ''
     if Constants.TEST['SPREADSHEET']:
