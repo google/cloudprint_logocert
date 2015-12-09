@@ -770,6 +770,7 @@ class Privet(LogoCert):
       raise
     else:
       print 'Accept the registration request on the device.'
+      print 'Note: some printers may not show a registration request.'
       raw_input('Select enter once registration is accepted.')
       try:
         self.assertTrue(device.GetPrivetClaimToken())
@@ -1409,16 +1410,16 @@ class Printer(LogoCert):
     if not Constants.CAPS['COLLATE']:
       notes = 'Printer does not support collate.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    try:
+      self.assertIn('collate', device.cdd['caps'])
+    except AssertionError:
+      notes = 'collate not found in printer capabilities.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      try:
-        self.assertIn('collate', device.cdd['caps'])
-      except AssertionError:
-        notes = 'collate not found in printer capabilities.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        notes = 'collate: %s' % device.cdd['caps']['collate']
-        self.LogTest(test_id, test_name, 'Passed', notes)
+      notes = 'collate: %s' % device.cdd['caps']['collate']
+      self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsPageOrientation(self):
     """Verify page_orientation is not in printer capabilities."""
@@ -3018,21 +3019,21 @@ class PrinterState(LogoCert):
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    print 'Open the paper tray to the printer.'
+    raw_input('Select enter once the paper tray is open.')
+    time.sleep(10)
+    device.GetDeviceDetails()
+    try:
+      self.assertTrue(device.error_state)
+    except AssertionError:
+      notes = 'Printer is not in error state with open paper tray.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      print 'Open the paper tray to he printer.'
-      raw_input('Select enter once the paper tray is open.')
-      time.sleep(10)
-      device.GetDeviceDetails()
-      try:
-        self.assertTrue(device.error_state)
-      except AssertionError:
-        notes = 'Printer is not in error state with open paper tray.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        print 'Open paper tray alert should be reported on GCP Mgt page.'
-        print 'If not, fail this test.'
-        self.ManualPass(test_id, test_name, print_test=False)
+      print 'Open paper tray alert should be reported on GCP Mgt page.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name, print_test=False)
 
   def testClosedPaperTray(self):
     """Verify open to closed paper tray is reported correctly."""
@@ -3041,24 +3042,24 @@ class PrinterState(LogoCert):
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    print 'Start with open paper tray.'
+    print 'GCP Mgt page should report an open paper tray.'
+    raw_input('Select enter when the GCP Mgt Page show open tray alert.')
+    print 'Now close the paper tray.'
+    raw_input('Select enter once the paper tray is closed.')
+    time.sleep(10)
+    device.GetDeviceDetails()
+    try:
+      self.assertFalse(device.error_state)
+    except AssertionError:
+      notes = 'Paper tray is closed but printer reports error.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      print 'Start with open paper tray.'
-      print 'GCP Mgt page should report an open paper tray.'
-      raw_input('Select enter when the GCP Mgt Page show open tray alert.')
-      print 'Now close the paper tray.'
-      raw_input('Select enter once the paper tray is closed.')
-      time.sleep(10)
-      device.GetDeviceDetails()
-      try:
-        self.assertFalse(device.error_state)
-      except AssertionError:
-        notes = 'Paper tray is closed but printer reports error.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        print 'Closed paper tray should not be reported by GCP Mgt page.'
-        print 'If reported, fail this test.'
-        self.ManualPass(test_id, test_name, print_test=False)
+      print 'Closed paper tray should not be reported by GCP Mgt page.'
+      print 'If reported, fail this test.'
+      self.ManualPass(test_id, test_name, print_test=False)
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
@@ -3067,21 +3068,21 @@ class PrinterState(LogoCert):
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    print 'Remove all media from the paper tray.'
+    raw_input('Select enter once all media is removed.')
+    time.sleep(10)
+    device.GetDeviceDetails()
+    try:
+      self.assertTrue(device.error_state)
+    except AssertionError:
+      notes = 'Printer not in error state with no media in paper tray.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      print 'Remove all media from the paper tray.'
-      raw_input('Select enter once all media is removed.')
-      time.sleep(10)
-      device.GetDeviceDetails()
-      try:
-        self.assertTrue(device.error_state)
-      except AssertionError:
-        notes = 'Printer not in error state with no media in paper tray.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        print 'GCP Mgt page should show empty paper tray alert.'
-        print 'Fail this test if it does not.'
-        self.ManualPass(test_id, test_name, print_test=False)
+      print 'GCP Mgt page should show empty paper tray alert.'
+      print 'Fail this test if it does not.'
+      self.ManualPass(test_id, test_name, print_test=False)
 
   def testMediaInTray(self):
     """Verify when media put in empty tray, printer state is updated."""
@@ -3090,28 +3091,32 @@ class PrinterState(LogoCert):
     if not Constants.CAPS['TRAY_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    print 'Start with no media in paper tray.'
+    raw_input('Select enter when GCP Mgt page shows missing media alert.')
+    print 'Place media in empty paper tray.'
+    raw_input('Select enter once you have placed paper in paper tray.')
+    time.sleep(10)
+    device.GetDeviceDetails()
+    try:
+      self.assertFalse(device.error_state)
+    except AssertionError:
+      notes = 'Papaer in media tray but printer in error state.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      print 'Start with no media in paper tray.'
-      raw_input('Select enter when GCP Mgt page shows missing media alert.')
-      print 'Place media in empty paper tray.'
-      raw_input('Select enter once you have placed paper in paper tray.')
-      time.sleep(10)
-      device.GetDeviceDetails()
-      try:
-        self.assertFalse(device.error_state)
-      except AssertionError:
-        notes = 'Papaer in media tray but printer in error state.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        print 'GCP Mgt page should not show missing paper alert.'
-        print 'If it has alert, fail this test.'
-        self.ManualPass(test_id, test_name, print_test=False)
+      print 'GCP Mgt page should not show missing paper alert.'
+      print 'If it has alert, fail this test.'
+      self.ManualPass(test_id, test_name, print_test=False)
 
   def testRemoveTonerCartridge(self):
     """Verify missing toner cartridge is reported correctly."""
     test_id = '3be1a76e-b60f-4166-aeb2-0feed9de67c8'
     test_name = 'testRemoveTonerCartridge'
+    if not Constants.CAPS['TONER']:
+      notes = 'Printer does not contain ink toner.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return True
     print 'Remove the (or one) toner cartridge from the printer.'
     raw_input('Select enter once the toner cartridge is removed.')
     time.sleep(10)
@@ -3131,6 +3136,10 @@ class PrinterState(LogoCert):
     """Verify empty toner is reported correctly."""
     test_id = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name = 'testExhaustTonerCartridge'
+    if not Constants.CAPS['TONER']:
+      notes = 'Printer does not contain ink toner.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
     print 'Insert an empty toner cartridge in printer.'
     raw_input('Select enter once an empty toner cartridge is in printer.')
     time.sleep(10)
@@ -3150,6 +3159,10 @@ class PrinterState(LogoCert):
     """Verify correct printer state after replacing missing toner cartridge."""
     test_id = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name = 'testReplaceMissingToner'
+    if not Constants.CAPS['TONER']:
+      notes = 'Printer does not contain ink toner.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
     print 'Start test with missing toner cartridge'
     raw_input('Select enter once toner is removed from printer.')
     print 'Verify the GCP Mgt page shows missing toner alert.'
@@ -3171,6 +3184,10 @@ class PrinterState(LogoCert):
     """Verify that an open door or cover is reported correctly."""
     test_id = 'b4d4f888-2a97-4ab4-aab8-c847046616f8'
     test_name = 'testCoverOpen'
+    if not Constants.CAPS['COVER']:
+      notes = 'Printer does not have a cover.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
     print 'Open a cover on your printer.'
     raw_input('Select enter once the cover has been opened.')
     time.sleep(10)
@@ -3190,6 +3207,10 @@ class PrinterState(LogoCert):
     """Verify that printer updates state from open to closed cover."""
     test_id = 'a26b7d34-15b4-4819-84a5-4b8e5bc3a30e'
     test_name = 'testCoverClosed'
+    if not Constants.CAPS['COVER']:
+      notes = 'Printer does not have a cover.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
     print 'Start with open cover to printer.'
     raw_input('Select enter once you see open cover indicator on GCP MGT page')
     print 'Now close the printer cover.'
@@ -3413,6 +3434,10 @@ class JobState(LogoCert):
     """Validate proper /control msg when toner or ink cartridge is missing."""
     test_id = '88ae0238-c866-41eb-b5c1-dea43b902335'
     test_name = 'testJobStateMissingToner'
+    if not Constants.CAPS['TONER']:
+      notes = 'printer does not contain toner ink.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
     print 'Remove ink cartridge or toner from the printer.'
     raw_input('Select enter once the toner is removed.')
     if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
@@ -3805,18 +3830,18 @@ class Printing(LogoCert):
     if not Constants.CAPS['COPIES']:
       notes = 'Copies not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    logger.info('Setting copies to 2...')
+    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG12'],
+                              color=self.color, copies=2)
+    try:
+      self.assertTrue(output)
+    except AssertionError:
+      notes = 'Error printing with copies = 2.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      logger.info('Setting copies to 2...')
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG12'],
-                                color=self.color, copies=2)
-      try:
-        self.assertTrue(output)
-      except AssertionError:
-        notes = 'Error printing with copies = 2.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        self.ManualPass(test_id, test_name)
+      self.ManualPass(test_id, test_name)
 
   def testPrintLandscape(self):
     test_id = '2b7c81a9-9014-4236-8a1f-5daf4824a41a'
@@ -3839,18 +3864,18 @@ class Printing(LogoCert):
     if not Constants.CAPS['DUPLEX']:
       notes = 'Duplex not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    logger.info('Setting duplex to long edge...')
+    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
+                              duplex='Long Edge')
+    try:
+      self.assertTrue(output)
+    except AssertionError:
+      notes = 'Error printing in duplex long edge.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      logger.info('Setting duplex to long edge...')
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
-                                duplex='Long Edge')
-      try:
-        self.assertTrue(output)
-      except AssertionError:
-        notes = 'Error printing in duplex long edge.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        self.ManualPass(test_id, test_name)
+      self.ManualPass(test_id, test_name)
 
   def testPrintPdfDuplexShortEdge(self):
     test_id = '651588ca-c4aa-4710-b203-64085834dd17'
@@ -3858,18 +3883,18 @@ class Printing(LogoCert):
     if not Constants.CAPS['DUPLEX']:
       notes = 'Duplex not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    logger.info('Setting duplex to short edge...')
+    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
+                              duplex='Short Edge')
+    try:
+      self.assertTrue(output)
+    except AssertionError:
+      notes = 'Error printing in duplex short edge.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      logger.info('Setting duplex to short edge...')
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
-                                duplex='Short Edge')
-      try:
-        self.assertTrue(output)
-      except AssertionError:
-        notes = 'Error printing in duplex short edge.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        self.ManualPass(test_id, test_name)
+      self.ManualPass(test_id, test_name)
 
   def testPrintColorSelect(self):
     """Verify the management page has color options."""
@@ -3878,18 +3903,18 @@ class Printing(LogoCert):
     if not Constants.CAPS['COLOR']:
       notes = 'Color is not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    logger.info('Printing with color selected.')
+    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF13'],
+                              color='Color')
+    try:
+      self.assertTrue(output)
+    except AssertionError:
+      notes = 'Error printing color PDF with color selected.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      logger.info('Printing with color selected.')
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF13'],
-                                color='Color')
-      try:
-        self.assertTrue(output)
-      except AssertionError:
-        notes = 'Error printing color PDF with color selected.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        self.ManualPass(test_id, test_name)
+      self.ManualPass(test_id, test_name)
 
   def testPrintMediaSizeSelect(self):
     test_id = '14ee1e62-7b38-423c-8637-50a2ae460ddc'
@@ -3944,18 +3969,18 @@ class Printing(LogoCert):
     if not Constants.CAPS['COLOR']:
       notes = 'Printer does not support color.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    logger.info('Setting color option to Color...')
+    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG1'],
+                              color='Color')
+    try:
+      self.assertTrue(output)
+    except AssertionError:
+      notes = 'Error printing PNG in color.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
-      logger.info('Setting color option to Color...')
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG1'],
-                                color='Color')
-      try:
-        self.assertTrue(output)
-      except AssertionError:
-        notes = 'Error printing PNG in color.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        self.ManualPass(test_id, test_name)
+      self.ManualPass(test_id, test_name)
 
   def testPrintJpgDpiSetting(self):
     test_id = '93c42b61-30e9-407c-bcd5-df50f418c53b'
