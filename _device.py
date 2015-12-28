@@ -162,7 +162,7 @@ class Device(object):
     cancel_url = self.privet_url['register']['cancel']
     self.logger.debug('Sending request to cancel Privet Registration.')
     response = self.transport.HTTPReq(cancel_url, data='',
-                                      headers=self.privet.headers_empty)
+                                      headers=self.headers, user=Constants.USER['EMAIL'])
     return response['code']
 
   def StartPrivetRegister(self):
