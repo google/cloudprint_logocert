@@ -614,6 +614,9 @@ class Privet(LogoCert):
     response = transport.HTTPReq(
         device.privet_url['register']['start'], data='',
         headers=device.headers, user=self.username)
+    transport.HTTPReq(
+        device.privet_url['register']['cancel'], data='',
+        headers=device.headers, user=self.username)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
@@ -737,26 +740,30 @@ class Privet(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      print 'Accept the registration request on the device.'
-      raw_input('Select enter once registration accepted.')
       try:
-        self.assertTrue(device.GetPrivetClaimToken())
-      except AssertionError:
-        notes = 'Error getting claim token.'
-        self.LogTest(test_id, test_name, 'Blocked', notes)
-        raise
-      else:
-        device.automated_claim_url = (
-            'https://www.google.com/cloudprint/confirm?token=INVALID')
+        print 'Accept the registration request on the device.'
+        raw_input('Select enter once registration accepted.')
         try:
-          self.assertFalse(device.SendClaimToken(Constants.AUTH['ACCESS']))
+          self.assertTrue(device.GetPrivetClaimToken())
         except AssertionError:
-          notes = 'Device accepted invalid claim token.'
-          self.LogTest(test_id, test_name, 'Failed', notes)
+          notes = 'Error getting claim token.'
+          self.LogTest(test_id, test_name, 'Blocked', notes)
           raise
         else:
-          notes = 'Device did not accept invalid claim token.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
+          device.automated_claim_url = (
+              'https://www.google.com/cloudprint/confirm?token=INVALID')
+          try:
+            self.assertFalse(device.SendClaimToken(Constants.AUTH['ACCESS']))
+          except AssertionError:
+            notes = 'Device accepted invalid claim token.'
+            self.LogTest(test_id, test_name, 'Failed', notes)
+            raise
+          else:
+            notes = 'Device did not accept invalid claim token.'
+            self.LogTest(test_id, test_name, 'Passed', notes)
+      finally:
+        device.CancelRegistration()
+        time.sleep(10)
 
   def testDeviceRegistrationInvalidUserAuthToken(self):
     """Verify a device will not register is user auth token is invalid."""
@@ -769,25 +776,29 @@ class Privet(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      print 'Accept the registration request on the device.'
-      print 'Note: some printers may not show a registration request.'
-      raw_input('Select enter once registration is accepted.')
       try:
-        self.assertTrue(device.GetPrivetClaimToken())
-      except AssertionError:
-        notes = 'Error getting claim token.'
-        self.LogTest(test_id, test_name, 'Blocked', notes)
-        raise
-      else:
+        print 'Accept the registration request on the device.'
+        print 'Note: some printers may not show a registration request.'
+        raw_input('Select enter once registration is accepted.')
         try:
-          self.assertFalse(device.SendClaimToken('INVALID_USER_AUTH_TOKEN'))
+          self.assertTrue(device.GetPrivetClaimToken())
         except AssertionError:
-          notes = 'Claim token accepted with invalid User Auth Token.'
-          self.LogTest(test_id, test_name, 'Failed', notes)
+          notes = 'Error getting claim token.'
+          self.LogTest(test_id, test_name, 'Blocked', notes)
           raise
         else:
-          notes = 'Claim token not accepted with invalid user auth token.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
+          try:
+            self.assertFalse(device.SendClaimToken('INVALID_USER_AUTH_TOKEN'))
+          except AssertionError:
+            notes = 'Claim token accepted with invalid User Auth Token.'
+            self.LogTest(test_id, test_name, 'Failed', notes)
+            raise
+          else:
+            notes = 'Claim token not accepted with invalid user auth token.'
+            self.LogTest(test_id, test_name, 'Passed', notes)
+      finally:
+        device.CancelRegistration()
+        time.sleep(10)
 
 
 class Printer(LogoCert):
