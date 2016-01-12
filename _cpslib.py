@@ -63,6 +63,22 @@ class GCPService(object):
 
     return response_dict
 
+  def InterfaceQuery(query):
+    """Decorator for all queries to GCP interfaces.
+
+    Args:
+      query: function we are wrapping.
+    Returns:
+      formatted data from query to GCP Service Interface.
+    """
+    def GCPQuery(self, *args, **kwargs):
+      url = query(self, *args, **kwargs)
+      res = self.transport.HTTPReq(url, auth_token=self.auth_token)
+      return self.FormatResponse(res)
+
+    return GCPQuery
+
+  @InterfaceQuery
   def Search(self, printer=None):
     """Search for printers owned by user.
 
@@ -77,11 +93,13 @@ class GCPService(object):
     else:
       url = search_url
 
-    response = self.transport.HTTPReq(url, auth_token=self.auth_token)
+    # response = self.transport.HTTPReq(url, auth_token=self.auth_token)
 
-    response_dict = self.FormatResponse(response) 
-    return response_dict
+    # response_dict = self.FormatResponse(response) 
+    # return response_dict
+    return url
 
+  @InterfaceQuery
   def Printer(self, printer_id):
     """Execute the printer interface and return printer fields and capabilites.
 
@@ -92,7 +110,8 @@ class GCPService(object):
     """
     url = '%s/printer?printerid=%s&usecdd=True' % (
         Constants.GCP['MGT'], printer_id)
-    response = self.transport.HTTPReq(url, auth_token=self.auth_token)
+    #response = self.transport.HTTPReq(url, auth_token=self.auth_token)
 
-    response_dict = self.FormatResponse(response)
-    return response_dict
+    #response_dict = self.FormatResponse(response)
+    #return response_dict
+    return url
