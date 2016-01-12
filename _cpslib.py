@@ -25,6 +25,7 @@ jobs
 printer
 control
 delete
+deletejob
 fetch
 register
 update
@@ -79,19 +80,58 @@ class GCPService(object):
     return GCPQuery
 
   @InterfaceQuery
-  def Search(self, printer=None):
-    """Search for printers owned by user.
+  def Delete(self, printer_id):
+    """Delete a printer owned by a user.
 
     Args:
-      printer: string, name or partial name of printer to search for.
+      printer_id: string, printerid of registered printer.
     Returns:
-      json string returned from the GCP Service.
+      url: string, url to delete printer.
     """
-    search_url = Constants.GCP['MGT'] + '/search'
-    if printer:
-      url = search_url + '?q=%s' % printer
-    else:
-      url = search_url
+    url = '%s/delete?printerid=%s' % (Constants.GCP['MGT'], printer_id)
+
+    return url
+
+  @InterfaceQuery
+  def DeleteJob(self, job_id):
+    """Delete a job owned by user.
+
+    Args:
+      job_id: string, jobid of existing job owned by user.
+    Returns:
+      url: string, url to delete job.
+    """
+    url = '%s/deletejob?jobid=%s' % (Constants.GCP['MGT'], job_id)
+
+    return url
+
+  @InterfaceQuery
+  def Jobs(self, printer_id=None, owner=None, job_title=None, status=None):
+    """Get a list of print jobs which user has permission to view.
+
+    Args:
+      printer_id: string, filer jobs sent to this printer.
+      owner: string, filter jobs submitted by this owner.
+      job_title: string, filter jobs whose title or tags contain this string.
+      status: string, filter jobs that match this status.
+    Returns:
+      string, url to be used by InterfaceQuery method.
+    Valid Job Status strings are: QUEUED, IN_PROGRESS, DONE, ERROR, SUBMITTED,
+    and HELD.
+    """
+    args = '?'
+    url = '%s/jobs' % Constants.GCP['MGT']
+    if printer_id:
+      url += '?printerid=%s' % printer_id
+      args = '&'
+    if owner:
+      url += '%sowner=%s' % (args, owner)
+      args = '&'
+    if status:
+      url += '%sstatus=%s' % (args, status)
+      args= '&'
+    if job_title:
+      url += '%sq=%s' % (args, job_title)
 
     return url
 
@@ -102,9 +142,24 @@ class GCPService(object):
     Args:
       printer_id: string, id of printer.
     Returns:
-      json string returned by GCP Service.
+      string: url to be used by InterfaceQuery method.
     """
     url = '%s/printer?printerid=%s&usecdd=True' % (
         Constants.GCP['MGT'], printer_id)
+
+    return url
+
+  @InterfaceQuery
+  def Search(self, printer=None):
+    """Search for printers owned by user.
+
+    Args:
+      printer: string, name or partial name of printer to search for.
+    Returns:
+      string: url to be used by InterfaceQuery method.
+    """
+    url = '%s/search' % Constants.GCP['MGT']
+    if printer:
+      url += '?q=%s' % printer
 
     return url
