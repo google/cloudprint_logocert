@@ -93,10 +93,6 @@ class GCPService(object):
     else:
       url = search_url
 
-    # response = self.transport.HTTPReq(url, auth_token=self.auth_token)
-
-    # response_dict = self.FormatResponse(response) 
-    # return response_dict
     return url
 
   @InterfaceQuery
@@ -110,8 +106,5 @@ class GCPService(object):
     """
     url = '%s/printer?printerid=%s&usecdd=True' % (
         Constants.GCP['MGT'], printer_id)
-    #response = self.transport.HTTPReq(url, auth_token=self.auth_token)
 
-    #response_dict = self.FormatResponse(response)
-    #return response_dict
     return url
