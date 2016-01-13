@@ -25,6 +25,7 @@ import json
 from _cloudprintmgr import CloudPrintMgr
 from _common import Extract
 from _config import Constants
+from _cpslib import GCPService
 from _jsonparser import JsonParser
 import _log
 from _privet import Privet
@@ -34,10 +35,11 @@ from _transport import Transport
 class Device(object):
   """The basic device object."""
 
-  def __init__(self, chromedriver, model=None):
+  def __init__(self, auth_token, chromedriver, model=None):
     """Initialize a device object.
 
     Args:
+      auth_token: string, auth_token of authenicated user.
       chromedriver: an initialized chromedriver object.
       model: string, unique model or name of device.
     """
@@ -50,7 +52,9 @@ class Device(object):
     self.cloudprintmgr = CloudPrintMgr(chromedriver)
     self.ipv4 = Constants.PRINTER['IP']
     self.port = Constants.PRINTER['PORT']
+    self.dev_id = None
     self.name = None
+    self.gcp = GCPService(auth_token)
     self.status = None
     self.messages = []
     self.details = {}
@@ -96,11 +100,22 @@ class Device(object):
     This will populate a Device object with device name, status, state messages,
     and device details.
     """
-    self.name = self.cloudprintmgr.GetPrinterName(self.model)
-    self.status = self.cloudprintmgr.GetPrinterState(self.model)
-    self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.model)
-    self.details = self.cloudprintmgr.GetPrinterDetails(self.model)
-    self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.model)
+    response = self.gcp.Search(self.model)
+    for k in response['printers'][0]:
+      if k == 'name':
+        self.name = response['printers'][0][k]
+      elif k == 'connectionStatus':
+        self.status = response['printers'][0][k]
+      elif k == 'id':
+        self.dev_id = response['printers'][0][k]
+      else:
+        self.details[k] = response['printers'][0][k]
+    #self.name = self.cloudprintmgr.GetPrinterName(self.model)
+    #self.status = self.cloudprintmgr.GetPrinterState(self.model)
+    #self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.model)
+    #self.details = self.cloudprintmgr.GetPrinterDetails(self.model)
+    #self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.model)
+
 
   def GetDeviceCDD(self, device_id):
     """Get device cdd and populate device object with the details.
@@ -109,7 +124,7 @@ class Device(object):
       device_id: string, Cloud Print device id.
     Returns:
       boolean: True = cdd details populated, False = cdd details not populated.
-    """
+
     self.cd.driver.get(Constants.GCP['SIMULATE'])
 
     printer_lookup = self.cd.FindID('printer_printerid')
@@ -126,6 +141,11 @@ class Device(object):
     self.info = printer_info.text
     self.ParseCDD()
     return True
+    """
+    self.info = self.gcp.Printer(device_id)
+    if self.ParseCDD():
+      return True
+    return False
 
   def ParseCDD(self):
     """Parse the CDD json string into a logical dictionary.
@@ -134,23 +154,24 @@ class Device(object):
       boolean: True = CDD parsed, False = CDD not parsed.
     """
 
-    cdd = {}
-    if self.info:
-      cdd = json.loads(self.info)
-    else:
-      self.logger.warning('Device info is empty.')
-      return False
-    if 'printers' in cdd:
-      for k in cdd['printers'][0]:
+    #cdd = {}
+    #if self.info:
+    #  cdd = json.loads(self.info)
+    #else:
+    #  self.logger.warning('Device info is empty.')
+    #  return False
+    #if 'printers' in cdd:
+    if 'printers' in self.info:
+      for k in self.info['printers'][0]:
         if k == 'capabilities':
           self.cdd['caps'] = {}
         else:
-          self.cdd[k] = cdd['printers'][0][k]
+          self.cdd[k] = self.info['printers'][0][k]
     else:
       self.logger.error('Could not find printers in cdd.')
       return False
-    for k in cdd['printers'][0]['capabilities']['printer']:
-      self.cdd['caps'][k] = cdd['printers'][0]['capabilities']['printer'][k]
+    for k in self.info['printers'][0]['capabilities']['printer']:
+      self.cdd['caps'][k] = self.info['printers'][0]['capabilities']['printer'][k]
     return True
 
   def CancelRegistration(self):
