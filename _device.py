@@ -39,13 +39,13 @@ class Device(object):
 
     Args:
       auth_token: string, auth_token of authenicated user.
-      chromedriver: an initialized chromedriver object.
       model: string, unique model or name of device.
     """
     if model:
       self.model = model
     else:
       self.model = Constants.PRINTER['MODEL']
+    self.auth_token = auth_token
     self.logger = _log.GetLogger('LogoCert')
     self.ipv4 = Constants.PRINTER['IP']
     self.port = Constants.PRINTER['PORT']
@@ -91,8 +91,28 @@ class Device(object):
       if response['data']:
         self.logger.info('Data from response: %s', response['data'])
 
+  def Register(self):
+    """Register device using Privet.
+
+    Returns:
+      boolean: True = device registered, False = device not registered.
+    Note, devices a required user input to accept or deny a registration
+    request, so manual intervention is required.
+    """
+    if self.StartPrivetRegister():
+      if self.GetPrivetClaimToken():
+        if self.SendClaimToken():
+          if FinishPrivetRegister():
+            return True
+
+    return False
+
+
   def GetDeviceDetails(self):
     """Get the device details from our management page.
+
+    Returns:
+      boolean: True = device populated, False = errors.
 
     This will populate a Device object with device name, status, state messages,
     and device details.
@@ -107,12 +127,11 @@ class Device(object):
         self.dev_id = response['printers'][0][k]
       else:
         self.details[k] = response['printers'][0][k]
-    #self.name = self.cloudprintmgr.GetPrinterName(self.model)
-    #self.status = self.cloudprintmgr.GetPrinterState(self.model)
-    #self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.model)
-    #self.details = self.cloudprintmgr.GetPrinterDetails(self.model)
-    #self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.model)
+    if self.dev_id:
+      if self.GetDeviceCDD(self.dev_id):
+        return True
 
+    return False
 
   def GetDeviceCDD(self, device_id):
     """Get device cdd and populate device object with the details.
@@ -124,6 +143,10 @@ class Device(object):
     """
     info = self.gcp.Printer(device_id)
     if self.ParseCDD(info):
+      if self.cdd['uiState']['num_issues'] > 0:
+        self.error_state = True
+      else:
+        self.error_state = False
       return True
     return False
 
@@ -206,7 +229,7 @@ class Device(object):
 
     return False  # If here, means unexpected condition, so return False.
 
-  def SendClaimToken(self, auth_token):
+  def SendClaimToken(self, auth_token=None):
     """Send a claim token to the Cloud Print service.
 
     Args:
@@ -214,6 +237,8 @@ class Device(object):
     Returns:
       boolean: True = success, False = errors.
     """
+    if not auth_token:
+      auth_token = self.auth_token
     if not self.claim_token:
       self.logger.error('Error: device does not have claim token.')
       self.logger.error('Cannot send empty token to Cloud Print Service.')
