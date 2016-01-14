@@ -17,18 +17,14 @@ Methods to interact with the Google Cloud Print Service APIs.
 
 GCPService will provide methods to access all of Cloud Print's Interfaces:
 
-list
-search
-submit
-deletejob
-jobs
-printer
-control
 delete
 deletejob
-fetch
+jobs
+list
+printer
 register
-update
+search
+submit
 
 This module is dependent on modules from the LogoCert pacakge.
 """
@@ -136,6 +132,19 @@ class GCPService(object):
     return url
 
   @InterfaceQuery
+  def List(self, proxy_id):
+    """Execute the list interface and return printer fields.
+
+    Args:
+      proxy_id: string, proxy of printer.
+    Returns:
+      string: url to by used by InterfaceQuery method.
+    """
+    url = '%s/list?proxy=%s' % (Constants.GCP['MGT'], proxy_id)
+
+    return url
+
+  @InterfaceQuery
   def Printer(self, printer_id):
     """Execute the printer interface and return printer fields and capabilites.
 
@@ -144,8 +153,9 @@ class GCPService(object):
     Returns:
       string: url to be used by InterfaceQuery method.
     """
-    url = '%s/printer?printerid=%s&usecdd=True' % (
-        Constants.GCP['MGT'], printer_id)
+    fields = 'connectionStatus,semanticState,uiState,queuedJobsCount'
+    url = '%s/printer?printerid=%s&usecdd=True&extra_fields=%s' % (
+        Constants.GCP['MGT'], printer_id, fields)
 
     return url
 
