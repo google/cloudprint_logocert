@@ -22,7 +22,6 @@ the methods GetDeviceDetails and GetDeviceCDD must be run.
 
 import json
 
-from _cloudprintmgr import CloudPrintMgr
 from _common import Extract
 from _config import Constants
 from _cpslib import GCPService
@@ -35,7 +34,7 @@ from _transport import Transport
 class Device(object):
   """The basic device object."""
 
-  def __init__(self, auth_token, chromedriver, model=None):
+  def __init__(self, auth_token, model=None):
     """Initialize a device object.
 
     Args:
@@ -48,8 +47,6 @@ class Device(object):
     else:
       self.model = Constants.PRINTER['MODEL']
     self.logger = _log.GetLogger('LogoCert')
-    self.cd = chromedriver
-    self.cloudprintmgr = CloudPrintMgr(chromedriver)
     self.ipv4 = Constants.PRINTER['IP']
     self.port = Constants.PRINTER['PORT']
     self.dev_id = None
@@ -124,54 +121,32 @@ class Device(object):
       device_id: string, Cloud Print device id.
     Returns:
       boolean: True = cdd details populated, False = cdd details not populated.
-
-    self.cd.driver.get(Constants.GCP['SIMULATE'])
-
-    printer_lookup = self.cd.FindID('printer_printerid')
-    if not printer_lookup:
-      return False
-    if not self.cd.SendKeys(device_id, printer_lookup):
-      return False
-    printer_submit = self.cd.FindID('printer_submit')
-    if not self.cd.ClickElement(printer_submit):
-      return False
-    printer_info = self.cd.FindXPath('html')
-    if not printer_info:
-      return False
-    self.info = printer_info.text
-    self.ParseCDD()
-    return True
     """
-    self.info = self.gcp.Printer(device_id)
-    if self.ParseCDD():
+    info = self.gcp.Printer(device_id)
+    if self.ParseCDD(info):
       return True
     return False
 
-  def ParseCDD(self):
+  def ParseCDD(self, info):
     """Parse the CDD json string into a logical dictionary.
 
+    Args:
+      info: formatted data from /printer interface.
     Returns:
       boolean: True = CDD parsed, False = CDD not parsed.
     """
 
-    #cdd = {}
-    #if self.info:
-    #  cdd = json.loads(self.info)
-    #else:
-    #  self.logger.warning('Device info is empty.')
-    #  return False
-    #if 'printers' in cdd:
-    if 'printers' in self.info:
-      for k in self.info['printers'][0]:
+    if 'printers' in info:
+      for k in info['printers'][0]:
         if k == 'capabilities':
           self.cdd['caps'] = {}
         else:
-          self.cdd[k] = self.info['printers'][0][k]
+          self.cdd[k] = info['printers'][0][k]
     else:
       self.logger.error('Could not find printers in cdd.')
       return False
-    for k in self.info['printers'][0]['capabilities']['printer']:
-      self.cdd['caps'][k] = self.info['printers'][0]['capabilities']['printer'][k]
+    for k in info['printers'][0]['capabilities']['printer']:
+      self.cdd['caps'][k] = info['printers'][0]['capabilities']['printer'][k]
     return True
 
   def CancelRegistration(self):
@@ -183,7 +158,8 @@ class Device(object):
     cancel_url = self.privet_url['register']['cancel']
     self.logger.debug('Sending request to cancel Privet Registration.')
     response = self.transport.HTTPReq(cancel_url, data='',
-                                      headers=self.headers, user=Constants.USER['EMAIL'])
+                                      headers=self.headers,
+                                      user=Constants.USER['EMAIL'])
     return response['code']
 
   def StartPrivetRegister(self):
@@ -304,26 +280,3 @@ class Device(object):
     else:
       self.logger.error('Unable to delete printer from service.')
       return False
-
-  def GetPrinterInfo(self, auth_token):
-    """Get the printer capabilities stored on the service.
-
-    Args:
-      auth_token: string, auth token of device owner.
-    Returns:
-      boolean: True = success, False = errors.
-    """
-    if self.id:
-      printer_url = '%s/printer?printerid=%s&usecdd=True' % (
-          Constants.AUTH['URL']['GCP'], self.id)
-      response = self.transport.HTTPReq(printer_url, auth_token=auth_token)
-    else:
-      self.logger.warning('Cannot get printer info, device not registered.')
-      return False
-
-    info = self.jparser.Read(response['data'])
-    Extract(info, self.info)
-    for k, v in self.info.iteritems():
-      self.logger.debug('%s: %s', k, v)
-      self.logger.debug('=============================================')
-    return True
