@@ -101,9 +101,9 @@ class Device(object):
     """
     if self.StartPrivetRegister():
       if self.GetPrivetClaimToken():
-        if self.SendClaimToken():
-          if FinishPrivetRegister():
-            return True
+        if self.ConfirmRegistration():
+          self.FinishPrivetRegister()
+          return True
 
     return False
 
@@ -260,6 +260,26 @@ class Device(object):
     else:
       return False
 
+  def ConfirmRegistration(self):
+    """Register printer with GCP Service using claim token.
+
+    Returns:
+      boolean: True = printer registered, False = printer not registered.
+    This method should only be called once self.claim_token is populated.
+    """
+    if not self.claim_token:
+      self.logger.error('No claim token has been  set yet.')
+      self.logger.error('Execute GetClaimToken() before this method.')
+      return False
+    url = '%s/confirm?token=%s' % (Constants.GCP['MGT'], self.claim_token)
+    response = self.transport.HTTPReq(url, data='', headers=self.headers,
+                                      auth_token=self.auth_token)
+    info = jparser.Read(response['data'])
+    if info['success']:
+      return True
+
+    return False
+
   def FinishPrivetRegister(self):
     """Complete printer registration using Privet.
 
@@ -276,8 +296,8 @@ class Device(object):
     if info['json']:
       for k in info:
         if 'device_id' in k:
-          self.id = info[k]
-          self.logger.debug('Registered with device id: %s', self.id)
+          self.dev_id = info[k]
+          self.logger.debug('Registered with device id: %s', self.dev_id)
     return self.transport.LogData(response)
 
   def UnRegister(self, auth_token):
