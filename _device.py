@@ -22,9 +22,9 @@ the methods GetDeviceDetails and GetDeviceCDD must be run.
 
 import json
 
-from _cloudprintmgr import CloudPrintMgr
 from _common import Extract
 from _config import Constants
+from _cpslib import GCPService
 from _jsonparser import JsonParser
 import _log
 from _privet import Privet
@@ -34,23 +34,24 @@ from _transport import Transport
 class Device(object):
   """The basic device object."""
 
-  def __init__(self, chromedriver, model=None):
+  def __init__(self, auth_token, model=None):
     """Initialize a device object.
 
     Args:
-      chromedriver: an initialized chromedriver object.
+      auth_token: string, auth_token of authenicated user.
       model: string, unique model or name of device.
     """
     if model:
       self.model = model
     else:
       self.model = Constants.PRINTER['MODEL']
+    self.auth_token = auth_token
     self.logger = _log.GetLogger('LogoCert')
-    self.cd = chromedriver
-    self.cloudprintmgr = CloudPrintMgr(chromedriver)
     self.ipv4 = Constants.PRINTER['IP']
     self.port = Constants.PRINTER['PORT']
+    self.dev_id = None
     self.name = None
+    self.gcp = GCPService(auth_token)
     self.status = None
     self.messages = []
     self.details = {}
@@ -90,17 +91,47 @@ class Device(object):
       if response['data']:
         self.logger.info('Data from response: %s', response['data'])
 
+  def Register(self):
+    """Register device using Privet.
+
+    Returns:
+      boolean: True = device registered, False = device not registered.
+    Note, devices a required user input to accept or deny a registration
+    request, so manual intervention is required.
+    """
+    if self.StartPrivetRegister():
+      if self.GetPrivetClaimToken():
+        if self.ConfirmRegistration():
+          self.FinishPrivetRegister()
+          return True
+
+    return False
+
+
   def GetDeviceDetails(self):
     """Get the device details from our management page.
+
+    Returns:
+      boolean: True = device populated, False = errors.
 
     This will populate a Device object with device name, status, state messages,
     and device details.
     """
-    self.name = self.cloudprintmgr.GetPrinterName(self.model)
-    self.status = self.cloudprintmgr.GetPrinterState(self.model)
-    self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.model)
-    self.details = self.cloudprintmgr.GetPrinterDetails(self.model)
-    self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.model)
+    response = self.gcp.Search(self.model)
+    for k in response['printers'][0]:
+      if k == 'name':
+        self.name = response['printers'][0][k]
+      elif k == 'connectionStatus':
+        self.status = response['printers'][0][k]
+      elif k == 'id':
+        self.dev_id = response['printers'][0][k]
+      else:
+        self.details[k] = response['printers'][0][k]
+    if self.dev_id:
+      if self.GetDeviceCDD(self.dev_id):
+        return True
+
+    return False
 
   def GetDeviceCDD(self, device_id):
     """Get device cdd and populate device object with the details.
@@ -110,47 +141,35 @@ class Device(object):
     Returns:
       boolean: True = cdd details populated, False = cdd details not populated.
     """
-    self.cd.driver.get(Constants.GCP['SIMULATE'])
+    info = self.gcp.Printer(device_id)
+    if self.ParseCDD(info):
+      if self.cdd['uiState']['num_issues'] > 0:
+        self.error_state = True
+      else:
+        self.error_state = False
+      return True
+    return False
 
-    printer_lookup = self.cd.FindID('printer_printerid')
-    if not printer_lookup:
-      return False
-    if not self.cd.SendKeys(device_id, printer_lookup):
-      return False
-    printer_submit = self.cd.FindID('printer_submit')
-    if not self.cd.ClickElement(printer_submit):
-      return False
-    printer_info = self.cd.FindXPath('html')
-    if not printer_info:
-      return False
-    self.info = printer_info.text
-    self.ParseCDD()
-    return True
-
-  def ParseCDD(self):
+  def ParseCDD(self, info):
     """Parse the CDD json string into a logical dictionary.
 
+    Args:
+      info: formatted data from /printer interface.
     Returns:
       boolean: True = CDD parsed, False = CDD not parsed.
     """
 
-    cdd = {}
-    if self.info:
-      cdd = json.loads(self.info)
-    else:
-      self.logger.warning('Device info is empty.')
-      return False
-    if 'printers' in cdd:
-      for k in cdd['printers'][0]:
+    if 'printers' in info:
+      for k in info['printers'][0]:
         if k == 'capabilities':
           self.cdd['caps'] = {}
         else:
-          self.cdd[k] = cdd['printers'][0][k]
+          self.cdd[k] = info['printers'][0][k]
     else:
       self.logger.error('Could not find printers in cdd.')
       return False
-    for k in cdd['printers'][0]['capabilities']['printer']:
-      self.cdd['caps'][k] = cdd['printers'][0]['capabilities']['printer'][k]
+    for k in info['printers'][0]['capabilities']['printer']:
+      self.cdd['caps'][k] = info['printers'][0]['capabilities']['printer'][k]
     return True
 
   def CancelRegistration(self):
@@ -162,7 +181,8 @@ class Device(object):
     cancel_url = self.privet_url['register']['cancel']
     self.logger.debug('Sending request to cancel Privet Registration.')
     response = self.transport.HTTPReq(cancel_url, data='',
-                                      headers=self.headers, user=Constants.USER['EMAIL'])
+                                      headers=self.headers,
+                                      user=Constants.USER['EMAIL'])
     return response['code']
 
   def StartPrivetRegister(self):
@@ -209,7 +229,7 @@ class Device(object):
 
     return False  # If here, means unexpected condition, so return False.
 
-  def SendClaimToken(self, auth_token):
+  def SendClaimToken(self, auth_token=None):
     """Send a claim token to the Cloud Print service.
 
     Args:
@@ -217,6 +237,8 @@ class Device(object):
     Returns:
       boolean: True = success, False = errors.
     """
+    if not auth_token:
+      auth_token = self.auth_token
     if not self.claim_token:
       self.logger.error('Error: device does not have claim token.')
       self.logger.error('Cannot send empty token to Cloud Print Service.')
@@ -238,6 +260,26 @@ class Device(object):
     else:
       return False
 
+  def ConfirmRegistration(self):
+    """Register printer with GCP Service using claim token.
+
+    Returns:
+      boolean: True = printer registered, False = printer not registered.
+    This method should only be called once self.claim_token is populated.
+    """
+    if not self.claim_token:
+      self.logger.error('No claim token has been  set yet.')
+      self.logger.error('Execute GetClaimToken() before this method.')
+      return False
+    url = '%s/confirm?token=%s' % (Constants.GCP['MGT'], self.claim_token)
+    response = self.transport.HTTPReq(url, data='', headers=self.headers,
+                                      auth_token=self.auth_token)
+    info = jparser.Read(response['data'])
+    if info['success']:
+      return True
+
+    return False
+
   def FinishPrivetRegister(self):
     """Complete printer registration using Privet.
 
@@ -254,8 +296,8 @@ class Device(object):
     if info['json']:
       for k in info:
         if 'device_id' in k:
-          self.id = info[k]
-          self.logger.debug('Registered with device id: %s', self.id)
+          self.dev_id = info[k]
+          self.logger.debug('Registered with device id: %s', self.dev_id)
     return self.transport.LogData(response)
 
   def UnRegister(self, auth_token):
@@ -283,26 +325,3 @@ class Device(object):
     else:
       self.logger.error('Unable to delete printer from service.')
       return False
-
-  def GetPrinterInfo(self, auth_token):
-    """Get the printer capabilities stored on the service.
-
-    Args:
-      auth_token: string, auth token of device owner.
-    Returns:
-      boolean: True = success, False = errors.
-    """
-    if self.id:
-      printer_url = '%s/printer?printerid=%s&usecdd=True' % (
-          Constants.AUTH['URL']['GCP'], self.id)
-      response = self.transport.HTTPReq(printer_url, auth_token=auth_token)
-    else:
-      self.logger.warning('Cannot get printer info, device not registered.')
-      return False
-
-    info = self.jparser.Read(response['data'])
-    Extract(info, self.info)
-    for k, v in self.info.iteritems():
-      self.logger.debug('%s: %s', k, v)
-      self.logger.debug('=============================================')
-    return True
