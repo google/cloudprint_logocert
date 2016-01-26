@@ -81,7 +81,7 @@ class Transport(object):
     request = urllib2.Request(self.url)
     if auth_token:
       self.logger.debug('Using Auth Token: %s', auth_token)
-      request.add_header('Authorization', 'GoogleLogin auth=%s' % auth_token)
+      request.add_header('Authorization', 'Bearer %s' % auth_token)
     if cloudprint:
       request.add_header('X-CloudPrint-Proxy', 'GCPLogoCert')
     if headers:
