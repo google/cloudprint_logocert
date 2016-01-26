@@ -3974,25 +3974,6 @@ class Printing(LogoCert):
     else:
       self.ManualPass(test_id, test_name)
 
-  def testPrintPngColor(self):
-    test_id = '8f66270d-64df-49c7-bb49-01705b65d089'
-    test_name = 'testPrintPngColor'
-    if not Constants.CAPS['COLOR']:
-      notes = 'Printer does not support color.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    logger.info('Setting color option to Color...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG1'],
-                              color='Color')
-    try:
-      self.assertTrue(output)
-    except AssertionError:
-      notes = 'Error printing PNG in color.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.ManualPass(test_id, test_name)
-
   def testPrintJpgDpiSetting(self):
     test_id = '93c42b61-30e9-407c-bcd5-df50f418c53b'
     test_name = 'testPrintJpgDpiSetting'
