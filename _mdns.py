@@ -40,16 +40,19 @@ class MDnsService(object):
   # pylint: disable=unused-argument
   def add_service(self, zeroconf, service_type, name):
     self.logger.info('Service added: "%s" (type is %s)', name, service_type)
-    self.discovered[name] = True
+    self.discovered[name] = {}
+    self.discovered[name]['proto'] = service_type
+    self.discovered[name]['found'] = True
 
     info = zeroconf.get_service_info(service_type, name)
     if info:
+      self.discovered[name]['info'] = info
       self.logger.debug('%s service info: %s', name, info)
     else:
       self.logger.debug('Service has no info.')
 
   def remove_service(self, zeroconf, service_type, name):
-    self.discovered[name] = False
+    self.discovered[name]['found'] = False
     self.logger.info('Service removed: %s', name)
   # pylint: enable=unused-argument
 
