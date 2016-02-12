@@ -34,12 +34,13 @@ from _transport import Transport
 class Device(object):
   """The basic device object."""
 
-  def __init__(self, chromedriver, model=None):
+  def __init__(self, chromedriver, model=None, privet_port=None):
     """Initialize a device object.
 
     Args:
       chromedriver: an initialized chromedriver object.
       model: string, unique model or name of device.
+      privet_port: integer, tcp port devices uses for Privet protocol.
     """
     if model:
       self.model = model
@@ -49,7 +50,10 @@ class Device(object):
     self.cd = chromedriver
     self.cloudprintmgr = CloudPrintMgr(chromedriver)
     self.ipv4 = Constants.PRINTER['IP']
-    self.port = Constants.PRINTER['PORT']
+    if privet_port:
+      self.port = privet_port
+    else:
+      self.port = Constants.PRINTER['PORT']
     self.name = None
     self.status = None
     self.messages = []
