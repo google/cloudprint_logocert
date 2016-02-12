@@ -28,7 +28,7 @@ import sys
 import time
 
 
-def GetLogger(name, logdir=None, loglevel='debug', stdout=True):
+def GetLogger(name, logdir=None, loglevel='info', stdout=False):
   """Return a new logger, or reference to an existing logger.
 
   Args:
