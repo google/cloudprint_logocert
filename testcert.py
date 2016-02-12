@@ -109,6 +109,7 @@ def setUpModule():
   global chromedriver
   global gcpmgr
   global logger
+  global mdns_browser
   global transport
   global device
 
@@ -121,7 +122,20 @@ def setUpModule():
   chrome.SignIn(options.email, options.passwd)
   CheckCredentials()
   gcpmgr = _cloudprintmgr.CloudPrintMgr(chromedriver)
-  device = Device(chromedriver)
+  mdns_browser = _mdns.MDnsListener()
+  mdns_browser.add_listener('privet')
+  # Wait to receive Privet printer advertisements.
+  time.sleep(30)
+  privet_port = None
+  for k in mdns_browser.listener.discovered:
+    logger.debug('Found printer in Privet advertisements.')
+    if Constants.PRINTER['MODEL'] in k:
+      pinfo = str(mdns_browser.listener.discovered[k]['info']).split(',') 
+      for item in pinfo:
+        if 'port' in item:
+          privet_port = int(item.split('=')[1])
+          logger.debug('Privet advertises port: %d', privet_port)
+  device = Device(chromedriver, privet_port=privet_port)
   transport = Transport()
   time.sleep(2)
 
@@ -1797,8 +1811,6 @@ class LocalDiscovery(LogoCert):
   def setUpClass(cls):
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
-    cls.browser = _mdns.MDnsListener()
-    cls.browser.add_listener('privet')
 
   @classmethod
   def tearDownClass(cls):
@@ -1822,11 +1834,11 @@ class LocalDiscovery(LogoCert):
     # Give printer time to update.
     print 'Waiting 60 seconds for printer to accept changes.'
     time.sleep(60)
-    for k in self.browser.listener.discovered:
+    for k in mdns_browser.listener.discovered:
       if self.printer in k:
         printer_found = True
         try:
-          self.assertFalse(self.browser.listener.discovered[k])
+          self.assertFalse(mdns_browser.listener.discovered[k])
         except AssertionError:
           notes = 'Local Discovery not disabled.'
           failed = True
@@ -1846,11 +1858,11 @@ class LocalDiscovery(LogoCert):
     gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing')
     print 'Waiting 60 seconds for printer to accept changes.'
     time.sleep(60)
-    for k in self.browser.listener.discovered:
+    for k in mdns_browser.listener.discovered:
       if self.printer in k:
         printer_found = True
         try:
-          self.assertTrue(self.browser.listener.discovered[k])
+          self.assertTrue(mdns_browser.listener.discovered[k])
         except AssertionError:
           notes2 = 'Local Discovery not enabled.'
           failed = True
@@ -1881,11 +1893,11 @@ class LocalDiscovery(LogoCert):
     print 'Waiting 10 seconds for printer to broadcast using mDNS.'
     time.sleep(10)  # Give printer time to send privet broadcast.
 
-    for k in self.browser.listener.discovered:
+    for k in mdns_browser.listener.discovered:
       if self.printer in k:
         printer_found = True
         try:
-          self.assertTrue(self.browser.listener.discovered[k])
+          self.assertTrue(mdns_browser.listener.discovered[k])
         except AssertionError:
           notes = 'Printer did not broadcast privet packet.'
           failed = True
@@ -1910,11 +1922,11 @@ class LocalDiscovery(LogoCert):
     print 'This test must start with the printer on and operational.'
     raw_input('Power off printer, Select enter when printer completely off.')
     time.sleep(10)
-    for k in self.browser.listener.discovered:
+    for k in mdns_browser.listener.discovered:
       if self.printer in k:
         printer_found = True
         try:
-          self.assertFalse(self.browser.listener.discovered[k])
+          self.assertFalse(mdns_browser.listener.discovered[k])
         except AssertionError:
           notes = 'Printer did not send goodbye packet when powered off.'
           failed = True
@@ -1937,13 +1949,13 @@ class LocalDiscovery(LogoCert):
     printer_found = False
     print 'Ensure printer stays is on and remains in idle state.'
     # Remove any broadcast entries from dictionary.
-    for k in self.browser.listener.discovered.keys():
+    for k in mdns_browser.listener.discovered.keys():
       if self.printer in k:
-        del self.browser.listener.discovered[k]
+        del mdns_browser.listener.discovered[k]
     # Monitor the local network for privet broadcasts.
     print 'Listening for network broadcasts for 5 minutes.'
     time.sleep(300)
-    for k in self.browser.listener.discovered:
+    for k in mdns_browser.listener.discovered:
       if self.printer in k:
         printer_found = True
 
