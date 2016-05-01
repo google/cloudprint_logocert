@@ -1815,7 +1815,7 @@ class LocalDiscovery(LogoCert):
   @classmethod
   def tearDownClass(cls):
     LogoCert.tearDownClass()
-    cls.browser.remove_listeners()
+    # cls.browser.remove_listeners()  # Uncomment this if you notice inconsistencies. 
 
   def testLocalDiscoveryToggle(self):
     """Verify printer respects GCP Mgt page when local discovery toggled."""
@@ -1838,7 +1838,7 @@ class LocalDiscovery(LogoCert):
       if self.printer in k:
         printer_found = True
         try:
-          self.assertFalse(mdns_browser.listener.discovered[k])
+          self.assertFalse(mdns_browser.listener.discovered[k]['found'])
         except AssertionError:
           notes = 'Local Discovery not disabled.'
           failed = True
