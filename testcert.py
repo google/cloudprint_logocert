@@ -1862,7 +1862,7 @@ class LocalDiscovery(LogoCert):
       if self.printer in k:
         printer_found = True
         try:
-          self.assertTrue(mdns_browser.listener.discovered[k])
+          self.assertTrue(mdns_browser.listener.discovered[k]['found'])
         except AssertionError:
           notes2 = 'Local Discovery not enabled.'
           failed = True
@@ -1897,7 +1897,7 @@ class LocalDiscovery(LogoCert):
       if self.printer in k:
         printer_found = True
         try:
-          self.assertTrue(mdns_browser.listener.discovered[k])
+          self.assertTrue(mdns_browser.listener.discovered[k]['found'])
         except AssertionError:
           notes = 'Printer did not broadcast privet packet.'
           failed = True
@@ -1926,7 +1926,7 @@ class LocalDiscovery(LogoCert):
       if self.printer in k:
         printer_found = True
         try:
-          self.assertFalse(mdns_browser.listener.discovered[k])
+          self.assertFalse(mdns_browser.listener.discovered[k]['found'])
         except AssertionError:
           notes = 'Printer did not send goodbye packet when powered off.'
           failed = True
