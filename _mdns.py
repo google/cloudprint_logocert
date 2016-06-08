@@ -18,8 +18,6 @@ Support for mdns operations.
 This module will provide a class to browse MDNS messages on the local network.
 It depends on the Python package zeroconf.
 """
-import _log
-
 from zeroconf import InterfaceChoice
 from zeroconf import ServiceBrowser
 from zeroconf import Zeroconf
@@ -33,8 +31,13 @@ class MDnsService(object):
   listener.
   """
 
-  def __init__(self):
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger):
+    """Initialization requires a logger.
+    
+    Args:
+      logger: initialized logger object.
+    """
+    self.logger = logger
     self.discovered = {}
 
   # pylint: disable=unused-argument
