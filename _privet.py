@@ -20,15 +20,17 @@ Privet class will provide the needed methods to send, receive, and parse
 messages from privet clients (for example, a printer).
 """
 
-import _log
-
 
 class Privet(object):
   """Contains methods to send and receive Privet Protocol messages."""
 
-  def __init__(self):
-    """Get a reference to a logger object. Set some initial dictionaries."""
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger):
+    """Get a reference to a logger object. Set some initial dictionaries.
+    
+    Args:
+      logger: initialized logger object.
+    """
+    self.logger = logger
     self.api_names = ['accesstoken', 'capabilities', 'info', 'INVALID',
                       'printer']
     self.reg_actions = ['start', 'cancel', 'getClaimToken', 'complete',
