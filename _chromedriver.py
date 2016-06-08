@@ -22,8 +22,6 @@ present before proceeding, and will continue polling up to the value of timeout
 
 import os
 
-import _log
-
 from selenium import webdriver
 from selenium.common.exceptions import ElementNotVisibleException
 from selenium.common.exceptions import NoSuchElementException
@@ -40,16 +38,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 class ChromeDriver(object):
   """Provides webdriver functionality for Chrome."""
 
-  def __init__(self, user_data_dir, timeout):
+  def __init__(self, logger, user_data_dir, timeout):
     """Initialize chromedriver for use by all other modules.
 
     Args:
+      logger: initialized logger object.
       user_data_dir: string, directory for chrome data.
       timeout: integer, number of seconds to wait for web pages to load.
     """
     self.timeout = timeout
     data_dir = os.path.join(os.getcwd(), user_data_dir)
-    self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
     options = Options()
     data_dir_option = '--user-data-dir=%s' % data_dir
     options.add_argument(data_dir_option)
