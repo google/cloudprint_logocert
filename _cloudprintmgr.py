@@ -36,8 +36,10 @@ class CloudPrintMgr(object):
 
   def __init__(self, logger, chromedriver):
     """Use initialized objects for logger and chromedriver.
-    logger: initialized logger object.
-    chromedriver: initialized chromedriver object.
+    
+    Args:
+      logger: initialized logger object.
+      chromedriver: initialized chromedriver object.
     """
     self.logger = logger
     self.cd = chromedriver
