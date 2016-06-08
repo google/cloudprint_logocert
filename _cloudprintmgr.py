@@ -29,14 +29,17 @@ import time
 
 from _common import Retry
 from _config import Constants
-import _log
 
 
 class CloudPrintMgr(object):
   """An object to interact with our management pages."""
 
-  def __init__(self, chromedriver):
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger, chromedriver):
+    """Use initialized objects for logger and chromedriver.
+    logger: initialized logger object.
+    chromedriver: initialized chromedriver object.
+    """
+    self.logger = logger
     self.cd = chromedriver
 
   def SelectPrinter(self, printer_name):
