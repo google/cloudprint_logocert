@@ -26,7 +26,6 @@ from _cloudprintmgr import CloudPrintMgr
 from _common import Extract
 from _config import Constants
 from _jsonparser import JsonParser
-import _log
 from _privet import Privet
 from _transport import Transport
 
@@ -34,11 +33,12 @@ from _transport import Transport
 class Device(object):
   """The basic device object."""
 
-  def __init__(self, chromedriver, model=None, privet_port=None):
+  def __init__(self, logger, chromedriver, model=None, privet_port=None):
     """Initialize a device object.
 
     Args:
-      chromedriver: an initialized chromedriver object.
+      logger: initialized logger object.
+      chromedriver: initialized chromedriver object.
       model: string, unique model or name of device.
       privet_port: integer, tcp port devices uses for Privet protocol.
     """
@@ -46,7 +46,7 @@ class Device(object):
       self.model = model
     else:
       self.model = Constants.PRINTER['MODEL']
-    self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
     self.cd = chromedriver
     self.cloudprintmgr = CloudPrintMgr(chromedriver)
     self.ipv4 = Constants.PRINTER['IP']

@@ -30,15 +30,18 @@ import urllib2
 import _common
 from _config import Constants
 from _jsonparser import JsonParser
-import _log
 
 
 class Transport(object):
   """Send and receive network messages and communication."""
 
-  def __init__(self):
-    """Get a reference to a logger object."""
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger):
+    """Get a reference to a logger object and JsonParser.
+    
+    Args:
+        logger: initialized logger object.
+    """
+    self.logger = logger
     self.jparser = JsonParser()
     socket.setdefaulttimeout(Constants.URL['TIMEOUT'])
 

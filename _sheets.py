@@ -22,16 +22,22 @@ in a spreadsheet to assist in summarizing the test results.
 import time
 
 import _gdocs
-import _log
 
 
 class SheetMgr(object):
   """Create and populate a Google spreadsheet."""
 
-  def __init__(self, chromedriver, Constants):
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger, chromedriver, Constants):
+    """ Sheet manager will use some objects from main module.
+    
+    Args:
+      logger: initialized logger object.
+      chromedriver: initialized chromedriver object.
+      Constants: object that contains contants.
+    """
+    self.logger = logger
     self.headers = Constants.TEST['RESULTS']
-    self.sheet = _gdocs.GoogleDataMgr(chromedriver, Constants)
+    self.sheet = _gdocs.GoogleDataMgr(logger, chromedriver, Constants)
     # First see if Spreadsheet Already exists.
     self.sheet_id = self.sheet.GetSpreadSheetID(Constants.TEST['NAME'])
     if not self.sheet_id:

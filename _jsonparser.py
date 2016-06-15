@@ -21,16 +21,17 @@ packaging up various artifacts into JSON formatted messages.
 
 import json
 
-import _log
-
 
 class JsonParser(object):
   """Various methods to parse JSON formatted messages."""
 
-  def __init__(self):
-    """Get a reference to a logger object."""
-
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger):
+    """Pass in the logger object.
+    
+    Args:
+      logger: initialized logger object.
+    """
+    self.logger = logger
 
   def Read(self, json_str):
     """Read a json string into a python object.

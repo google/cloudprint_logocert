@@ -23,7 +23,6 @@ import time
 
 from _common import Retry
 from _config import Constants
-import _log
 
 from selenium.common.exceptions import NoSuchWindowException
 
@@ -31,13 +30,14 @@ from selenium.common.exceptions import NoSuchWindowException
 class Chrome(object):
   """The Page Object for Chrome."""
 
-  def __init__(self, chromedriver):
+  def __init__(self, logger, chromedriver):
     """Set the resources that will be used for the life of this page object.
 
     Args:
+      logger: initialized logger object.
       chromedriver: initialized webdriver object using Chrome.
     """
-    self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
 
     self.cd = chromedriver
     self.chrome_version = 'Unknown'

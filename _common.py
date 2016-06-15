@@ -29,8 +29,6 @@ import time
 from _config import Constants
 import _log
 
-logger = _log.GetLogger('LogoCert')
-
 
 def Cancel():
   """Allow for user input to cancel a pending operations.
@@ -190,6 +188,7 @@ def ReadFile(pathname):
   Returns:
     string, contents of the file.
   """
+  logger = _log.GetLogger('LogoCert')
   if os.path.isfile(pathname):
     with open(pathname, 'rb') as f:
       try:
@@ -211,6 +210,7 @@ def WriteFile(file_name, data):
   Returns:
     boolean: True = success, False = errors.
   """
+  logger = _log.GetLogger('LogoCert')
   with open(file_name, 'wb') as f:
     try:
       f.write(data)
@@ -229,6 +229,7 @@ def ReadJsonFile(pathname):
   Returns:
     string, contents of the file.
   """
+  logger = _log.GetLogger('LogoCert')
   if os.path.isfile(pathname):
     try:
       s = json.load(open(pathname))
@@ -249,6 +250,7 @@ def WriteJsonFile(file_name, data):
   Returns:
     boolean: True = success, False = errors.
   """
+  logger = _log.GetLogger('LogoCert')
   try:
     json.dump(data, open(file_name, 'wb'))
   except IOError as e:
