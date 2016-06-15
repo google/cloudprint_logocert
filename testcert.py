@@ -117,12 +117,12 @@ def setUpModule():
   data_dir = options.email.split('@')[0]
   logger = _log.GetLogger('LogoCert', logdir=options.logdir,
                           loglevel=options.debug, stdout=options.stdout)
-  chromedriver = _chromedriver.ChromeDriver(data_dir, options.loadtime)
-  chrome = _chrome.Chrome(chromedriver)
+  chromedriver = _chromedriver.ChromeDriver(logger, data_dir, options.loadtime)
+  chrome = _chrome.Chrome(logger, chromedriver)
   chrome.SignIn(options.email, options.passwd)
   CheckCredentials()
-  gcpmgr = _cloudprintmgr.CloudPrintMgr(chromedriver)
-  mdns_browser = _mdns.MDnsListener()
+  gcpmgr = _cloudprintmgr.CloudPrintMgr(logger, chromedriver)
+  mdns_browser = _mdns.MDnsListener(logger)
   mdns_browser.add_listener('privet')
   # Wait to receive Privet printer advertisements.
   time.sleep(30)
@@ -135,13 +135,13 @@ def setUpModule():
         if 'port' in item:
           privet_port = int(item.split('=')[1])
           logger.debug('Privet advertises port: %d', privet_port)
-  device = Device(chromedriver, privet_port=privet_port)
-  transport = Transport()
+  device = Device(logger, chromedriver, privet_port=privet_port)
+  transport = Transport(logger)
   time.sleep(2)
 
   if Constants.TEST['SPREADSHEET']:
     global sheet
-    sheet = _sheets.SheetMgr(chromedriver, Constants)
+    sheet = _sheets.SheetMgr(logger, chromedriver, Constants)
     sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
 
