@@ -63,10 +63,11 @@ class MDnsService(object):
 class MDnsListener(object):
   """A MDNS Listener."""
 
-  def __init__(self):
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger):
+    # self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
     self.zeroconf = Zeroconf(InterfaceChoice.All)
-    self.listener = MDnsService()
+    self.listener = MDnsService(logger)
 
   def add_listener(self, proto):
     """Browse for announcements of a particular protocol.
