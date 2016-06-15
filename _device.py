@@ -48,7 +48,7 @@ class Device(object):
       self.model = Constants.PRINTER['MODEL']
     self.logger = logger
     self.cd = chromedriver
-    self.cloudprintmgr = CloudPrintMgr(chromedriver)
+    self.cloudprintmgr = CloudPrintMgr(logger, chromedriver)
     self.ipv4 = Constants.PRINTER['IP']
     if privet_port:
       self.port = privet_port
@@ -64,10 +64,10 @@ class Device(object):
 
     self.url = 'http://%s:%s' % (self.ipv4, self.port)
     self.logger.info('Device URL: %s', self.url)
-    self.transport = Transport()
-    self.jparser = JsonParser()
+    self.transport = Transport(logger)
+    self.jparser = JsonParser(logger)
     self.headers = None
-    self.privet = Privet()
+    self.privet = Privet(logger)
     self.privet_url = self.privet.SetPrivetUrls(self.ipv4, self.port)
     self.GetPrivetInfo()
 

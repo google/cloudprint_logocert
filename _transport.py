@@ -42,7 +42,7 @@ class Transport(object):
         logger: initialized logger object.
     """
     self.logger = logger
-    self.jparser = JsonParser()
+    self.jparser = JsonParser(logger)
     socket.setdefaulttimeout(Constants.URL['TIMEOUT'])
 
   def HTTPReq(self, url, auth_token=None, cloudprint=True, data=None,
