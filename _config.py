@@ -156,6 +156,7 @@ class Constants(object):
       'IP': '<ip_address of printer>',
       'MANUFACTURER': '<Printer Manufacturer>',
       'MODEL': '<Printer Model>',
+      'NAME': '<Printer Name>',
       'PORT': '<port number of device web service>',
       'SERIAL': '<Printer Serial Number>',
       'STATUS': '<Released, Internal, ProtoType, Unknown>',

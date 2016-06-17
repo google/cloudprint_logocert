@@ -85,7 +85,7 @@ def _ParseArgs():
                     dest='passwd')
   parser.add_option('--printer',
                     help='Name of printer [default: %default]',
-                    default=Constants.PRINTER['MODEL'],
+                    default=Constants.PRINTER['NAME'],
                     dest='printer')
   parser.add_option('--stdout',
                     help='Send output to stdout [default: %default]',
