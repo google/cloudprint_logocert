@@ -1579,8 +1579,8 @@ class PreRegistration(LogoCert):
   def setUpClass(cls):
     LogoCert.setUpClass()
     data_dir = 'NotSignedIn'
-    cls.cd3 = _chromedriver.ChromeDriver(data_dir, cls.loadtime)
-    cls.chrome3 = _chrome.Chrome(cls.cd3)
+    cls.cd3 = _chromedriver.ChromeDriver(logger, data_dir, cls.loadtime)
+    cls.chrome3 = _chrome.Chrome(logger, cls.cd3)
 
   @classmethod
   def tearDownClass(cls):
@@ -1703,8 +1703,8 @@ class PreRegistration(LogoCert):
     test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
     data_dir = 'guest_user'
-    cd3 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome3 = _chrome.Chrome(cd3)
+    cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome3 = _chrome.Chrome(logger, cd3)
     found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     if found:
       notes = 'Printer found in Local Destinations'
@@ -1782,8 +1782,8 @@ class Registration(LogoCert):
     test_id = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
     test_name = 'testMultipleRegistrationAttempt'
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(cd2)
+    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome2 = _chrome.Chrome(logger, cd2)
     chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
     if chrome2.RegisterPrinter(self.printer):
       registered = chrome2.ConfirmPrinterRegistration(self.printer)
@@ -2038,8 +2038,8 @@ class LocalPrinting(LogoCert):
     test_id = 'ea9b1e01-f792-4627-bf84-2db5db513da4'
     test_name = 'testLocalPrintNotOwner'
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(cd2)
+    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome2 = _chrome.Chrome(logger, cd2)
     chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
     chrome2.Print()
     found = chrome2.SelectPrinterFromPrintDialog(self.printer, localprint=True)
@@ -2060,8 +2060,8 @@ class LocalPrinting(LogoCert):
     test_id = '8ba6f1ba-66cc-4d9e-aa3c-1d2e611ddb38'
     test_name = 'testLocalPrintGuestUser'
     data_dir = 'guest_user'
-    cd3 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome3 = _chrome.Chrome(cd3)
+    cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome3 = _chrome.Chrome(logger, cd3)
     chrome3.Print()
     found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     try:
