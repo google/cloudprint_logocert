@@ -1562,7 +1562,8 @@ class Printer(LogoCert):
     test_id = '5a1ef1e7-26ba-458b-a72f-a5ebf26e437c'
     test_name = 'testCapsResolvedIssues'
     try:
-      self.assertIn('resolvedIssues', device.cdd)
+      if 'resolvedIssues' in device.cdd:
+        self.assertIn('resolvedIssues', device.cdd)
     except AssertionError:
       notes = 'resolvedIssues not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1570,7 +1571,6 @@ class Printer(LogoCert):
     else:
       notes = 'resolvedIssues found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Passed', notes)
-
 
 class PreRegistration(LogoCert):
   """Tests to be run before device is registered."""
