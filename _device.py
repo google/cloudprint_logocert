@@ -54,7 +54,7 @@ class Device(object):
       self.port = privet_port
     else:
       self.port = Constants.PRINTER['PORT']
-    self.name = None
+    self.name = Constants.PRINTER['NAME']
     self.status = None
     self.messages = []
     self.details = {}
@@ -100,11 +100,10 @@ class Device(object):
     This will populate a Device object with device name, status, state messages,
     and device details.
     """
-    self.name = self.cloudprintmgr.GetPrinterName(self.model)
-    self.status = self.cloudprintmgr.GetPrinterState(self.model)
-    self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.model)
-    self.details = self.cloudprintmgr.GetPrinterDetails(self.model)
-    self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.model)
+    self.status = self.cloudprintmgr.GetPrinterState(self.name)
+    self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.name)
+    self.details = self.cloudprintmgr.GetPrinterDetails(self.name)
+    self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.name)
 
   def GetDeviceCDD(self, device_id):
     """Get device cdd and populate device object with the details.
