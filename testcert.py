@@ -2105,6 +2105,7 @@ class LocalPrinting(LogoCert):
     if gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing'):
       print 'Waiting 60 seconds to allow printer to accept changes.'
       time.sleep(60)
+      chrome.Print()
       found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
       try:
         self.assertTrue(found)
@@ -2114,6 +2115,8 @@ class LocalPrinting(LogoCert):
         raise
       else:
         notes2 = 'Found printer in Local Destinations when enabled.'
+      finally:
+        chrome.ClosePrintDialog()
       notes = notes + '\n' + notes2
       if failed:
         self.LogTest(test_id, test_name, 'Failed', notes)
