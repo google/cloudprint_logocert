@@ -85,7 +85,7 @@ def _ParseArgs():
                     dest='passwd')
   parser.add_option('--printer',
                     help='Name of printer [default: %default]',
-                    default=Constants.PRINTER['MODEL'],
+                    default=Constants.PRINTER['NAME'],
                     dest='printer')
   parser.add_option('--stdout',
                     help='Send output to stdout [default: %default]',
@@ -1562,7 +1562,8 @@ class Printer(LogoCert):
     test_id = '5a1ef1e7-26ba-458b-a72f-a5ebf26e437c'
     test_name = 'testCapsResolvedIssues'
     try:
-      self.assertIn('resolvedIssues', device.cdd)
+      if 'resolvedIssues' in device.cdd:
+        self.assertIn('resolvedIssues', device.cdd)
     except AssertionError:
       notes = 'resolvedIssues not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1571,7 +1572,6 @@ class Printer(LogoCert):
       notes = 'resolvedIssues found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
-
 class PreRegistration(LogoCert):
   """Tests to be run before device is registered."""
 
@@ -1579,8 +1579,8 @@ class PreRegistration(LogoCert):
   def setUpClass(cls):
     LogoCert.setUpClass()
     data_dir = 'NotSignedIn'
-    cls.cd3 = _chromedriver.ChromeDriver(data_dir, cls.loadtime)
-    cls.chrome3 = _chrome.Chrome(cls.cd3)
+    cls.cd3 = _chromedriver.ChromeDriver(logger, data_dir, cls.loadtime)
+    cls.chrome3 = _chrome.Chrome(logger, cls.cd3)
 
   @classmethod
   def tearDownClass(cls):
@@ -1703,8 +1703,8 @@ class PreRegistration(LogoCert):
     test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
     data_dir = 'guest_user'
-    cd3 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome3 = _chrome.Chrome(cd3)
+    cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome3 = _chrome.Chrome(logger, cd3)
     found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     if found:
       notes = 'Printer found in Local Destinations'
@@ -1782,8 +1782,8 @@ class Registration(LogoCert):
     test_id = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
     test_name = 'testMultipleRegistrationAttempt'
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(cd2)
+    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome2 = _chrome.Chrome(logger, cd2)
     chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
     if chrome2.RegisterPrinter(self.printer):
       registered = chrome2.ConfirmPrinterRegistration(self.printer)
@@ -2038,8 +2038,8 @@ class LocalPrinting(LogoCert):
     test_id = 'ea9b1e01-f792-4627-bf84-2db5db513da4'
     test_name = 'testLocalPrintNotOwner'
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(cd2)
+    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome2 = _chrome.Chrome(logger, cd2)
     chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
     chrome2.Print()
     found = chrome2.SelectPrinterFromPrintDialog(self.printer, localprint=True)
@@ -2060,8 +2060,8 @@ class LocalPrinting(LogoCert):
     test_id = '8ba6f1ba-66cc-4d9e-aa3c-1d2e611ddb38'
     test_name = 'testLocalPrintGuestUser'
     data_dir = 'guest_user'
-    cd3 = _chromedriver.ChromeDriver(data_dir, self.loadtime)
-    chrome3 = _chrome.Chrome(cd3)
+    cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome3 = _chrome.Chrome(logger, cd3)
     chrome3.Print()
     found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     try:
@@ -2105,6 +2105,7 @@ class LocalPrinting(LogoCert):
     if gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing'):
       print 'Waiting 60 seconds to allow printer to accept changes.'
       time.sleep(60)
+      chrome.Print()
       found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
       try:
         self.assertTrue(found)
@@ -2114,6 +2115,8 @@ class LocalPrinting(LogoCert):
         raise
       else:
         notes2 = 'Found printer in Local Destinations when enabled.'
+      finally:
+        chrome.ClosePrintDialog()
       notes = notes + '\n' + notes2
       if failed:
         self.LogTest(test_id, test_name, 'Failed', notes)
