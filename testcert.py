@@ -1387,7 +1387,7 @@ class Printer(LogoCert):
     """Verify copies is in printer capabilities."""
     test_id = '9d1464d1-46fb-4d1c-a8fb-3fa0e7dc9509'
     test_name = 'testCapsCopies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_CLOUD']:
       self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
       return
     try:
@@ -2273,7 +2273,7 @@ class LocalPrinting(LogoCert):
     """Verify printer respects copy option in local print."""
     test_id = 'c849ce7a-07e0-488e-b266-e002bdbde4d6'
     test_name = 'testLocalPrintCopies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_LOCAL']:
       notes = 'Printer does not support copies option.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
@@ -2755,7 +2755,7 @@ class ChromePrinting(LogoCert):
     """Verify printer respects copy option using Chrome Print Dialog."""
     test_id = '345affa2-796a-43e2-bc0e-2978d847d7b4'
     test_name = 'testChromePrintCopies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_CLOUD']:
       notes = 'Printer does not support copies option.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
@@ -3853,7 +3853,7 @@ class Printing(LogoCert):
   def testPrintJpg2Copies(self):
     test_id = '734537e6-c075-4d38-bc4b-dd1b6ad1a7ca'
     test_name = 'testPrintJpg2Copies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_CLOUD']:
       notes = 'Copies not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
