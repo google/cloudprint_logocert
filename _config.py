@@ -49,7 +49,10 @@ class Constants(object):
   CAPS = {
       'COLLATE': False,
       'COLOR': False,
-      'COPIES': True,
+      'COPIES_LOCAL': True,  # If a Printer supports copies for local printing,
+                             # set this to True.
+      'COPIES_CLOUD': True,  # If a Printer supports copies for cloud printing,
+                             # set this to True.
       'COVER': True,  # Not all printers have a cover.
       'DUPLEX': True,
       'LAYOUT_ISSUE': True,  # Printer must set page orientation for local
