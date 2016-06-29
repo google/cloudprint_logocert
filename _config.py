@@ -59,8 +59,9 @@ class Constants(object):
                              # being registered, set this to True.
       'TONER': True,  # Set to false if printer is thermal or has no toner.
       'TRAY_SENSOR': False,  # Set this to True if printer has sensor to detect
-                             # if the paper tray is open or empty. Set this to
-                             # false if the printer has no paper tray.
+                             # if the paper tray is open.
+      'MEDIA_SENSOR': False, # Set this to True if printer has sensor to detect
+                             # if the paper tray is empty.
       }
 
   # Carriage return.
