@@ -599,3 +599,23 @@ class CloudPrintMgr(object):
       self.logger.error('Job not printed or not found.')
 
     return int(pages_printed)
+
+  def WaitJobStatusNotIn(self, job_name, job_status_list, timeout=600):
+    """Wait until the job status becomes a status which is not in the list.
+
+    Args:
+      job_name: string, name (or partial unique name) of print job.
+      job_status_list: string, list of job status.
+      timeout: integer, number of seconds to wait.
+    Returns:
+      string, current status of job.
+
+    """
+    start = time.time()
+    while True:
+      job_status = self.GetJobStatus(job_name)
+      if  job_status not in job_status_list:
+        return job_status
+      if timeout < time.time() - start:
+        return job_status
+      time.sleep(1)
