@@ -3406,7 +3406,7 @@ class JobState(LogoCert):
     if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
       # give printer time to update our service.
       time.sleep(10)
-      job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+      job_state = gcpmgr.WaitJobStatusNotIn('PDF1.7.pdf', ['In progress'])
       try:
         self.assertEqual(job_state, 'Error')
       except AssertionError:
@@ -3714,7 +3714,7 @@ class JobState(LogoCert):
     # Now print a valid file.
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'])
     time.sleep(10)
-    job_state = gcpmgr.GetJobStatus('printtest.pdf')
+    job_state = gcpmgr.WaitJobStatusNotIn('printtest.pdf', ['In progress'])
     try:
       self.assertTrue(output)
     except AssertionError:
