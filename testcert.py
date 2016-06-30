@@ -3091,7 +3091,7 @@ class PrinterState(LogoCert):
     """Verify no media in paper tray reported correctly."""
     test_id = 'e8001a2a-e403-4f5a-94e5-59e61528d161'
     test_name = 'testNoMediaInTray'
-    if not Constants.CAPS['TRAY_SENSOR']:
+    if not Constants.CAPS['MEDIA_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
@@ -3114,7 +3114,7 @@ class PrinterState(LogoCert):
     """Verify when media put in empty tray, printer state is updated."""
     test_id = '64e592be-d6c4-424e-9e69-021c92b09953'
     test_name = 'testMediaInTray'
-    if not Constants.CAPS['TRAY_SENSOR']:
+    if not Constants.CAPS['MEDIA_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
