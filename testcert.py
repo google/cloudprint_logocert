@@ -2339,7 +2339,7 @@ class LocalPrinting(LogoCert):
       # Give the printer time to complete the job and update the status.
       print 'Waiting 60 seconds for job to print and status to be updated.'
       time.sleep(60)
-      job_state = gcpmgr.GetJobStatus('Google-Glass.gif')
+      job_state = gcpmgr.GetPrinterJobStatus(device.name, 'Google-Glass.gif')
       try:
         self.assertIsNotNone(job_state)
       except AssertionError:
