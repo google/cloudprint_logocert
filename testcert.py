@@ -2230,6 +2230,14 @@ class LocalPrinting(LogoCert):
     """Verify printer respects layout settings in local print."""
     test_id = 'fb522a69-2454-40ab-9453-270553664fea'
     test_name = 'testLocalPrintLayout'
+
+    # TODO: When the Chrome issue of local printing page layout is fixed, this
+    #       code shold be removed.
+    if not Constants.CAPS['LAYOUT_ISSUE']:
+      notes = 'Printer does not have the workaround for the Chrome issue.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
     chromedriver.driver.get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait',
                                           localprint=True)
