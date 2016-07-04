@@ -96,6 +96,33 @@ class CloudPrintMgr(object):
     return False
 
   @Retry(3)
+  def OpenPrinterJobs(self, printer_name):
+    """Open Google Cloud Print Management Printer Jobs page.
+
+    Args:
+      printer_name: string, name (or unique partial name) of printer.
+    Returns:
+      boolean: True = details page opened, False = errors opening details page.
+    """
+    container = 'cp-dashboard-actionbar-main'
+    if self.SelectPrinter(printer_name):
+      action_bar = self.cd.FindClass(container)
+      if not action_bar:
+        return False
+      jobs_button = self.cd.FindXPaths('//*[contains(text(), "Show Print Jobs")]',
+                                          obj=action_bar)
+      if not jobs_button:
+        self.logger.error('Error finding show print jobs button on printer page.')
+        return False
+      for button in jobs_button:
+        if 'Show Print Jobs' in button.text:
+          if self.cd.ClickElement(button):
+            return True
+          else:
+            self.logger.error('Error clicking details button.')
+    return False
+
+  @Retry(3)
   def TogglePrinterAdvancedSettings(self, printer_name, toggle=True):
     """Open Google Cloud Print Management Printer Advanced Details tab.
 
@@ -492,6 +519,32 @@ class CloudPrintMgr(object):
     return False
 
   @Retry(3)
+  def SelectPrinterJob(self, printer_name, job_name):
+    """Select a printer job from the management page.
+
+    Args:
+      printer_name: string, name (or unique partial name) of printer.
+      job_name: string, name (or unique partial name) of print job.
+    Returns:
+      boolean: True = job selected, False = job not selected.
+    """
+    self.OpenPrinterJobs(printer_name)
+
+    # If job already selected return true.
+    selected = self.cd.FindClass('cp-dashboard-listitem-selected')
+    if selected:
+      jobs = self.cd.FindClasses('cp-job-name', obj=selected)
+      for j in jobs:
+        if job_name in j.text:
+          return True
+    jobs = self.cd.FindClasses('cp-job-name')
+    for j in jobs:
+      if job_name in j.text:
+        if self.cd.ClickElement(j):
+          return True
+    return False
+
+  @Retry(3)
   def DeleteJob(self, job_name):
     """Delete a print job from the management page.
 
@@ -545,6 +598,29 @@ class CloudPrintMgr(object):
       string, status of job.
     """
     if self.SelectJob(job_name):
+      selected = self.cd.FindClass('cp-dashboard-listitem-selected')
+      if selected:
+        status = self.cd.FindClass('cp-status-msg', obj=selected)
+        if status:
+          return status.text
+        else:
+          return None
+      else:
+        return None
+    else:
+      return None
+
+  @Retry(3, return_type='Value')
+  def GetPrinterJobStatus(self, printer_name, job_name):
+    """Get the printer job status of job_name.
+
+    Args:
+      printer_name: string, name (or unique partial name) of printer.
+      job_name: string, name (or unique partial name) of print job.
+    Returns:
+      string, status of job.
+    """
+    if self.SelectPrinterJob(printer_name, job_name):
       selected = self.cd.FindClass('cp-dashboard-listitem-selected')
       if selected:
         status = self.cd.FindClass('cp-status-msg', obj=selected)
