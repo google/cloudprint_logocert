@@ -161,7 +161,7 @@ class Constants(object):
       'MANUFACTURER': '<Printer Manufacturer>',
       'MODEL': '<Printer Model>',
       'NAME': '<Printer Name>',
-      'PORT': '<port number of device web service>',
+      'PORT': '<integer value of port number of device web service>',
       'SERIAL': '<Printer Serial Number>',
       'STATUS': '<Released, Internal, ProtoType, Unknown>',
       }
