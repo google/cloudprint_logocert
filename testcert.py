@@ -3783,7 +3783,7 @@ class RunAfter24Hours(LogoCert):
     test_name = 'testPrinterOnline'
     device.GetDeviceDetails()
     try:
-      self.AssertIn('online', device.status)
+      self.assertIn('online', device.status)
     except AssertionError:
       notes = 'Printer is not online after 24 hours.'
       self.LogTest(test_id, test_name, 'Failed', notes)
