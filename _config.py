@@ -176,6 +176,8 @@ class Constants(object):
       'ANDROID': '<Android Version>',
       'CHROME': '<Chrome Version>',
       'CHROMEDRIVER': '<Chromedriver version>',
+      'PYTHON': '<Python Version>',
+      'OS': '<OS Name>',
       'TABLET': '<Tablet Version>',
       }
 
