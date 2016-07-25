@@ -35,6 +35,7 @@ those IDs. These IDs are used when submitting test results to our database.
 """
 
 import optparse
+import sys
 import time
 import unittest
 
@@ -119,6 +120,14 @@ def setUpModule():
                           loglevel=options.debug, stdout=options.stdout)
   chromedriver = _chromedriver.ChromeDriver(logger, data_dir, options.loadtime)
   chrome = _chrome.Chrome(logger, chromedriver)
+  os_type = chromedriver.FindID('os_type')
+  Constants.TESTENV['OS'] = os_type.text
+  chrome_version = chromedriver.FindID('version')
+  Constants.TESTENV['CHROME'] = chrome_version.text
+  Constants.TESTENV['CHROMEDRIVER'] = (
+      chromedriver.driver.__dict__['capabilities']['chrome'][
+          'chromedriverVersion'])
+  Constants.TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
   chrome.SignIn(options.email, options.passwd)
   CheckCredentials()
   gcpmgr = _cloudprintmgr.CloudPrintMgr(logger, chromedriver)
