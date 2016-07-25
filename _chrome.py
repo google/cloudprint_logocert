@@ -658,9 +658,13 @@ class Chrome(object):
       list: list of all available options for this menu item.
     """
     values = []
-    filename = '/tmp/testfile.jpg'  # This file does not exist.
+    # Give filename a fake pathname, as this doesn't need to be a real file.
+    if 'Windows' in Constants.TESTENV['OS']:
+      filename = 'C:/testfile.jpg'
+    else:
+      filename = '/tmp/testfile.jpg'
+      
     self.cd.driver.get(Constants.GCP['MGT'])
-
     print_button = self.cd.FindName('cp-button-print')
     if not print_button:
       return False
