@@ -66,7 +66,7 @@ class GoogleDataMgr(object):
     sheets_found = False
     self.cd.driver.get(self.drive)
     # Select the New button in Google Drive.
-    button = self.cd.FindClasses('j-Ta-pb')
+    button = self.cd.FindClasses('h-sb-Ic')
     if not button:
       self.logger.error('New button not found.')
       return False
@@ -82,7 +82,7 @@ class GoogleDataMgr(object):
       return False
 
     # Select the spreadsheet menu item.
-    items = self.cd.FindClasses('a-D-P')
+    items = self.cd.FindClasses('a-v-T')
     if not items:
       self.logger.error('new submenu itemsnot found.')
       return False
