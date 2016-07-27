@@ -2027,7 +2027,7 @@ class LocalPrinting(LogoCert):
   def testLocalPrintEnabled(self):
     """Verify local print is available from Chrome Print Dialog."""
     test_id = 'a47b904c-d7a2-4112-832b-59035d117404'
-    test_name = 'testLocalPrintingEnabled'
+    test_name = 'testLocalPrintEnabled'
     chrome.Print()
     found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     try:
@@ -2562,7 +2562,7 @@ class LocalPrinting(LogoCert):
   def testLocalPrintGoogleSheet(self):
     """Verify Google Spreadsheet prints using Local Print."""
     test_id = '5cc856dc-4257-4d1e-89f3-71722a1a75a3'
-    test_name = 'testLocalPrintGoogleDoc'
+    test_name = 'testLocalPrintGoogleSheet'
 
     chromedriver.driver.get('about:blank')
     chromedriver.driver.get(Constants.GOOGLE_DOCS['SHEET1'])
@@ -3006,7 +3006,7 @@ class PostRegistration(LogoCert):
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
-    test_name = 'testRegisteredDeviceNotDiscovereableAfterPowerOn'
+    test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
     print 'Power off registered device.'
     print 'After device powers down, turn on device.'
     raw_input('Once device is fully initialized select enter.')
@@ -3320,7 +3320,7 @@ class JobState(LogoCert):
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
-  def testOnePagePrintJob(self):
+  def testOnePagePrintJobState(self):
     """Verify a 1 page print job is reported correctly."""
     test_id = '345f2083-ec94-4548-9c01-ad7d8f1840ec'
     test_name = 'testOnePagePrintJobState'
@@ -3347,7 +3347,7 @@ class JobState(LogoCert):
         notes = 'Printed one page as expected. Status shows as printed.'
         self.LogTest(test_id, test_name, 'Passed', notes)
 
-  def testMultiPagePrintJob(self):
+  def testMultiPageJobState(self):
     """Verify a multi-page print job is reported with correct state."""
     test_id = '7bbf3e1f-c972-4414-ad7c-e6054aa7416f'
     test_name = 'testMultiPageJobState'
@@ -3886,7 +3886,7 @@ class Printing(LogoCert):
     else:
       self.ManualPass(test_id, test_name)
 
-  def testPrintLandscape(self):
+  def testPrintJpgLandscape(self):
     test_id = '2b7c81a9-9014-4236-8a1f-5daf4824a41a'
     test_name = 'testPrintJpgLandscape'
     logger.info('Setting orientation to landscape...')
@@ -4642,7 +4642,7 @@ class Printing(LogoCert):
   def testPrintFileBlackNWhiteGIF(self):
     """Test printing a black & white GIF file."""
     test_id = '7fa69496-542e-4f71-8538-7f67b907a2ec'
-    test_name = 'testPrintBlackNWhiteGIF'
+    test_name = 'testPrintFileBlackNWhiteGIF'
     logger.info('Printing black and white GIF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF3'],
                               color='Monochrome')
