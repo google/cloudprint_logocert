@@ -397,7 +397,8 @@ class Chrome(object):
 
     # Mouse over the element so it become visible.
     print_labels = self.cd.FindClass('ade')
-    self.cd.MouseOver(print_labels)
+    if print_labels:
+      self.cd.MouseOver(print_labels)
     print_icon = self.cd.FindCss("div[aria-label='Print all']")
     if print_icon:
       doctype['gmail'] = True
