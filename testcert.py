@@ -3068,7 +3068,7 @@ class PrinterState(LogoCert):
     time.sleep(10)
     device.GetDeviceDetails()
     try:
-      self.assertTrue(device.error_state)
+      self.assertTrue(device.error_state or device.warning_state)
     except AssertionError:
       notes = 'Printer is not in error state with open paper tray.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3094,7 +3094,7 @@ class PrinterState(LogoCert):
     time.sleep(10)
     device.GetDeviceDetails()
     try:
-      self.assertFalse(device.error_state)
+      self.assertFalse(device.error_state or device.warning_state)
     except AssertionError:
       notes = 'Paper tray is closed but printer reports error.'
       self.LogTest(test_id, test_name, 'Failed', notes)
