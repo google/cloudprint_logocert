@@ -1793,24 +1793,25 @@ class Registration(LogoCert):
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
     cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
     chrome2 = _chrome.Chrome(logger, cd2)
-    chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
-    if chrome2.RegisterPrinter(self.printer):
-      registered = chrome2.ConfirmPrinterRegistration(self.printer)
-      try:
-        self.assertFalse(registered)
-      except AssertionError:
-        notes = 'A simultaneous registration request registered a printer!'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
+    try:
+      chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
+      if chrome2.RegisterPrinter(self.printer):
+        registered = chrome2.ConfirmPrinterRegistration(self.printer)
+        try:
+          self.assertFalse(registered)
+        except AssertionError:
+          notes = 'A simultaneous registration request registered a printer!'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Simultaneous registration request was not successful.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
       else:
-        notes = 'Simultaneous registration request was not successful.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
-      finally:
-        cd2.CloseChrome()
-    else:
-      notes = 'Error attempting to register printer by %s' % (
-          Constants.USER2['EMAIL'])
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+        notes = 'Error attempting to register printer by %s' % (
+            Constants.USER2['EMAIL'])
+        self.LogTest(test_id, test_name, 'Blocked', notes)
+    finally:
+      cd2.CloseChrome()
 
 
 class LocalDiscovery(LogoCert):
