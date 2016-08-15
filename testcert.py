@@ -528,10 +528,7 @@ class Privet(LogoCert):
     test_id = '74b0548c-5932-4aaa-a363-56dd9d44268b'
     test_name = 'testPrivetAccessTokenAPI'
     api = 'accesstoken'
-    if Constants.CAPS['LOCAL_PRINT']:
-      return_code = 200
-    else:
-      return_code = 404
+    return_code = [200, 404]
     response = transport.HTTPReq(device.privet_url[api], headers=device.headers)
     try:
       self.assertIsNotNone(response['code'])
@@ -541,7 +538,7 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertEqual(response['code'], return_code)
+        self.assertIn(response['code'], return_code)
       except AssertionError:
         notes = 'Incorrect return code, found %d' % response['code']
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -584,10 +581,7 @@ class Privet(LogoCert):
     test_id = 'c6e56ee1-eb55-478b-a495-dbdfeb7fe1ae'
     test_name = 'testPrivetPrinterAPI'
     api = 'printer'
-    if Constants.CAPS['LOCAL_PRINT']:
-      return_code = 200
-    else:
-      return_code = 404
+    return_code = [200, 404]
     response = transport.HTTPReq(device.privet_url[api], headers=device.headers)
     try:
       self.assertIsNotNone(response['code'])
@@ -597,7 +591,7 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertEqual(response['code'], return_code)
+        self.assertIn(response['code'], return_code)
       except AssertionError:
         notes = 'Incorrect return code, found %d' % response['code']
         self.LogTest(test_id, test_name, 'Failed', notes)
