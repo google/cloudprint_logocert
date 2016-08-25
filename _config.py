@@ -49,7 +49,10 @@ class Constants(object):
   CAPS = {
       'COLLATE': False,
       'COLOR': False,
-      'COPIES': True,
+      'COPIES_LOCAL': True,  # If a Printer supports copies for local printing,
+                             # set this to True.
+      'COPIES_CLOUD': True,  # If a Printer supports copies for cloud printing,
+                             # set this to True.
       'COVER': True,  # Not all printers have a cover.
       'DUPLEX': True,
       'LAYOUT_ISSUE': True,  # Printer must set page orientation for local
@@ -59,8 +62,9 @@ class Constants(object):
                              # being registered, set this to True.
       'TONER': True,  # Set to false if printer is thermal or has no toner.
       'TRAY_SENSOR': False,  # Set this to True if printer has sensor to detect
-                             # if the paper tray is open or empty. Set this to
-                             # false if the printer has no paper tray.
+                             # if the paper tray is open.
+      'MEDIA_SENSOR': False, # Set this to True if printer has sensor to detect
+                             # if the paper tray is empty.
       }
 
   # Carriage return.
@@ -157,7 +161,7 @@ class Constants(object):
       'MANUFACTURER': '<Printer Manufacturer>',
       'MODEL': '<Printer Model>',
       'NAME': '<Printer Name>',
-      'PORT': '<port number of device web service>',
+      'PORT': '<integer value of port number of device web service>',
       'SERIAL': '<Printer Serial Number>',
       'STATUS': '<Released, Internal, ProtoType, Unknown>',
       }
@@ -172,6 +176,8 @@ class Constants(object):
       'ANDROID': '<Android Version>',
       'CHROME': '<Chrome Version>',
       'CHROMEDRIVER': '<Chromedriver version>',
+      'PYTHON': '<Python Version>',
+      'OS': '<OS Name>',
       'TABLET': '<Tablet Version>',
       }
 

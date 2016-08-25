@@ -35,6 +35,7 @@ those IDs. These IDs are used when submitting test results to our database.
 """
 
 import optparse
+import sys
 import time
 import unittest
 
@@ -119,6 +120,14 @@ def setUpModule():
                           loglevel=options.debug, stdout=options.stdout)
   chromedriver = _chromedriver.ChromeDriver(logger, data_dir, options.loadtime)
   chrome = _chrome.Chrome(logger, chromedriver)
+  os_type = chromedriver.FindID('os_type')
+  Constants.TESTENV['OS'] = os_type.text
+  chrome_version = chromedriver.FindID('version')
+  Constants.TESTENV['CHROME'] = chrome_version.text
+  Constants.TESTENV['CHROMEDRIVER'] = (
+      chromedriver.driver.__dict__['capabilities']['chrome'][
+          'chromedriverVersion'])
+  Constants.TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
   chrome.SignIn(options.email, options.passwd)
   CheckCredentials()
   gcpmgr = _cloudprintmgr.CloudPrintMgr(logger, chromedriver)
@@ -519,10 +528,7 @@ class Privet(LogoCert):
     test_id = '74b0548c-5932-4aaa-a363-56dd9d44268b'
     test_name = 'testPrivetAccessTokenAPI'
     api = 'accesstoken'
-    if Constants.CAPS['LOCAL_PRINT']:
-      return_code = 200
-    else:
-      return_code = 404
+    return_code = [200, 404]
     response = transport.HTTPReq(device.privet_url[api], headers=device.headers)
     try:
       self.assertIsNotNone(response['code'])
@@ -532,7 +538,7 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertEqual(response['code'], return_code)
+        self.assertIn(response['code'], return_code)
       except AssertionError:
         notes = 'Incorrect return code, found %d' % response['code']
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -575,10 +581,7 @@ class Privet(LogoCert):
     test_id = 'c6e56ee1-eb55-478b-a495-dbdfeb7fe1ae'
     test_name = 'testPrivetPrinterAPI'
     api = 'printer'
-    if Constants.CAPS['LOCAL_PRINT']:
-      return_code = 200
-    else:
-      return_code = 404
+    return_code = [200, 404]
     response = transport.HTTPReq(device.privet_url[api], headers=device.headers)
     try:
       self.assertIsNotNone(response['code'])
@@ -588,7 +591,7 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertEqual(response['code'], return_code)
+        self.assertIn(response['code'], return_code)
       except AssertionError:
         notes = 'Incorrect return code, found %d' % response['code']
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1387,7 +1390,7 @@ class Printer(LogoCert):
     """Verify copies is in printer capabilities."""
     test_id = '9d1464d1-46fb-4d1c-a8fb-3fa0e7dc9509'
     test_name = 'testCapsCopies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_CLOUD']:
       self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
       return
     try:
@@ -1581,6 +1584,7 @@ class PreRegistration(LogoCert):
     data_dir = 'NotSignedIn'
     cls.cd3 = _chromedriver.ChromeDriver(logger, data_dir, cls.loadtime)
     cls.chrome3 = _chrome.Chrome(logger, cls.cd3)
+    cls.sleep_time = 120
 
   @classmethod
   def tearDownClass(cls):
@@ -1609,7 +1613,7 @@ class PreRegistration(LogoCert):
     print 'Put the printer in sleep mode.'
     raw_input('Select enter when printer is sleeping.')
     print 'Waiting 1 minute...'
-    time.sleep(60)
+    time.sleep(self.sleep_time)
     position = chrome.FindDevice('printers', self.printer)
     try:
       self.assertGreater(position, 0)
@@ -1628,7 +1632,7 @@ class PreRegistration(LogoCert):
     print 'Power off the test device.'
     raw_input('Select enter once device is off.')
     print 'Waiting 1 minute for device state updates.'
-    time.sleep(60)
+    time.sleep(self.sleep_time)
     position = chrome.FindDevice('printers', self.printer)
     try:
       self.assertEqual(position, 0)
@@ -1648,7 +1652,7 @@ class PreRegistration(LogoCert):
     print 'Turn on device and wait for device to fully initialize.'
     raw_input('Select enter once device is initialized.')
     print 'Waiting 1 minute for device state updates.'
-    time.sleep(60)
+    time.sleep(self.sleep_time)
     position = chrome.FindDevice('printers', self.printer)
     try:
       self.assertGreater(position, 0)
@@ -1705,6 +1709,7 @@ class PreRegistration(LogoCert):
     data_dir = 'guest_user'
     cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
     chrome3 = _chrome.Chrome(logger, cd3)
+    chrome3.Print()
     found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     if found:
       notes = 'Printer found in Local Destinations'
@@ -1784,24 +1789,25 @@ class Registration(LogoCert):
     data_dir = Constants.USER2['EMAIL'].split('@')[0]
     cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
     chrome2 = _chrome.Chrome(logger, cd2)
-    chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
-    if chrome2.RegisterPrinter(self.printer):
-      registered = chrome2.ConfirmPrinterRegistration(self.printer)
-      try:
-        self.assertFalse(registered)
-      except AssertionError:
-        notes = 'A simultaneous registration request registered a printer!'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
+    try:
+      chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
+      if chrome2.RegisterPrinter(self.printer):
+        registered = chrome2.ConfirmPrinterRegistration(self.printer)
+        try:
+          self.assertFalse(registered)
+        except AssertionError:
+          notes = 'A simultaneous registration request registered a printer!'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Simultaneous registration request was not successful.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
       else:
-        notes = 'Simultaneous registration request was not successful.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
-      finally:
-        cd2.CloseChrome()
-    else:
-      notes = 'Error attempting to register printer by %s' % (
-          Constants.USER2['EMAIL'])
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+        notes = 'Error attempting to register printer by %s' % (
+            Constants.USER2['EMAIL'])
+        self.LogTest(test_id, test_name, 'Blocked', notes)
+    finally:
+      cd2.CloseChrome()
 
 
 class LocalDiscovery(LogoCert):
@@ -2230,6 +2236,14 @@ class LocalPrinting(LogoCert):
     """Verify printer respects layout settings in local print."""
     test_id = 'fb522a69-2454-40ab-9453-270553664fea'
     test_name = 'testLocalPrintLayout'
+
+    # TODO: When the Chrome issue of local printing page layout is fixed, this
+    #       code shold be removed.
+    if not Constants.CAPS['LAYOUT_ISSUE']:
+      notes = 'Printer does not have the workaround for the Chrome issue.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
     chromedriver.driver.get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait',
                                           localprint=True)
@@ -2273,7 +2287,7 @@ class LocalPrinting(LogoCert):
     """Verify printer respects copy option in local print."""
     test_id = 'c849ce7a-07e0-488e-b266-e002bdbde4d6'
     test_name = 'testLocalPrintCopies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_LOCAL']:
       notes = 'Printer does not support copies option.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
@@ -2331,7 +2345,7 @@ class LocalPrinting(LogoCert):
       # Give the printer time to complete the job and update the status.
       print 'Waiting 60 seconds for job to print and status to be updated.'
       time.sleep(60)
-      job_state = gcpmgr.GetJobStatus('Google-Glass.gif')
+      job_state = gcpmgr.GetPrinterJobStatus(device.name, 'Google-Glass.gif')
       try:
         self.assertIsNotNone(job_state)
       except AssertionError:
@@ -2755,7 +2769,7 @@ class ChromePrinting(LogoCert):
     """Verify printer respects copy option using Chrome Print Dialog."""
     test_id = '345affa2-796a-43e2-bc0e-2978d847d7b4'
     test_name = 'testChromePrintCopies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_CLOUD']:
       notes = 'Printer does not support copies option.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
@@ -3091,7 +3105,7 @@ class PrinterState(LogoCert):
     """Verify no media in paper tray reported correctly."""
     test_id = 'e8001a2a-e403-4f5a-94e5-59e61528d161'
     test_name = 'testNoMediaInTray'
-    if not Constants.CAPS['TRAY_SENSOR']:
+    if not Constants.CAPS['MEDIA_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
@@ -3114,7 +3128,7 @@ class PrinterState(LogoCert):
     """Verify when media put in empty tray, printer state is updated."""
     test_id = '64e592be-d6c4-424e-9e69-021c92b09953'
     test_name = 'testMediaInTray'
-    if not Constants.CAPS['TRAY_SENSOR']:
+    if not Constants.CAPS['MEDIA_SENSOR']:
       notes = 'Printer does not have a paper tray sensor.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
@@ -3406,7 +3420,7 @@ class JobState(LogoCert):
     if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
       # give printer time to update our service.
       time.sleep(10)
-      job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+      job_state = gcpmgr.WaitJobStatusNotIn('PDF1.7.pdf', ['In progress'])
       try:
         self.assertEqual(job_state, 'Error')
       except AssertionError:
@@ -3714,7 +3728,7 @@ class JobState(LogoCert):
     # Now print a valid file.
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'])
     time.sleep(10)
-    job_state = gcpmgr.GetJobStatus('printtest.pdf')
+    job_state = gcpmgr.WaitJobStatusNotIn('printtest.pdf', ['In progress'])
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3775,7 +3789,7 @@ class RunAfter24Hours(LogoCert):
     test_name = 'testPrinterOnline'
     device.GetDeviceDetails()
     try:
-      self.AssertIn('online', device.status)
+      self.assertIn('online', device.status)
     except AssertionError:
       notes = 'Printer is not online after 24 hours.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3853,7 +3867,7 @@ class Printing(LogoCert):
   def testPrintJpg2Copies(self):
     test_id = '734537e6-c075-4d38-bc4b-dd1b6ad1a7ca'
     test_name = 'testPrintJpg2Copies'
-    if not Constants.CAPS['COPIES']:
+    if not Constants.CAPS['COPIES_CLOUD']:
       notes = 'Copies not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
