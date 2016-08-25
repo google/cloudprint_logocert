@@ -659,22 +659,21 @@ class Privet(LogoCert):
         device.privet_url['register']['invalid'], data='',
         headers=device.headers, user=self.username)
     try:
-      self.assertIsNotNone(response['data'])
+      self.assertIsNotNone(response['code'])
     except AssertionError:
       notes = 'No response received.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertIn('error', response['data'])
-        self.assertIn('invalid', response['data'])
+        self.assertEqual(response['code'], 404)
       except AssertionError:
-        notes = 'Response from invalid registration params: %s' % (
-            response['data'])
+        notes = 'Response from invalid registration params: %d' % (
+            response['code'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Received correct error: %s' % response['data']
+        notes = 'Received correct error: %d' % response['code']
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIEmptyToken(self):
