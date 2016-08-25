@@ -1709,6 +1709,7 @@ class PreRegistration(LogoCert):
     data_dir = 'guest_user'
     cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
     chrome3 = _chrome.Chrome(logger, cd3)
+    chrome3.Print()
     found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     if found:
       notes = 'Printer found in Local Destinations'
