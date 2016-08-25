@@ -1584,6 +1584,7 @@ class PreRegistration(LogoCert):
     data_dir = 'NotSignedIn'
     cls.cd3 = _chromedriver.ChromeDriver(logger, data_dir, cls.loadtime)
     cls.chrome3 = _chrome.Chrome(logger, cls.cd3)
+    cls.sleep_time = 120
 
   @classmethod
   def tearDownClass(cls):
@@ -1612,7 +1613,7 @@ class PreRegistration(LogoCert):
     print 'Put the printer in sleep mode.'
     raw_input('Select enter when printer is sleeping.')
     print 'Waiting 1 minute...'
-    time.sleep(60)
+    time.sleep(self.sleep_time)
     position = chrome.FindDevice('printers', self.printer)
     try:
       self.assertGreater(position, 0)
@@ -1631,7 +1632,7 @@ class PreRegistration(LogoCert):
     print 'Power off the test device.'
     raw_input('Select enter once device is off.')
     print 'Waiting 1 minute for device state updates.'
-    time.sleep(60)
+    time.sleep(self.sleep_time)
     position = chrome.FindDevice('printers', self.printer)
     try:
       self.assertEqual(position, 0)
@@ -1651,7 +1652,7 @@ class PreRegistration(LogoCert):
     print 'Turn on device and wait for device to fully initialize.'
     raw_input('Select enter once device is initialized.')
     print 'Waiting 1 minute for device state updates.'
-    time.sleep(60)
+    time.sleep(self.sleep_time)
     position = chrome.FindDevice('printers', self.printer)
     try:
       self.assertGreater(position, 0)
