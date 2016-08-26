@@ -266,6 +266,28 @@ class CloudPrintMgr(object):
 
     return False
 
+  @Retry(3)
+  def GetPrinterWarningState(self, printer_name):
+    """Determine if cp-warning-state-icon is present.
+
+    Args:
+      printer_name: string, name (or partial unique name) of printer.
+    Returns:
+      boolean: True = in warning state, False = not in warning state.
+    """
+    if self.SelectPrinter(printer_name):
+      selected = self.cd.FindClass('cp-dashboard-listitem-selected')
+      if selected:
+        warning_state = self.cd.FindClass('cp-warning-state-icon', obj=selected)
+        if warning_state:
+          return True
+      else:
+        self.logger.error('%s not selected.', printer_name)
+    else:
+      self.logger.error('Error finding and seleecting %s', printer_name)
+
+    return False
+
   @Retry(3, return_type='Value')
   def GetPrinterStateMessages(self, printer_name):
     """Get all of the printer detailed messages.

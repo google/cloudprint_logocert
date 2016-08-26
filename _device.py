@@ -59,6 +59,7 @@ class Device(object):
     self.messages = []
     self.details = {}
     self.error_state = False
+    self.warning_state = False
     self.cdd = {}
     self.info = None
 
@@ -104,6 +105,7 @@ class Device(object):
     self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.name)
     self.details = self.cloudprintmgr.GetPrinterDetails(self.name)
     self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.name)
+    self.warning_state = self.cloudprintmgr.GetPrinterWarningState(self.name)
 
   def GetDeviceCDD(self, device_id):
     """Get device cdd and populate device object with the details.
