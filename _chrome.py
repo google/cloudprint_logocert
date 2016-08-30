@@ -804,57 +804,74 @@ class Chrome(object):
     Returns:
       boolean, True = successful login, False = unsuccessful login.
     """
-    email_required = True
-    self.cd.driver.get(Constants.ACCOUNTS)
-    if 'myaccount' not in self.cd.driver.current_url:
-      reauth = self.cd.FindID('reauthEmail')
-      if reauth:
-        if username != reauth.text:
-          account_chooser = self.cd.FindID('account-chooser-link')
-          self.cd.ClickElement(account_chooser)
-          add_account = self.cd.FindID('account-chooser-add-account')
-          self.cd.ClickElement(add_account)
-        else:
-          email_required = False
-      if email_required:
-        email = self.cd.FindID('Email')
-        if not email:
-          return False
-        else:
-          email.clear()
-          if not self.cd.SendKeys(username, email):
-            return False
-      pw = self.cd.FindID('Passwd')
-      if not pw:
-        next_button = self.cd.FindID('next')
-        if next_button:
-          if not self.cd.ClickElement(next_button):
-            return False
-        else:
-          self.logger.error('Coud not find next button.')
-          return False
-        pw = self.cd.FindID('Passwd')
-        if not pw:
-          self.logger.error('Passwd id not found on next screen.')
-          return False
-      if not self.cd.SendKeys(password, pw):
-        return False
-      signin = self.cd.FindID('signIn')
-      if not signin:
-        self.logger.info('Account is logged in.')
-      else:
-        if not self.cd.ClickElement(signin):
-          return False
 
+    # Sign in to Chrome
     self.cd.driver.get(self.devices)
     login = self.cd.FindID('cloud-devices-login-link')
     if login:
       if login.is_displayed():
         self.cd.driver.get(self.signin)
-        print 'Please sign in manually to the chrome sign in page.'
-        raw_input('Hit enter when finished.')
+        time.sleep(3);
+        self.cd.driver.switch_to.window(self.cd.driver.window_handles[1])
+        try:
+          signed_in = self.SignInImpl(username, password)
+        finally:
+          self.cd.driver.switch_to.window(self.cd.driver.window_handles[0])
+        if not signed_in:
+          return False
+    time.sleep(3);
+
+    # Sign in to the server
+    self.cd.driver.get(Constants.ACCOUNTS)
+    time.sleep(3);
+    if 'myaccount' not in self.cd.driver.current_url:
+      if not self.SignInImpl(username, password):
+        return False
 
     return True
+
+  def SignInImpl(self, username, password):
+    email_required = True
+    reauth = self.cd.FindID('reauthEmail')
+    if reauth:
+      if username != reauth.text:
+        account_chooser = self.cd.FindID('account-chooser-link')
+        self.cd.ClickElement(account_chooser)
+        add_account = self.cd.FindID('account-chooser-add-account')
+        self.cd.ClickElement(add_account)
+      else:
+        email_required = False
+    if email_required:
+      email = self.cd.FindID('Email')
+      if not email:
+        return False
+      else:
+        email.clear()
+        if not self.cd.SendKeys(username, email):
+          return False
+    pw = self.cd.FindID('Passwd')
+    if not pw:
+      next_button = self.cd.FindID('next')
+      if next_button:
+        if not self.cd.ClickElement(next_button):
+          return False
+      else:
+        self.logger.error('Coud not find next button.')
+        return False
+      pw = self.cd.FindID('Passwd')
+      if not pw:
+        self.logger.error('Passwd id not found on next screen.')
+        return False
+    if not self.cd.SendKeys(password, pw):
+      return False
+    signin = self.cd.FindID('signIn')
+    if not signin:
+      self.logger.info('Account is logged in.')
+    else:
+      if not self.cd.ClickElement(signin):
+        return False
+    return True
+
 
   def GetTokens(self):
     """Get the tokens that are set in Chrome.
