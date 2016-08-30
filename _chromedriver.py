@@ -55,6 +55,7 @@ class ChromeDriver(object):
     options.add_argument('--enable-logging')
     options.add_argument('--v=1')
     options.add_argument('--lang=en')
+    options.add_experimental_option("windowTypes", ["webview"])
     self.driver = webdriver.Chrome(chrome_options=options)
     self.action_chain = ActionChains(self.driver)
 
