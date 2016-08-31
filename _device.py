@@ -101,11 +101,27 @@ class Device(object):
     This will populate a Device object with device name, status, state messages,
     and device details.
     """
-    self.status = self.cloudprintmgr.GetPrinterState(self.name)
-    self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.name)
-    self.details = self.cloudprintmgr.GetPrinterDetails(self.name)
-    self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.name)
-    self.warning_state = self.cloudprintmgr.GetPrinterWarningState(self.name)
+
+    RETRY_COUNT = 3
+
+    self.error_state = None
+    self.warning_state = None
+    self.status = None
+    self.messages = None
+    self.details = None
+
+    for i in range(-1, RETRY_COUNT):
+      self.cd.page_id = None
+      if not self.error_state:
+        self.error_state = self.cloudprintmgr.GetPrinterErrorState(self.name)
+      if not self.warning_state:
+        self.warning_state = self.cloudprintmgr.GetPrinterWarningState(self.name)
+      if not self.status:
+        self.status = self.cloudprintmgr.GetPrinterState(self.name)
+      if not self.messages:
+        self.messages = self.cloudprintmgr.GetPrinterStateMessages(self.name)
+      if not self.details:
+        self.details = self.cloudprintmgr.GetPrinterDetails(self.name)
 
   def GetDeviceCDD(self, device_id):
     """Get device cdd and populate device object with the details.
@@ -115,7 +131,7 @@ class Device(object):
     Returns:
       boolean: True = cdd details populated, False = cdd details not populated.
     """
-    self.cd.driver.get(Constants.GCP['SIMULATE'])
+    self.cd.Get(Constants.GCP['SIMULATE'])
 
     printer_lookup = self.cd.FindID('printer_printerid')
     if not printer_lookup:

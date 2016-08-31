@@ -54,13 +54,13 @@ class Chrome(object):
     self.GetVersion()
 
   def DevicePage(self):
-    self.cd.driver.get(self.devices)
+    self.cd.Get(self.devices)
 
   def GetFlags(self):
-    self.cd.driver.get(self.flags)
+    self.cd.Get(self.flags)
 
   def GetSettings(self):
-    self.cd.driver.get(self.settings)
+    self.cd.Get(self.settings)
 
   def GetVersion(self):
     """Get the version of Chrome and the OS.
@@ -68,7 +68,7 @@ class Chrome(object):
     Returns:
       boolean: True = set versions, False = error getting versions.
     """
-    self.cd.driver.get(self.version)
+    self.cd.Get(self.version)
     version = self.cd.FindID('version')
     os = self.cd.FindID('os_type')
     if version:
@@ -82,7 +82,7 @@ class Chrome(object):
     return True
 
   def PrintPage(self):
-    self.cd.driver.get(self.printpage)
+    self.cd.Get(self.printpage)
 
   def Print(self):
     """This method will open the Chrome Print Dialog.
@@ -526,7 +526,7 @@ class Chrome(object):
     Returns:
       boolean: True = file printed, False = file not printed.
     """
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
 
     print_button = self.cd.FindName('cp-button-print')
     if not print_button:
@@ -665,7 +665,7 @@ class Chrome(object):
     else:
       filename = '/tmp/testfile.jpg'
       
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
     print_button = self.cd.FindName('cp-button-print')
     if not print_button:
       return False
@@ -680,7 +680,7 @@ class Chrome(object):
       for item in items:
         values.append(item.text)
 
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
 
     return values
 
@@ -784,7 +784,7 @@ class Chrome(object):
     Returns:
       boolean, True = signed in, False = not signed in.
     """
-    self.cd.driver.get(self.settings)
+    self.cd.Get(self.settings)
     if not self.cd.SwitchFrame('settings'):
       return False
     account = self.cd.FindID('sync-status-text')
@@ -806,11 +806,11 @@ class Chrome(object):
     """
 
     # Sign in to Chrome
-    self.cd.driver.get(self.devices)
+    self.cd.Get(self.devices)
     login = self.cd.FindID('cloud-devices-login-link')
     if login:
       if login.is_displayed():
-        self.cd.driver.get(self.signin)
+        self.cd.Get(self.signin)
         time.sleep(3);
         self.cd.driver.switch_to.window(self.cd.driver.window_handles[1])
         try:
@@ -822,7 +822,7 @@ class Chrome(object):
     time.sleep(3);
 
     # Sign in to the server
-    self.cd.driver.get(Constants.ACCOUNTS)
+    self.cd.Get(Constants.ACCOUNTS)
     time.sleep(3);
     if 'myaccount' not in self.cd.driver.current_url:
       if not self.SignInImpl(username, password):
@@ -878,8 +878,8 @@ class Chrome(object):
 
     This method should be run after a user is logged in.
     """
-    self.cd.driver.get(Constants.GCP['MGT'])
-    cookies = self.cd.driver.get_cookies()
+    self.cd.Get(Constants.GCP['MGT'])
+    cookies = self.cd.Get_cookies()
     for d in cookies:
       for k in d:
         if k == 'name':
@@ -894,7 +894,7 @@ class Chrome(object):
     Returns:
       boolean: True = signed out, False = not signed in or error.
     """
-    self.cd.driver.get(self.settings)
+    self.cd.Get(self.settings)
     if not self.cd.SwitchFrame('settings'):
       return False
     account = self.cd.FindID('start-stop-sync')
