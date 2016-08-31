@@ -52,7 +52,13 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = printer selected, False = printer not selected.
     """
-    self.cd.driver.get(Constants.GCP['PRINTERS'])
+
+    PAGE_ID = 'SelectPrinter("' + printer_name + '")'
+    if self.cd.page_id == PAGE_ID:
+      return True
+
+    self.cd.Get('about:blank')
+    self.cd.Get(Constants.GCP['PRINTERS'])
 
     # Check if printer is already selected.
     selected = self.cd.FindClass('cp-dashboard-listitem-selected')
@@ -60,11 +66,13 @@ class CloudPrintMgr(object):
       printers = self.cd.FindClasses('cp-dashboard-printer-name', obj=selected)
       for p in printers:
         if printer_name in p.text:
+          self.cd.page_id = PAGE_ID
           return True
     printers = self.cd.FindClasses('cp-dashboard-printer-name')
     for p in printers:
       if printer_name in p.text:
         if self.cd.ClickElement(p):
+          self.cd.page_id = PAGE_ID
           return True
     return False
 
@@ -77,6 +85,11 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = details page opened, False = errors opening details page.
     """
+
+    PAGE_ID = 'OpenPrinterDetails("' + printer_name + '")'
+    if self.cd.page_id == PAGE_ID:
+      return True
+
     container = 'cp-dashboard-actionbar-main'
     if self.SelectPrinter(printer_name):
       action_bar = self.cd.FindClass(container)
@@ -90,6 +103,7 @@ class CloudPrintMgr(object):
       for button in details_button:
         if 'Details' in button.text:
           if self.cd.ClickElement(button):
+            self.cd.page_id = PAGE_ID
             return True
           else:
             self.logger.error('Error clicking details button.')
@@ -220,7 +234,6 @@ class CloudPrintMgr(object):
       self.logger.error('Error opening printer details from GCP Mgt page.')
       return None
 
-  @Retry(3, return_type='Value')
   def GetPrinterState(self, printer_name):
     """Get the current basic state of a printer.
 
@@ -244,7 +257,6 @@ class CloudPrintMgr(object):
       self.logger.error('Error opening printer details page.')
       return None
 
-  @Retry(3)
   def GetPrinterErrorState(self, printer_name):
     """Determine if cp-error-state-icon is present.
 
@@ -266,7 +278,6 @@ class CloudPrintMgr(object):
 
     return False
 
-  @Retry(3)
   def GetPrinterWarningState(self, printer_name):
     """Determine if cp-warning-state-icon is present.
 
@@ -288,7 +299,6 @@ class CloudPrintMgr(object):
 
     return False
 
-  @Retry(3, return_type='Value')
   def GetPrinterStateMessages(self, printer_name):
     """Get all of the printer detailed messages.
 
@@ -314,7 +324,6 @@ class CloudPrintMgr(object):
 
     return state_messages
 
-  @Retry(3, return_type='Value')
   def GetPrinterDetails(self, printer_name):
     """Get advanced details contained in management page.
 
@@ -423,7 +432,7 @@ class CloudPrintMgr(object):
         self.logger.error('%s', param)
       return False
 
-    self.cd.driver.get(Constants.GCP['SIMULATE'])
+    self.cd.Get(Constants.GCP['SIMULATE'])
 
     update_printer_id = self.cd.FindID('update_printerid')
     if not update_printer_id:
@@ -454,7 +463,7 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = dialog open, False = dialog not open.
     """
-    self.cd.driver.get(Constants.GCP['SIMULATE'])
+    self.cd.Get(Constants.GCP['SIMULATE'])
 
     gadget = self.cd.FindID('cloudprint_gadget_document')
     if gadget:
@@ -524,7 +533,7 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = job selected, False = job not selected.
     """
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
 
     # If job already selected return true.
     selected = self.cd.FindClass('cp-dashboard-listitem-selected')
