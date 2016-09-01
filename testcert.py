@@ -199,7 +199,7 @@ def GetNewTokens():
   """
   auth_code = None
   permit_url = _oauth2.GenerateUrl()
-  chromedriver.driver.get(permit_url)
+  chromedriver.Get(permit_url)
   #  This may take awhile, so wait for the page to load.
   time.sleep(5)
   approve = chromedriver.FindID('submit_approve_access')
@@ -2136,7 +2136,7 @@ class LocalPrinting(LogoCert):
     test_id = '26cd8c36-3107-426b-9e49-2f1beea076f9'
     test_name = 'testLocalPrintHeadersFooters'
     # First navigate to a web page to print.
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2166,7 +2166,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
       return
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GCP['LEARN'])
+    chromedriver.Get(Constants.GCP['LEARN'])
     printed = chrome.PrintFromPrintDialog(self.printer, duplex=True,
                                           localprint=True)
     try:
@@ -2183,7 +2183,7 @@ class LocalPrinting(LogoCert):
     test_id = '4ff48cf9-7329-4757-9f30-d5c30586c225'
     test_name = 'testLocalPrintBackground'
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GOOGLE)
+    chromedriver.Get(Constants.GOOGLE)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2209,7 +2209,7 @@ class LocalPrinting(LogoCert):
     test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0b8e'
     test_name = 'testLocalPrintMargins'
     # Navigate to a page to print.
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, margin='None',
                                           localprint=True)
     try:
@@ -2243,7 +2243,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait',
                                           localprint=True)
     try:
@@ -2269,7 +2269,7 @@ class LocalPrinting(LogoCert):
     """Verify printer respects page range in local print."""
     test_id = '1580f47d-4115-462d-b85e-bd4d5fd4d7e3'
     test_name = 'testLocalPrintPageRange'
-    chromedriver.driver.get(chrome.flags)
+    chromedriver.Get(chrome.flags)
     printed = chrome.PrintFromPrintDialog(self.printer, page_range='2-3',
                                           localprint=True)
     try:
@@ -2291,7 +2291,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, copies=2,
                                           localprint=True)
     try:
@@ -2313,7 +2313,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get('http://www.google.com/cloudprint/learn/')
+    chromedriver.Get('http://www.google.com/cloudprint/learn/')
     printed = chrome.PrintFromPrintDialog(self.printer, color=True,
                                           localprint=True)
     try:
@@ -2332,7 +2332,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintUpdateMgtPage'
     filepath = 'file://' + Constants.IMAGES['GIF4']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2363,7 +2363,7 @@ class LocalPrinting(LogoCert):
            'Determining_the_best_IBM_Lotus_Web_Content_Management_delivery'
            '_option_for_your_needs')
 
-    chromedriver.driver.get(url)
+    chromedriver.Get(url)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2381,7 +2381,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintHTML'
     filepath = 'file://' + Constants.IMAGES['HTML1']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2401,7 +2401,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintJPG'
     filepath = 'file://' + Constants.IMAGES['JPG12']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2421,7 +2421,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintPNG'
     filepath = 'file://' + Constants.IMAGES['PNG6']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2441,7 +2441,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintGIF'
     filepath = 'file://' + Constants.IMAGES['GIF4']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2461,7 +2461,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintPDF'
     filepath = 'file://' + Constants.IMAGES['PDF9']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2480,8 +2480,8 @@ class LocalPrinting(LogoCert):
     test_id = '20828e70-a724-4446-8932-84b7cf3adaf9'
     test_name = 'testLocalPrintGmail'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2500,8 +2500,8 @@ class LocalPrinting(LogoCert):
     test_id = '5fa31002-b726-4a6a-b0d5-e21e3cc2ccf5'
     test_name = 'testLocalPrintGmailI18n'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL2'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL2'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2520,8 +2520,8 @@ class LocalPrinting(LogoCert):
     test_id = '4a01ed35-2758-4ed3-ab5e-8af5dc658999'
     test_name = 'testLocalPrintGmailWithAttachment'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL3'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL3'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2540,8 +2540,8 @@ class LocalPrinting(LogoCert):
     test_id = '07e05f71-9d4d-4760-93dd-471a87445261'
     test_name = 'testLocalPrintGoogleDoc'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['DOC1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['DOC1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2560,8 +2560,8 @@ class LocalPrinting(LogoCert):
     test_id = '5cc856dc-4257-4d1e-89f3-71722a1a75a3'
     test_name = 'testLocalPrintGoogleSheet'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['SHEET1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['SHEET1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2580,8 +2580,8 @@ class LocalPrinting(LogoCert):
     test_id = 'e2603a90-e749-42ed-b8c3-971e7079a5bf'
     test_name = 'testLocalPrintGoogleSlide'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['PREZ1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['PREZ1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2612,7 +2612,7 @@ class ChromePrinting(LogoCert):
     """Verify printer respects page range when printing from Chrome."""
     test_id = '553fbcb6-0d98-45a4-a0d7-308297852135'
     test_name = 'testChromePrintPageRange'
-    chromedriver.driver.get(chrome.flags)
+    chromedriver.Get(chrome.flags)
     printed = chrome.PrintFromPrintDialog(self.printer, page_range='2-3')
     try:
       self.assertTrue(printed)
@@ -2633,7 +2633,7 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get('http://www.google.com/cloudprint/learn/')
+    chromedriver.Get('http://www.google.com/cloudprint/learn/')
     printed = chrome.PrintFromPrintDialog(self.printer, color=True)
     try:
       self.assertTrue(printed)
@@ -2650,7 +2650,7 @@ class ChromePrinting(LogoCert):
     test_id = '05b8d603-4d60-4259-af11-8681ebc71ede'
     test_name = 'testChromePrintHeadersFooters'
     # First navigate to a web page to print.
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer)
     try:
       self.assertTrue(printed)
@@ -2679,7 +2679,7 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support.')
       return
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GCP['LEARN'])
+    chromedriver.Get(Constants.GCP['LEARN'])
     printed = chrome.PrintFromPrintDialog(self.printer, duplex=True)
     try:
       self.assertTrue(printed)
@@ -2695,7 +2695,7 @@ class ChromePrinting(LogoCert):
     test_id = 'd8ea8089-3d6c-44ea-89d9-3d048a5f68f2'
     test_name = 'testChromePrintBackground'
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GOOGLE)
+    chromedriver.Get(Constants.GOOGLE)
     printed = chrome.PrintFromPrintDialog(self.printer)
     try:
       self.assertTrue(printed)
@@ -2720,7 +2720,7 @@ class ChromePrinting(LogoCert):
     test_id = 'e2178d3a-4664-4d69-a7aa-f7ac50d296a0'
     test_name = 'testChromePrintMargins'
     # Navigate to a page to print.
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, margin='None')
     try:
       self.assertTrue(printed)
@@ -2744,7 +2744,7 @@ class ChromePrinting(LogoCert):
     """Verify printer respects layout settings using Chrome Print Dialog."""
     test_id = '96267e29-1718-4b15-9436-d94f91568048'
     test_name = 'testChromePrintLayout'
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait')
     try:
       self.assertTrue(printed)
@@ -2773,7 +2773,7 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, copies=2)
     try:
       self.assertTrue(printed)
@@ -2790,8 +2790,8 @@ class ChromePrinting(LogoCert):
     test_id = '598dca3d-70e4-483e-bfc2-d62a89715a11'
     test_name = 'testChromePrintGoogleDoc'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['DOC1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['DOC1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2810,8 +2810,8 @@ class ChromePrinting(LogoCert):
     test_id = 'caf2c6a3-9486-4ffe-b6f1-fa1ed8147a48'
     test_name = 'testChromePrintGoogleSheet'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['SHEET1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['SHEET1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2830,8 +2830,8 @@ class ChromePrinting(LogoCert):
     test_id = '74fb87af-e399-4fce-8bbf-af65a4b48af2'
     test_name = 'testChromePrintGoogleSlide'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['PREZ1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['PREZ1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2850,7 +2850,7 @@ class ChromePrinting(LogoCert):
     test_id = '109b3834-e119-4518-bf76-c7f6b6896934'
     test_name = 'testChromePrintURL'
 
-    chromedriver.driver.get('http://www.google.com')
+    chromedriver.Get('http://www.google.com')
     printed = chrome.PrintFromPrintDialog(self.printer)
 
     try:
@@ -2869,8 +2869,8 @@ class ChromePrinting(LogoCert):
     test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testChromePrintGmail'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2889,8 +2889,8 @@ class ChromePrinting(LogoCert):
     test_id = '2af97351-0fb5-4cdc-9f71-d4666c2393d4'
     test_name = 'testChromePrintGmailI18n'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL2'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL2'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2909,8 +2909,8 @@ class ChromePrinting(LogoCert):
     test_id = '24f290e8-42c6-4710-8758-54b623ca51f4'
     test_name = 'testChromePrintGmailWithAttachment'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL3'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL3'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:

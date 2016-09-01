@@ -64,7 +64,7 @@ class GoogleDataMgr(object):
     """
     button_found = False
     sheets_found = False
-    self.cd.driver.get(self.drive)
+    self.cd.Get(self.drive)
     # Select the New button in Google Drive.
     button = self.cd.FindClasses('h-sb-Ic')
     if not button:
