@@ -879,7 +879,7 @@ class Chrome(object):
     This method should be run after a user is logged in.
     """
     self.cd.Get(Constants.GCP['MGT'])
-    cookies = self.cd.Get_cookies()
+    cookies = self.cd.driver.get_cookies()
     for d in cookies:
       for k in d:
         if k == 'name':
