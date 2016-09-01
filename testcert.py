@@ -666,13 +666,14 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertEqual(response['code'], 404)
+        self.assertEqual(response['code'], 200)
       except AssertionError:
         notes = 'Response from invalid registration params: %d' % (
             response['code'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
+        #TODO check for invalid parameters in response message.
         notes = 'Received correct error: %d' % response['code']
         self.LogTest(test_id, test_name, 'Passed', notes)
 
