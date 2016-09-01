@@ -668,14 +668,22 @@ class Privet(LogoCert):
       try:
         self.assertEqual(response['code'], 200)
       except AssertionError:
-        notes = 'Response from invalid registration params: %d' % (
+        notes = 'Response code from invalid registration params: %d' % (
             response['code'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        #TODO check for invalid parameters in response message.
-        notes = 'Received correct error: %d' % response['code']
-        self.LogTest(test_id, test_name, 'Passed', notes)
+        try:
+          self.assertIn('error', response['data'])
+        except AssertionError:
+          notes = 'Did not find error message. Error message: %s' % (
+            response['data'])
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Received correct error code and response: %d\n%s' % (
+            response['code'], response['data'])
+          self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIEmptyToken(self):
     """Verify device returns code 200 if Privet Token is empty."""
