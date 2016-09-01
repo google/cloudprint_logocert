@@ -60,14 +60,6 @@ class CloudPrintMgr(object):
     self.cd.Get('about:blank')
     self.cd.Get(Constants.GCP['PRINTERS'])
 
-    # Check if printer is already selected.
-    selected = self.cd.FindClass('cp-dashboard-listitem-selected')
-    if selected:
-      printers = self.cd.FindClasses('cp-dashboard-printer-name', obj=selected)
-      for p in printers:
-        if printer_name in p.text:
-          self.cd.page_id = PAGE_ID
-          return True
     printers = self.cd.FindClasses('cp-dashboard-printer-name')
     for p in printers:
       if printer_name in p.text:
