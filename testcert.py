@@ -3037,6 +3037,46 @@ class PrinterState(LogoCert):
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
+  def VerifyStateMessages(self, test_id, test_name, category, required_suffix, allowed_suffixes=()):
+    """Verify state messages.
+
+    Args:
+      test_id: integer, testid in TestTracker database.
+      test_name: string, name of test.
+      category: string, message category.
+      required_suffix: string, required suffix of state message, None if no required suffix.
+      allowed_suffixes: tuple or string, additional allowed suffixes of state messages,
+        empty if required suffix is only allowed.
+    Returns:
+      boolean: True = Pass, False = Fail.
+    """
+    if category in device.messages:
+      messages = device.messages[category]
+    else:
+      messages = []
+    
+    if required_suffix is None:
+      found = True
+    else:
+      found = False
+
+    for message in messages:
+      if required_suffix and message.endswith(required_suffix):
+        found = True
+      else:
+        if not message.endswith(allowed_suffixes):
+          notes = 'state message "%s" is not allowed' % message
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          return False
+
+    if found:
+      self.LogTest(test_id, test_name, 'Passed')
+      return True
+    else:
+      notes = 'required suffix "%s" is not in state messages' % required_suffix
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      return False
+
   def testLostNetworkConnection(self):
     """Verify printer that loses network connection reconnects properly."""
     test_id = '0af4301e-bacb-40c4-8b95-a8b29aefc8dd'
@@ -3079,9 +3119,8 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'Open paper tray alert should be reported on GCP Mgt page.'
-      print 'If not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      # Check state message. Some input trays may not be opened and be normally empty.
+      self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is open', ' is empty')
 
     test_id2 = '5041f9a4-0b58-451a-906f-dec2375d93a4'
     test_name2 = 'testClosedPaperTray'
@@ -3096,9 +3135,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'Closed paper tray should not be reported by GCP Mgt page.'
-      print 'If reported, fail this test.'
-      self.ManualPass(test_id2, test_name2, print_test=False)
+      self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, ' is empty')
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
@@ -3112,9 +3149,7 @@ class PrinterState(LogoCert):
     raw_input('Select enter once all media is removed.')
     time.sleep(10)
     device.GetDeviceDetails()
-    print 'GCP Mgt page should show empty paper tray alert.'
-    print 'Fail this test if it does not.'
-    self.ManualPass(test_id, test_name, print_test=False)
+    self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is empty')
 
     test_id2 = '64e592be-d6c4-424e-9e69-021c92b09953'
     test_name2 = 'testMediaInTray'
@@ -3122,9 +3157,7 @@ class PrinterState(LogoCert):
     raw_input('Select enter once you have placed paper in paper tray.')
     time.sleep(10)
     device.GetDeviceDetails()
-    print 'GCP Mgt page should not show missing paper alert.'
-    print 'If it has alert, fail this test.'
-    self.ManualPass(test_id2, test_name2, print_test=False)
+    self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None)
 
   def testRemoveTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
@@ -3145,9 +3178,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert for missing toner cartridge.'
-      print 'If it does not, faile this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', '%')
 
     test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name2 = 'testExhaustTonerCartridge'
@@ -3162,9 +3193,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert for empty toner.'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id2, test_name2, print_test=False)
+      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', '%')
 
     test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name3 = 'testReplaceMissingToner'
@@ -3179,9 +3208,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id3, test_name3, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt page should not show missing toner alert.'
-      print 'If it does, fail this test.'
-      self.ManualPass(test_id3, test_name3, print_test=False)
+      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, '%')
 
   def testCoverOpen(self):
     """Verify that an open door or cover is reported correctly."""
@@ -3202,9 +3229,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert of open door or cover'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id, test_name, 'Doors/Covers', ' is open')
 
     test_id2 = 'a26b7d34-15b4-4819-84a5-4b8e5bc3a30e'
     test_name2 = 'testCoverClosed'
@@ -3219,9 +3244,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should remove alert about open door.'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id2, test_name2, print_test=False)
+      self.VerifyStateMessages(test_id2, test_name2, 'Doors/Covers', None)
 
   def testPaperJam(self):
     """Verify printer properly reports a paper jam with correct state."""
@@ -3238,9 +3261,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert about papaer jam.'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id, test_name, 'Paper Jams', 'Paper jam')
 
     test_id2 = 'ff7e0f11-4955-4510-8a5c-91f809f6b263'
     test_name2 = 'testRemovePaperJam'
@@ -3255,9 +3276,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt page should not report paper jam.'
-      print 'If it does, fail this test.'
-      self.ManualPass(test_id2, test_name2, print_test=False)
+      self.VerifyStateMessages(test_id, test_name, 'Paper Jams', None)
 
 
 class JobState(LogoCert):
