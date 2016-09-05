@@ -3112,16 +3112,9 @@ class PrinterState(LogoCert):
     raw_input('Select enter once all media is removed.')
     time.sleep(10)
     device.GetDeviceDetails()
-    try:
-      self.assertTrue(device.error_state)
-    except AssertionError:
-      notes = 'Printer not in error state with no media in paper tray.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'GCP Mgt page should show empty paper tray alert.'
-      print 'Fail this test if it does not.'
-      self.ManualPass(test_id, test_name, print_test=False)
+    print 'GCP Mgt page should show empty paper tray alert.'
+    print 'Fail this test if it does not.'
+    self.ManualPass(test_id, test_name, print_test=False)
 
     test_id2 = '64e592be-d6c4-424e-9e69-021c92b09953'
     test_name2 = 'testMediaInTray'
@@ -3129,16 +3122,9 @@ class PrinterState(LogoCert):
     raw_input('Select enter once you have placed paper in paper tray.')
     time.sleep(10)
     device.GetDeviceDetails()
-    try:
-      self.assertFalse(device.error_state)
-    except AssertionError:
-      notes = 'Papaer in media tray but printer in error state.'
-      self.LogTest(test_id2, test_name2, 'Failed', notes)
-      raise
-    else:
-      print 'GCP Mgt page should not show missing paper alert.'
-      print 'If it has alert, fail this test.'
-      self.ManualPass(test_id2, test_name2, print_test=False)
+    print 'GCP Mgt page should not show missing paper alert.'
+    print 'If it has alert, fail this test.'
+    self.ManualPass(test_id2, test_name2, print_test=False)
 
   def testRemoveTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
