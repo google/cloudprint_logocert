@@ -24,7 +24,8 @@ import time
 from _common import Retry
 from _config import Constants
 
-from selenium.common.exceptions import WebDriverException, NoSuchWindowException
+from selenium.common.exceptions import NoSuchWindowException
+from selenium.common.exceptions import WebDriverException
 
 
 class Chrome(object):
