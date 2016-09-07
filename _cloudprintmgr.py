@@ -297,20 +297,21 @@ class CloudPrintMgr(object):
     Args:
       printer_name: string, name (or unique partial name) of printer.
     Returns:
-      list, list of printer state messages.
+      dictionary, keys are labels, values are lists of messages.
     """
-    state_messages = []
+    state_messages = {}
     if self.OpenPrinterDetails(printer_name):
-      state = self.cd.FindClass('cp-printerdetailscontent-state')
-      if state:
-        messages = self.cd.FindClasses('cp-printer-state-message', obj=state)
-        if messages:
-          for msg in messages:
-            state_messages.append(msg.text)
-        else:
-          self.logger.error('No printer state messages found.')
+      elements = self.cd.FindXPaths('//*[@class="cp-printerdetailscontent-state"]//*[@class="cp-info-label" or @class="cp-printer-state-message"]')
+      if elements:
+        for element in elements:
+          cls = element.get_attribute("class")
+          if 'cp-info-label' == cls:
+            messages = []
+            state_messages.update({element.text: messages})
+          elif 'cp-printer-state-message' == cls:
+            messages.append(element.text)
       else:
-        self.logger.error('Detailed state section not found.')
+        self.logger.error('No printer state messages found.')
     else:
       self.logger.error('Error opening printer details page.')
 
