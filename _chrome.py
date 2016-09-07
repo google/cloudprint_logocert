@@ -25,6 +25,7 @@ from _common import Retry
 from _config import Constants
 
 from selenium.common.exceptions import NoSuchWindowException
+from selenium.common.exceptions import WebDriverException
 
 
 class Chrome(object):
@@ -692,6 +693,9 @@ class Chrome(object):
     Returns:
       list of available selections for a given option.
     """
+
+    RETRY_COUNT = 3
+
     container = 'cp-capabilities-capabilities-%s-container' % option
     cap = self.cd.FindClass(container)
     if not cap:
@@ -699,9 +703,20 @@ class Chrome(object):
     button = self.cd.FindClass('jfk-select', obj=cap)
     if not button:
       return None
-    if not self.cd.ClickElement(button):
-      return None
-    menus = self.cd.FindClasses('goog-menu-vertical')
+
+    for i in range(-1, RETRY_COUNT):
+      try:
+        if not self.cd.ClickElement(button):
+          return None
+        menus = self.cd.FindClasses('goog-menu-vertical')
+        if menus is None:
+          # maybe failed to clicking silently.
+          continue
+        break
+      except WebDriverException:
+        # maybe the button has been moved.
+        time.sleep(1)
+        continue
     if not menus:
       return None
     for m in menus:
