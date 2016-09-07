@@ -59,8 +59,14 @@ def _ParseArgs():
   parser = optparse.OptionParser()
 
   parser.add_option('--autorun',
-                    help='Set if tests need manual input [default: %default]',
+                    help='Skip manual input',
                     default=Constants.AUTOMODE,
+                    action="store_true",
+                    dest='autorun')
+  parser.add_option('--no-autorun',
+                    help='Do not skip manual input',
+                    default=Constants.AUTOMODE,
+                    action="store_false",
                     dest='autorun')
   parser.add_option('--debug',
                     help='Specify debug log level [default: %default]',
@@ -75,6 +81,7 @@ def _ParseArgs():
   parser.add_option('--loadtime',
                     help='Seconds for web pages to load [default: %default]',
                     default=10,
+                    type='float',
                     dest='loadtime')
   parser.add_option('--logdir',
                     help='Relative directory for logfiles [default: %default]',
@@ -88,9 +95,10 @@ def _ParseArgs():
                     help='Name of printer [default: %default]',
                     default=Constants.PRINTER['NAME'],
                     dest='printer')
-  parser.add_option('--stdout',
-                    help='Send output to stdout [default: %default]',
+  parser.add_option('--no-stdout',
+                    help='Do not send output to stdout',
                     default=True,
+                    action="store_false",
                     dest='stdout')
 
   return parser.parse_args()
