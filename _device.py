@@ -56,7 +56,7 @@ class Device(object):
       self.port = Constants.PRINTER['PORT']
     self.name = Constants.PRINTER['NAME']
     self.status = None
-    self.messages = []
+    self.messages = {}
     self.details = {}
     self.error_state = False
     self.warning_state = False
