@@ -980,10 +980,7 @@ class Chrome(object):
       integer: position found in list of new devices. 0 means not found.
     """
     self.DevicePage()
-    new_devices = self.cd.FindID(div_id)
-    if not new_devices:
-      return 0
-    devices = self.cd.FindClasses('device-info', obj=new_devices)
+    devices = self.cd.FindXPaths('//*[@id="%s"]//*[@class="device-info"]' % div_id)
     if not devices:
       return 0
     dev_num = devices.__len__()
