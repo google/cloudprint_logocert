@@ -1773,21 +1773,29 @@ class Registration(LogoCert):
       else:
         notes = 'Cancelled printer registration from printer UI.'
         self.LogTest(test_id2, test_name2, 'Passed', notes)
-    print 'Now accept the registration request from %s.' % self.username
-    if chrome.RegisterPrinter(self.printer):
-      self.User2RegistrationAttempt()
-      #  Allow time for registration to complete.
-      time.sleep(20)
-      result = chrome.ConfirmPrinterRegistration(self.printer)
-      try:
-        self.assertTrue(result)
-      except AssertionError:
-        notes = 'Not able to register printer using chrome://devices.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        notes = 'Registered printer using chrome://devices.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
+
+    data_dir = Constants.USER2['EMAIL'].split('@')[0]
+    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome2 = _chrome.Chrome(logger, cd2)
+    try:
+      chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
+      if chrome.RegisterPrinter(self.printer):
+        self.User2RegistrationAttempt(chrome2)
+        print 'Now accept the registration request from %s.' % self.username
+        #  Allow time for registration to complete.
+        time.sleep(20)
+        result = chrome.ConfirmPrinterRegistration(self.printer)
+        try:
+          self.assertTrue(result)
+        except AssertionError:
+          notes = 'Not able to register printer using chrome://devices.'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Registered printer using chrome://devices.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
+    finally:
+      cd2.CloseChrome()
 
   def testDeviceAcceptRegistration(self):
     """Verify printer must accept registration requests on printer panel."""
@@ -1798,32 +1806,28 @@ class Registration(LogoCert):
     print 'Fail this test.'
     self.ManualPass(test_id, test_name, print_test=False)
 
-  def User2RegistrationAttempt(self):
-    """Verify multiple registration attempts are not allowed by device."""
+  def User2RegistrationAttempt(self, chrome2):
+    """Verify multiple registration attempts are not allowed by device.
+    Args:
+      chrome2: Chrome object for 2nd user.
+    """
     test_id = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
     test_name = 'testMultipleRegistrationAttempt'
-    data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(logger, cd2)
-    try:
-      chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
-      if chrome2.RegisterPrinter(self.printer):
-        registered = chrome2.ConfirmPrinterRegistration(self.printer)
-        try:
-          self.assertFalse(registered)
-        except AssertionError:
-          notes = 'A simultaneous registration request registered a printer!'
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          raise
-        else:
-          notes = 'Simultaneous registration request was not successful.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
+    if chrome2.RegisterPrinter(self.printer):
+      registered = chrome2.ConfirmPrinterRegistration(self.printer)
+      try:
+        self.assertFalse(registered)
+      except AssertionError:
+        notes = 'A simultaneous registration request registered a printer!'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
       else:
-        notes = 'Error attempting to register printer by %s' % (
-            Constants.USER2['EMAIL'])
-        self.LogTest(test_id, test_name, 'Blocked', notes)
-    finally:
-      cd2.CloseChrome()
+        notes = 'Simultaneous registration request was not successful.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+    else:
+      notes = 'Error attempting to register printer by %s' % (
+          Constants.USER2['EMAIL'])
+      self.LogTest(test_id, test_name, 'Blocked', notes)
 
 
 class LocalDiscovery(LogoCert):
