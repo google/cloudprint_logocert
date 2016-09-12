@@ -555,17 +555,9 @@ class CloudPrintMgr(object):
     self.OpenPrinterJobs(printer_name)
 
     # If job already selected return true.
-    selected = self.cd.FindClass('cp-dashboard-listitem-selected')
-    if selected:
-      jobs = self.cd.FindClasses('cp-job-name', obj=selected)
-      for j in jobs:
-        if job_name in j.text:
-          return True
-    jobs = self.cd.FindClasses('cp-job-name')
-    for j in jobs:
-      if job_name in j.text:
-        if self.cd.ClickElement(j):
-          return True
+    job = self.cd.FindXPath('//*[@class="cp-job-name" and contains(text(),"' + job_name + '")]')
+    if self.cd.ClickElement(job):
+      return True
     return False
 
   @Retry(3)
