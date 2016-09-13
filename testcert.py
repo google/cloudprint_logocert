@@ -3190,7 +3190,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', '%')
+      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', ('%', '%)'))
 
     test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name2 = 'testExhaustTonerCartridge'
@@ -3205,7 +3205,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', '%')
+      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', ('%', '%)'))
 
     test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name3 = 'testReplaceMissingToner'
@@ -3220,7 +3220,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id3, test_name3, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, '%')
+      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, ('%', '%)'))
 
   def testCoverOpen(self):
     """Verify that an open door or cover is reported correctly."""
