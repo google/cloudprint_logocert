@@ -3865,21 +3865,6 @@ class Printing(LogoCert):
     else:
       self.ManualPass(test_id, test_name)
 
-  def testPrintJpgLandscape(self):
-    test_id = '2b7c81a9-9014-4236-8a1f-5daf4824a41a'
-    test_name = 'testPrintJpgLandscape'
-    logger.info('Setting orientation to landscape...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG7'],
-                              color=self.color, layout='Landscape')
-    try:
-      self.assertTrue(output)
-    except AssertionError:
-      notes = 'Error printing in landscape'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.ManualPass(test_id, test_name)
-
   def testPrintPdfDuplexLongEdge(self):
     test_id = 'cb86137b-943d-47fc-adcd-663ad9f0dce8'
     test_name = 'testPrintPdfDuplexLongEdge'
