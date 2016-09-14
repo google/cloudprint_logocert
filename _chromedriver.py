@@ -154,9 +154,6 @@ class ChromeDriver(object):
     try:
       self.GetWait().until(EC.presence_of_all_elements_located((By.CLASS_NAME,
                                                            classname)))
-      if classname == 'cp-job-name':
-        print 'waiting 60 seconds to find class cp-job-name'
-        time.sleep(60)
     except TimeoutException:
       self.logger.error('Timed out looking for class: %s', classname)
       return None
