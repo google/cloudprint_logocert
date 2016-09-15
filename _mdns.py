@@ -63,10 +63,19 @@ class MDnsService(object):
 class MDnsListener(object):
   """A MDNS Listener."""
 
-  def __init__(self, logger):
+  def __init__(self, logger, if_addr=None):
+    """Initialization requires a logger.
+    
+    Args:
+      logger: initialized logger object.
+      if_addr: string, interface address for Zeroconf, None means all interfaces.
+    """
     # self.logger = _log.GetLogger('LogoCert')
     self.logger = logger
-    self.zeroconf = Zeroconf(InterfaceChoice.All)
+    if if_addr:
+      self.zeroconf = Zeroconf([if_addr])
+    else:
+      self.zeroconf = Zeroconf(InterfaceChoice.All)
     self.listener = MDnsService(logger)
 
   def add_listener(self, proto):

@@ -78,6 +78,10 @@ def _ParseArgs():
                     help='Email account to use [default: %default]',
                     default=Constants.USER['EMAIL'],
                     dest='email')
+  parser.add_option('--if-addr',
+                    help='Interface address for Zeroconf',
+                    default=None,
+                    dest='if_addr')
   parser.add_option('--loadtime',
                     help='Seconds for web pages to load [default: %default]',
                     default=10,
@@ -139,7 +143,7 @@ def setUpModule():
   chrome.SignIn(options.email, options.passwd)
   CheckCredentials()
   gcpmgr = _cloudprintmgr.CloudPrintMgr(logger, chromedriver)
-  mdns_browser = _mdns.MDnsListener(logger)
+  mdns_browser = _mdns.MDnsListener(logger, options.if_addr)
   mdns_browser.add_listener('privet')
   # Wait to receive Privet printer advertisements.
   time.sleep(30)
