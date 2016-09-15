@@ -4439,7 +4439,7 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfColorTicket'
     logger.info('Printing PDF Color ticket in with landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF2'],
-                              color=self.color)
+                              color=self.color, layout='Landscape')
     try:
       self.assertTrue(output)
     except AssertionError:
