@@ -1987,14 +1987,17 @@ class LocalDiscovery(LogoCert):
     for (k, v) in mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
-          del mdns_browser.listener.discovered[k]
+          mdns_browser.listener.discovered[k]['found'] = None
     # Monitor the local network for privet broadcasts.
     print 'Listening for network broadcasts for 5 minutes.'
     time.sleep(300)
-    for v in mdns_browser.listener.discovered.values():
+    for (k, v) in mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
-          printer_found = True
+          if mdns_browser.listener.discovered[k]['found'] is None:
+            mdns_browser.listener.discovered[k]['found'] = True
+          else:
+            printer_found = True
 
     try:
       self.assertFalse(printer_found)
