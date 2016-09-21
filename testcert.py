@@ -1868,7 +1868,7 @@ class LocalDiscovery(LogoCert):
       if self.printer in k:
         printer_found = True
         try:
-          self.assertTrue(mdns_browser.listener.discovered[k]['found'])
+          self.assertFalse(mdns_browser.listener.discovered[k]['found'])
         except AssertionError:
           notes = 'Local Discovery not disabled.'
           failed = True
