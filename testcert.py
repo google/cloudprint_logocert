@@ -35,6 +35,7 @@ those IDs. These IDs are used when submitting test results to our database.
 """
 
 import optparse
+import re
 import sys
 import time
 import unittest
@@ -3087,6 +3088,7 @@ class PrinterState(LogoCert):
       found = False
 
     for message in messages:
+      message = re.sub(r' \(.*\)$', '', message)
       if required_suffix and message.endswith(required_suffix):
         found = True
       else:
@@ -3204,7 +3206,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', ('%', '%)', ' pages remaining'))
+      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', ('%', ' pages remaining', ' is low'))
 
     test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name2 = 'testExhaustTonerCartridge'
@@ -3219,7 +3221,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', ('%', '%)', ' pages remaining'))
+      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', ('%', ' pages remaining', ' is low'))
 
     test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name3 = 'testReplaceMissingToner'
@@ -3234,7 +3236,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id3, test_name3, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, ('%', '%)', ' pages remaining'))
+      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, ('%', ' pages remaining', ' is low'))
 
   def testCoverOpen(self):
     """Verify that an open door or cover is reported correctly."""
