@@ -3146,7 +3146,7 @@ class PrinterState(LogoCert):
       raise
     else:
       # Check state message. Some input trays may not be opened and be normally empty.
-      self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is open', ' is empty')
+      self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is open', (' is empty', '% full'))
 
     test_id2 = '5041f9a4-0b58-451a-906f-dec2375d93a4'
     test_name2 = 'testClosedPaperTray'
@@ -3161,7 +3161,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, ' is empty')
+      self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, (' is empty', '% full'))
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
@@ -3183,7 +3183,7 @@ class PrinterState(LogoCert):
     raw_input('Select enter once you have placed paper in paper tray.')
     time.sleep(10)
     device.GetDeviceDetails()
-    self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None)
+    self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, '% full')
 
   def testRemoveTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
