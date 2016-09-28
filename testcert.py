@@ -3304,7 +3304,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id, test_name, 'Paper Jams', None)
+      self.VerifyStateMessages(test_id2, test_name2, 'Paper Jams', None)
 
 
 class JobState(LogoCert):
