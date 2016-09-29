@@ -35,6 +35,7 @@ those IDs. These IDs are used when submitting test results to our database.
 """
 
 import optparse
+import re
 import sys
 import time
 import unittest
@@ -3087,6 +3088,7 @@ class PrinterState(LogoCert):
       found = False
 
     for message in messages:
+      message = re.sub(r' \(.*\)$', '', message)
       if required_suffix and message.endswith(required_suffix):
         found = True
       else:
@@ -3146,7 +3148,7 @@ class PrinterState(LogoCert):
       raise
     else:
       # Check state message. Some input trays may not be opened and be normally empty.
-      self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is open', ' is empty')
+      self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is open', (' is empty', '% full'))
 
     test_id2 = '5041f9a4-0b58-451a-906f-dec2375d93a4'
     test_name2 = 'testClosedPaperTray'
@@ -3161,7 +3163,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, ' is empty')
+      self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, (' is empty', '% full'))
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
@@ -3183,7 +3185,7 @@ class PrinterState(LogoCert):
     raw_input('Select enter once you have placed paper in paper tray.')
     time.sleep(10)
     device.GetDeviceDetails()
-    self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None)
+    self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, '% full')
 
   def testRemoveTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
@@ -3204,7 +3206,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', ('%', '%)'))
+      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', ('%', ' pages remaining', ' is low'))
 
     test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name2 = 'testExhaustTonerCartridge'
@@ -3219,7 +3221,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', ('%', '%)'))
+      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', ('%', ' pages remaining', ' is low'))
 
     test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name3 = 'testReplaceMissingToner'
@@ -3234,7 +3236,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id3, test_name3, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, ('%', '%)'))
+      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, ('%', ' pages remaining', ' is low'))
 
   def testCoverOpen(self):
     """Verify that an open door or cover is reported correctly."""
@@ -3302,7 +3304,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      self.VerifyStateMessages(test_id, test_name, 'Paper Jams', None)
+      self.VerifyStateMessages(test_id2, test_name2, 'Paper Jams', None)
 
 
 class JobState(LogoCert):
