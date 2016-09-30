@@ -33,6 +33,7 @@ therefore watch the output of the script while it's running.
 test_id corresponds to an internal database used by Google, so don't change
 those IDs. These IDs are used when submitting test results to our database.
 """
+__version__ = '1.11'
 
 import optparse
 import re
