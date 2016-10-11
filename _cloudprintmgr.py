@@ -52,19 +52,19 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = printer selected, False = printer not selected.
     """
-    self.cd.driver.get(Constants.GCP['PRINTERS'])
 
-    # Check if printer is already selected.
-    selected = self.cd.FindClass('cp-dashboard-listitem-selected')
-    if selected:
-      printers = self.cd.FindClasses('cp-dashboard-printer-name', obj=selected)
-      for p in printers:
-        if printer_name in p.text:
-          return True
+    PAGE_ID = 'SelectPrinter("' + printer_name + '")'
+    if self.cd.page_id == PAGE_ID:
+      return True
+
+    self.cd.Get('about:blank')
+    self.cd.Get(Constants.GCP['PRINTERS'])
+
     printers = self.cd.FindClasses('cp-dashboard-printer-name')
     for p in printers:
       if printer_name in p.text:
         if self.cd.ClickElement(p):
+          self.cd.page_id = PAGE_ID
           return True
     return False
 
@@ -77,6 +77,11 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = details page opened, False = errors opening details page.
     """
+
+    PAGE_ID = 'OpenPrinterDetails("' + printer_name + '")'
+    if self.cd.page_id == PAGE_ID:
+      return True
+
     container = 'cp-dashboard-actionbar-main'
     if self.SelectPrinter(printer_name):
       action_bar = self.cd.FindClass(container)
@@ -90,6 +95,7 @@ class CloudPrintMgr(object):
       for button in details_button:
         if 'Details' in button.text:
           if self.cd.ClickElement(button):
+            self.cd.page_id = PAGE_ID
             return True
           else:
             self.logger.error('Error clicking details button.')
@@ -220,7 +226,6 @@ class CloudPrintMgr(object):
       self.logger.error('Error opening printer details from GCP Mgt page.')
       return None
 
-  @Retry(3, return_type='Value')
   def GetPrinterState(self, printer_name):
     """Get the current basic state of a printer.
 
@@ -244,7 +249,6 @@ class CloudPrintMgr(object):
       self.logger.error('Error opening printer details page.')
       return None
 
-  @Retry(3)
   def GetPrinterErrorState(self, printer_name):
     """Determine if cp-error-state-icon is present.
 
@@ -266,33 +270,53 @@ class CloudPrintMgr(object):
 
     return False
 
-  @Retry(3, return_type='Value')
+  def GetPrinterWarningState(self, printer_name):
+    """Determine if cp-warning-state-icon is present.
+
+    Args:
+      printer_name: string, name (or partial unique name) of printer.
+    Returns:
+      boolean: True = in warning state, False = not in warning state.
+    """
+    if self.SelectPrinter(printer_name):
+      selected = self.cd.FindClass('cp-dashboard-listitem-selected')
+      if selected:
+        warning_state = self.cd.FindClass('cp-warning-state-icon', obj=selected)
+        if warning_state:
+          return True
+      else:
+        self.logger.error('%s not selected.', printer_name)
+    else:
+      self.logger.error('Error finding and seleecting %s', printer_name)
+
+    return False
+
   def GetPrinterStateMessages(self, printer_name):
     """Get all of the printer detailed messages.
 
     Args:
       printer_name: string, name (or unique partial name) of printer.
     Returns:
-      list, list of printer state messages.
+      dictionary, keys are labels, values are lists of messages.
     """
-    state_messages = []
+    state_messages = {}
     if self.OpenPrinterDetails(printer_name):
-      state = self.cd.FindClass('cp-printerdetailscontent-state')
-      if state:
-        messages = self.cd.FindClasses('cp-printer-state-message', obj=state)
-        if messages:
-          for msg in messages:
-            state_messages.append(msg.text)
-        else:
-          self.logger.error('No printer state messages found.')
+      elements = self.cd.FindXPaths('//*[@class="cp-printerdetailscontent-state"]//*[@class="cp-info-label" or @class="cp-printer-state-message"]')
+      if elements:
+        for element in elements:
+          cls = element.get_attribute("class")
+          if 'cp-info-label' == cls:
+            messages = []
+            state_messages.update({element.text: messages})
+          elif 'cp-printer-state-message' == cls:
+            messages.append(element.text)
       else:
-        self.logger.error('Detailed state section not found.')
+        self.logger.error('No printer state messages found.')
     else:
       self.logger.error('Error opening printer details page.')
 
     return state_messages
 
-  @Retry(3, return_type='Value')
   def GetPrinterDetails(self, printer_name):
     """Get advanced details contained in management page.
 
@@ -401,7 +425,7 @@ class CloudPrintMgr(object):
         self.logger.error('%s', param)
       return False
 
-    self.cd.driver.get(Constants.GCP['SIMULATE'])
+    self.cd.Get(Constants.GCP['SIMULATE'])
 
     update_printer_id = self.cd.FindID('update_printerid')
     if not update_printer_id:
@@ -432,7 +456,7 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = dialog open, False = dialog not open.
     """
-    self.cd.driver.get(Constants.GCP['SIMULATE'])
+    self.cd.Get(Constants.GCP['SIMULATE'])
 
     gadget = self.cd.FindID('cloudprint_gadget_document')
     if gadget:
@@ -502,7 +526,7 @@ class CloudPrintMgr(object):
     Returns:
       boolean: True = job selected, False = job not selected.
     """
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
 
     # If job already selected return true.
     selected = self.cd.FindClass('cp-dashboard-listitem-selected')
@@ -531,17 +555,9 @@ class CloudPrintMgr(object):
     self.OpenPrinterJobs(printer_name)
 
     # If job already selected return true.
-    selected = self.cd.FindClass('cp-dashboard-listitem-selected')
-    if selected:
-      jobs = self.cd.FindClasses('cp-job-name', obj=selected)
-      for j in jobs:
-        if job_name in j.text:
-          return True
-    jobs = self.cd.FindClasses('cp-job-name')
-    for j in jobs:
-      if job_name in j.text:
-        if self.cd.ClickElement(j):
-          return True
+    job = self.cd.FindXPath('//*[@class="cp-job-name" and contains(text(),"' + job_name + '")]')
+    if self.cd.ClickElement(job):
+      return True
     return False
 
   @Retry(3)

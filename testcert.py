@@ -33,8 +33,10 @@ therefore watch the output of the script while it's running.
 test_id corresponds to an internal database used by Google, so don't change
 those IDs. These IDs are used when submitting test results to our database.
 """
+__version__ = '1.11'
 
 import optparse
+import re
 import sys
 import time
 import unittest
@@ -59,8 +61,14 @@ def _ParseArgs():
   parser = optparse.OptionParser()
 
   parser.add_option('--autorun',
-                    help='Set if tests need manual input [default: %default]',
+                    help='Skip manual input',
                     default=Constants.AUTOMODE,
+                    action="store_true",
+                    dest='autorun')
+  parser.add_option('--no-autorun',
+                    help='Do not skip manual input',
+                    default=Constants.AUTOMODE,
+                    action="store_false",
                     dest='autorun')
   parser.add_option('--debug',
                     help='Specify debug log level [default: %default]',
@@ -72,9 +80,14 @@ def _ParseArgs():
                     help='Email account to use [default: %default]',
                     default=Constants.USER['EMAIL'],
                     dest='email')
+  parser.add_option('--if-addr',
+                    help='Interface address for Zeroconf',
+                    default=None,
+                    dest='if_addr')
   parser.add_option('--loadtime',
                     help='Seconds for web pages to load [default: %default]',
                     default=10,
+                    type='float',
                     dest='loadtime')
   parser.add_option('--logdir',
                     help='Relative directory for logfiles [default: %default]',
@@ -88,9 +101,10 @@ def _ParseArgs():
                     help='Name of printer [default: %default]',
                     default=Constants.PRINTER['NAME'],
                     dest='printer')
-  parser.add_option('--stdout',
-                    help='Send output to stdout [default: %default]',
+  parser.add_option('--no-stdout',
+                    help='Do not send output to stdout',
                     default=True,
+                    action="store_false",
                     dest='stdout')
 
   return parser.parse_args()
@@ -131,19 +145,20 @@ def setUpModule():
   chrome.SignIn(options.email, options.passwd)
   CheckCredentials()
   gcpmgr = _cloudprintmgr.CloudPrintMgr(logger, chromedriver)
-  mdns_browser = _mdns.MDnsListener(logger)
+  mdns_browser = _mdns.MDnsListener(logger, options.if_addr)
   mdns_browser.add_listener('privet')
   # Wait to receive Privet printer advertisements.
   time.sleep(30)
   privet_port = None
-  for k in mdns_browser.listener.discovered:
+  for v in mdns_browser.listener.discovered.values():
     logger.debug('Found printer in Privet advertisements.')
-    if Constants.PRINTER['MODEL'] in k:
-      pinfo = str(mdns_browser.listener.discovered[k]['info']).split(',') 
-      for item in pinfo:
-        if 'port' in item:
-          privet_port = int(item.split('=')[1])
-          logger.debug('Privet advertises port: %d', privet_port)
+    if 'ty' in v['info'].properties:
+      if options.printer in v['info'].properties['ty']:
+        pinfo = str(v['info']).split(',') 
+        for item in pinfo:
+          if 'port' in item:
+            privet_port = int(item.split('=')[1])
+            logger.debug('Privet advertises port: %d', privet_port)
   device = Device(logger, chromedriver, privet_port=privet_port)
   transport = Transport(logger)
   time.sleep(2)
@@ -199,7 +214,7 @@ def GetNewTokens():
   """
   auth_code = None
   permit_url = _oauth2.GenerateUrl()
-  chromedriver.driver.get(permit_url)
+  chromedriver.Get(permit_url)
   #  This may take awhile, so wait for the page to load.
   time.sleep(5)
   approve = chromedriver.FindID('submit_approve_access')
@@ -659,23 +674,31 @@ class Privet(LogoCert):
         device.privet_url['register']['invalid'], data='',
         headers=device.headers, user=self.username)
     try:
-      self.assertIsNotNone(response['data'])
+      self.assertIsNotNone(response['code'])
     except AssertionError:
       notes = 'No response received.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertIn('error', response['data'])
-        self.assertIn('invalid', response['data'])
+        self.assertEqual(response['code'], 200)
       except AssertionError:
-        notes = 'Response from invalid registration params: %s' % (
-            response['data'])
+        notes = 'Response code from invalid registration params: %d' % (
+            response['code'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Received correct error: %s' % response['data']
-        self.LogTest(test_id, test_name, 'Passed', notes)
+        try:
+          self.assertIn('error', response['data'])
+        except AssertionError:
+          notes = 'Did not find error message. Error message: %s' % (
+            response['data'])
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Received correct error code and response: %d\n%s' % (
+            response['code'], response['data'])
+          self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIEmptyToken(self):
     """Verify device returns code 200 if Privet Token is empty."""
@@ -1757,21 +1780,29 @@ class Registration(LogoCert):
       else:
         notes = 'Cancelled printer registration from printer UI.'
         self.LogTest(test_id2, test_name2, 'Passed', notes)
-    print 'Now accept the registration request from %s.' % self.username
-    if chrome.RegisterPrinter(self.printer):
-      self.User2RegistrationAttempt()
-      #  Allow time for registration to complete.
-      time.sleep(20)
-      result = chrome.ConfirmPrinterRegistration(self.printer)
-      try:
-        self.assertTrue(result)
-      except AssertionError:
-        notes = 'Not able to register printer using chrome://devices.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        notes = 'Registered printer using chrome://devices.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
+
+    data_dir = Constants.USER2['EMAIL'].split('@')[0]
+    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
+    chrome2 = _chrome.Chrome(logger, cd2)
+    try:
+      chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
+      if chrome.RegisterPrinter(self.printer):
+        self.User2RegistrationAttempt(chrome2)
+        print 'Now accept the registration request from %s.' % self.username
+        #  Allow time for registration to complete.
+        time.sleep(20)
+        result = chrome.ConfirmPrinterRegistration(self.printer)
+        try:
+          self.assertTrue(result)
+        except AssertionError:
+          notes = 'Not able to register printer using chrome://devices.'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Registered printer using chrome://devices.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
+    finally:
+      cd2.CloseChrome()
 
   def testDeviceAcceptRegistration(self):
     """Verify printer must accept registration requests on printer panel."""
@@ -1782,32 +1813,28 @@ class Registration(LogoCert):
     print 'Fail this test.'
     self.ManualPass(test_id, test_name, print_test=False)
 
-  def User2RegistrationAttempt(self):
-    """Verify multiple registration attempts are not allowed by device."""
+  def User2RegistrationAttempt(self, chrome2):
+    """Verify multiple registration attempts are not allowed by device.
+    Args:
+      chrome2: Chrome object for 2nd user.
+    """
     test_id = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
     test_name = 'testMultipleRegistrationAttempt'
-    data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(logger, cd2)
-    try:
-      chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
-      if chrome2.RegisterPrinter(self.printer):
-        registered = chrome2.ConfirmPrinterRegistration(self.printer)
-        try:
-          self.assertFalse(registered)
-        except AssertionError:
-          notes = 'A simultaneous registration request registered a printer!'
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          raise
-        else:
-          notes = 'Simultaneous registration request was not successful.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
+    if chrome2.RegisterPrinter(self.printer):
+      registered = chrome2.ConfirmPrinterRegistration(self.printer)
+      try:
+        self.assertFalse(registered)
+      except AssertionError:
+        notes = 'A simultaneous registration request registered a printer!'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
       else:
-        notes = 'Error attempting to register printer by %s' % (
-            Constants.USER2['EMAIL'])
-        self.LogTest(test_id, test_name, 'Blocked', notes)
-    finally:
-      cd2.CloseChrome()
+        notes = 'Simultaneous registration request was not successful.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+    else:
+      notes = 'Error attempting to register printer by %s' % (
+          Constants.USER2['EMAIL'])
+      self.LogTest(test_id, test_name, 'Blocked', notes)
 
 
 class LocalDiscovery(LogoCert):
@@ -1840,18 +1867,19 @@ class LocalDiscovery(LogoCert):
     # Give printer time to update.
     print 'Waiting 60 seconds for printer to accept changes.'
     time.sleep(60)
-    for k in mdns_browser.listener.discovered:
-      if self.printer in k:
-        printer_found = True
-        try:
-          self.assertFalse(mdns_browser.listener.discovered[k]['found'])
-        except AssertionError:
-          notes = 'Local Discovery not disabled.'
-          failed = True
-          raise
-        else:
-          notes = 'Local Discovery successfully disabled.'
-        break
+    for v in mdns_browser.listener.discovered.values():
+      if 'ty' in v['info'].properties:
+        if self.printer in v['info'].properties['ty']:
+          printer_found = True
+          try:
+            self.assertFalse(v['found'])
+          except AssertionError:
+            notes = 'Local Discovery not disabled.'
+            failed = True
+            raise
+          else:
+            notes = 'Local Discovery successfully disabled.'
+          break
     if not printer_found:
       notes = 'No printer announcement seen.'
       failed = True
@@ -1864,18 +1892,19 @@ class LocalDiscovery(LogoCert):
     gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing')
     print 'Waiting 60 seconds for printer to accept changes.'
     time.sleep(60)
-    for k in mdns_browser.listener.discovered:
-      if self.printer in k:
-        printer_found = True
-        try:
-          self.assertTrue(mdns_browser.listener.discovered[k]['found'])
-        except AssertionError:
-          notes2 = 'Local Discovery not enabled.'
-          failed = True
-          raise
-        else:
-          notes2 = 'Local Discovery successfully enabled.'
-        break
+    for v in mdns_browser.listener.discovered.values():
+      if 'ty' in v['info'].properties:
+        if self.printer in v['info'].properties['ty']:
+          printer_found = True
+          try:
+            self.assertTrue(v['found'])
+          except AssertionError:
+            notes2 = 'Local Discovery not enabled.'
+            failed = True
+            raise
+          else:
+            notes2 = 'Local Discovery successfully enabled.'
+          break
     if not printer_found:
       notes2 = 'No printer announcement seen.'
       failed = True
@@ -1899,17 +1928,18 @@ class LocalDiscovery(LogoCert):
     print 'Waiting 10 seconds for printer to broadcast using mDNS.'
     time.sleep(10)  # Give printer time to send privet broadcast.
 
-    for k in mdns_browser.listener.discovered:
-      if self.printer in k:
-        printer_found = True
-        try:
-          self.assertTrue(mdns_browser.listener.discovered[k]['found'])
-        except AssertionError:
-          notes = 'Printer did not broadcast privet packet.'
-          failed = True
-          raise
-        else:
-          notes = 'Printer broadcast privet packet.'
+    for v in mdns_browser.listener.discovered.values():
+      if 'ty' in v['info'].properties:
+        if self.printer in v['info'].properties['ty']:
+          printer_found = True
+          try:
+            self.assertTrue(v['found'])
+          except AssertionError:
+            notes = 'Printer did not broadcast privet packet.'
+            failed = True
+            raise
+          else:
+            notes = 'Printer broadcast privet packet.'
     if not printer_found:
       notes = 'Printer did not make privet packet.'
       failed = True
@@ -1928,17 +1958,18 @@ class LocalDiscovery(LogoCert):
     print 'This test must start with the printer on and operational.'
     raw_input('Power off printer, Select enter when printer completely off.')
     time.sleep(10)
-    for k in mdns_browser.listener.discovered:
-      if self.printer in k:
-        printer_found = True
-        try:
-          self.assertFalse(mdns_browser.listener.discovered[k]['found'])
-        except AssertionError:
-          notes = 'Printer did not send goodbye packet when powered off.'
-          failed = True
-          raise
-        else:
-          notes = 'Printer sent goodbye packet when powered off.'
+    for v in mdns_browser.listener.discovered.values():
+      if 'ty' in v['info'].properties:
+        if self.printer in v['info'].properties['ty']:
+          printer_found = True
+          try:
+            self.assertFalse(v['found'])
+          except AssertionError:
+            notes = 'Printer did not send goodbye packet when powered off.'
+            failed = True
+            raise
+          else:
+            notes = 'Printer sent goodbye packet when powered off.'
     if not printer_found:
       notes = 'Printer did not send goodbye packet when powered off.'
       failed = True
@@ -1955,15 +1986,20 @@ class LocalDiscovery(LogoCert):
     printer_found = False
     print 'Ensure printer stays is on and remains in idle state.'
     # Remove any broadcast entries from dictionary.
-    for k in mdns_browser.listener.discovered.keys():
-      if self.printer in k:
-        del mdns_browser.listener.discovered[k]
+    for (k, v) in mdns_browser.listener.discovered.items():
+      if 'ty' in v['info'].properties:
+        if self.printer in v['info'].properties['ty']:
+          mdns_browser.listener.discovered[k]['found'] = None
     # Monitor the local network for privet broadcasts.
     print 'Listening for network broadcasts for 5 minutes.'
     time.sleep(300)
-    for k in mdns_browser.listener.discovered:
-      if self.printer in k:
-        printer_found = True
+    for (k, v) in mdns_browser.listener.discovered.items():
+      if 'ty' in v['info'].properties:
+        if self.printer in v['info'].properties['ty']:
+          if mdns_browser.listener.discovered[k]['found'] is None:
+            mdns_browser.listener.discovered[k]['found'] = True
+          else:
+            printer_found = True
 
     try:
       self.assertFalse(printer_found)
@@ -2024,7 +2060,7 @@ class LocalPrinting(LogoCert):
   def testLocalPrintEnabled(self):
     """Verify local print is available from Chrome Print Dialog."""
     test_id = 'a47b904c-d7a2-4112-832b-59035d117404'
-    test_name = 'testLocalPrintingEnabled'
+    test_name = 'testLocalPrintEnabled'
     chrome.Print()
     found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
     try:
@@ -2137,7 +2173,7 @@ class LocalPrinting(LogoCert):
     test_id = '26cd8c36-3107-426b-9e49-2f1beea076f9'
     test_name = 'testLocalPrintHeadersFooters'
     # First navigate to a web page to print.
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2167,7 +2203,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
       return
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GCP['LEARN'])
+    chromedriver.Get(Constants.GCP['LEARN'])
     printed = chrome.PrintFromPrintDialog(self.printer, duplex=True,
                                           localprint=True)
     try:
@@ -2184,7 +2220,7 @@ class LocalPrinting(LogoCert):
     test_id = '4ff48cf9-7329-4757-9f30-d5c30586c225'
     test_name = 'testLocalPrintBackground'
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GOOGLE)
+    chromedriver.Get(Constants.GOOGLE)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2210,7 +2246,7 @@ class LocalPrinting(LogoCert):
     test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0b8e'
     test_name = 'testLocalPrintMargins'
     # Navigate to a page to print.
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, margin='None',
                                           localprint=True)
     try:
@@ -2244,7 +2280,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait',
                                           localprint=True)
     try:
@@ -2270,7 +2306,7 @@ class LocalPrinting(LogoCert):
     """Verify printer respects page range in local print."""
     test_id = '1580f47d-4115-462d-b85e-bd4d5fd4d7e3'
     test_name = 'testLocalPrintPageRange'
-    chromedriver.driver.get(chrome.flags)
+    chromedriver.Get(chrome.flags)
     printed = chrome.PrintFromPrintDialog(self.printer, page_range='2-3',
                                           localprint=True)
     try:
@@ -2292,7 +2328,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, copies=2,
                                           localprint=True)
     try:
@@ -2314,7 +2350,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get('http://www.google.com/cloudprint/learn/')
+    chromedriver.Get('http://www.google.com/cloudprint/learn/')
     printed = chrome.PrintFromPrintDialog(self.printer, color=True,
                                           localprint=True)
     try:
@@ -2333,7 +2369,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintUpdateMgtPage'
     filepath = 'file://' + Constants.IMAGES['GIF4']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2364,7 +2400,7 @@ class LocalPrinting(LogoCert):
            'Determining_the_best_IBM_Lotus_Web_Content_Management_delivery'
            '_option_for_your_needs')
 
-    chromedriver.driver.get(url)
+    chromedriver.Get(url)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
     try:
       self.assertTrue(printed)
@@ -2382,7 +2418,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintHTML'
     filepath = 'file://' + Constants.IMAGES['HTML1']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2402,7 +2438,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintJPG'
     filepath = 'file://' + Constants.IMAGES['JPG12']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2422,7 +2458,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintPNG'
     filepath = 'file://' + Constants.IMAGES['PNG6']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2442,7 +2478,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintGIF'
     filepath = 'file://' + Constants.IMAGES['GIF4']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2462,7 +2498,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintPDF'
     filepath = 'file://' + Constants.IMAGES['PDF9']
 
-    chromedriver.driver.get(filepath)
+    chromedriver.Get(filepath)
     printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
 
     try:
@@ -2481,8 +2517,8 @@ class LocalPrinting(LogoCert):
     test_id = '20828e70-a724-4446-8932-84b7cf3adaf9'
     test_name = 'testLocalPrintGmail'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2501,8 +2537,8 @@ class LocalPrinting(LogoCert):
     test_id = '5fa31002-b726-4a6a-b0d5-e21e3cc2ccf5'
     test_name = 'testLocalPrintGmailI18n'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL2'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL2'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2521,8 +2557,8 @@ class LocalPrinting(LogoCert):
     test_id = '4a01ed35-2758-4ed3-ab5e-8af5dc658999'
     test_name = 'testLocalPrintGmailWithAttachment'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL3'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL3'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2541,8 +2577,8 @@ class LocalPrinting(LogoCert):
     test_id = '07e05f71-9d4d-4760-93dd-471a87445261'
     test_name = 'testLocalPrintGoogleDoc'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['DOC1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['DOC1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2559,10 +2595,10 @@ class LocalPrinting(LogoCert):
   def testLocalPrintGoogleSheet(self):
     """Verify Google Spreadsheet prints using Local Print."""
     test_id = '5cc856dc-4257-4d1e-89f3-71722a1a75a3'
-    test_name = 'testLocalPrintGoogleDoc'
+    test_name = 'testLocalPrintGoogleSheet'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['SHEET1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['SHEET1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2581,8 +2617,8 @@ class LocalPrinting(LogoCert):
     test_id = 'e2603a90-e749-42ed-b8c3-971e7079a5bf'
     test_name = 'testLocalPrintGoogleSlide'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['PREZ1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['PREZ1'])
     printed = chrome.PrintGoogleItem(self.printer, localprint=True)
 
     try:
@@ -2613,7 +2649,7 @@ class ChromePrinting(LogoCert):
     """Verify printer respects page range when printing from Chrome."""
     test_id = '553fbcb6-0d98-45a4-a0d7-308297852135'
     test_name = 'testChromePrintPageRange'
-    chromedriver.driver.get(chrome.flags)
+    chromedriver.Get(chrome.flags)
     printed = chrome.PrintFromPrintDialog(self.printer, page_range='2-3')
     try:
       self.assertTrue(printed)
@@ -2634,7 +2670,7 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get('http://www.google.com/cloudprint/learn/')
+    chromedriver.Get('http://www.google.com/cloudprint/learn/')
     printed = chrome.PrintFromPrintDialog(self.printer, color=True)
     try:
       self.assertTrue(printed)
@@ -2651,7 +2687,7 @@ class ChromePrinting(LogoCert):
     test_id = '05b8d603-4d60-4259-af11-8681ebc71ede'
     test_name = 'testChromePrintHeadersFooters'
     # First navigate to a web page to print.
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer)
     try:
       self.assertTrue(printed)
@@ -2680,7 +2716,7 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support.')
       return
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GCP['LEARN'])
+    chromedriver.Get(Constants.GCP['LEARN'])
     printed = chrome.PrintFromPrintDialog(self.printer, duplex=True)
     try:
       self.assertTrue(printed)
@@ -2696,7 +2732,7 @@ class ChromePrinting(LogoCert):
     test_id = 'd8ea8089-3d6c-44ea-89d9-3d048a5f68f2'
     test_name = 'testChromePrintBackground'
     # First navigate to a web page to print.
-    chromedriver.driver.get(Constants.GOOGLE)
+    chromedriver.Get(Constants.GOOGLE)
     printed = chrome.PrintFromPrintDialog(self.printer)
     try:
       self.assertTrue(printed)
@@ -2721,7 +2757,7 @@ class ChromePrinting(LogoCert):
     test_id = 'e2178d3a-4664-4d69-a7aa-f7ac50d296a0'
     test_name = 'testChromePrintMargins'
     # Navigate to a page to print.
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, margin='None')
     try:
       self.assertTrue(printed)
@@ -2745,7 +2781,7 @@ class ChromePrinting(LogoCert):
     """Verify printer respects layout settings using Chrome Print Dialog."""
     test_id = '96267e29-1718-4b15-9436-d94f91568048'
     test_name = 'testChromePrintLayout'
-    chromedriver.driver.get(chrome.devices)
+    chromedriver.Get(chrome.devices)
     printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait')
     try:
       self.assertTrue(printed)
@@ -2774,7 +2810,7 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.driver.get(chrome.version)
+    chromedriver.Get(chrome.version)
     printed = chrome.PrintFromPrintDialog(self.printer, copies=2)
     try:
       self.assertTrue(printed)
@@ -2791,8 +2827,8 @@ class ChromePrinting(LogoCert):
     test_id = '598dca3d-70e4-483e-bfc2-d62a89715a11'
     test_name = 'testChromePrintGoogleDoc'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['DOC1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['DOC1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2811,8 +2847,8 @@ class ChromePrinting(LogoCert):
     test_id = 'caf2c6a3-9486-4ffe-b6f1-fa1ed8147a48'
     test_name = 'testChromePrintGoogleSheet'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['SHEET1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['SHEET1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2831,8 +2867,8 @@ class ChromePrinting(LogoCert):
     test_id = '74fb87af-e399-4fce-8bbf-af65a4b48af2'
     test_name = 'testChromePrintGoogleSlide'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['PREZ1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['PREZ1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2851,7 +2887,7 @@ class ChromePrinting(LogoCert):
     test_id = '109b3834-e119-4518-bf76-c7f6b6896934'
     test_name = 'testChromePrintURL'
 
-    chromedriver.driver.get('http://www.google.com')
+    chromedriver.Get('http://www.google.com')
     printed = chrome.PrintFromPrintDialog(self.printer)
 
     try:
@@ -2870,8 +2906,8 @@ class ChromePrinting(LogoCert):
     test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testChromePrintGmail'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL1'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL1'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2890,8 +2926,8 @@ class ChromePrinting(LogoCert):
     test_id = '2af97351-0fb5-4cdc-9f71-d4666c2393d4'
     test_name = 'testChromePrintGmailI18n'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL2'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL2'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -2910,8 +2946,8 @@ class ChromePrinting(LogoCert):
     test_id = '24f290e8-42c6-4710-8758-54b623ca51f4'
     test_name = 'testChromePrintGmailWithAttachment'
 
-    chromedriver.driver.get('about:blank')
-    chromedriver.driver.get(Constants.GOOGLE_DOCS['GMAIL3'])
+    chromedriver.Get('about:blank')
+    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL3'])
     printed = chrome.PrintGoogleItem(self.printer)
 
     try:
@@ -3003,7 +3039,7 @@ class PostRegistration(LogoCert):
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
-    test_name = 'testRegisteredDeviceNotDiscovereableAfterPowerOn'
+    test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
     print 'Power off registered device.'
     print 'After device powers down, turn on device.'
     raw_input('Once device is fully initialized select enter.')
@@ -3028,6 +3064,47 @@ class PrinterState(LogoCert):
   def setUpClass(cls):
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
+
+  def VerifyStateMessages(self, test_id, test_name, category, required_suffix, allowed_suffixes=()):
+    """Verify state messages.
+
+    Args:
+      test_id: integer, testid in TestTracker database.
+      test_name: string, name of test.
+      category: string, message category.
+      required_suffix: string, required suffix of state message, None if no required suffix.
+      allowed_suffixes: tuple or string, additional allowed suffixes of state messages,
+        empty if required suffix is only allowed.
+    Returns:
+      boolean: True = Pass, False = Fail.
+    """
+    if category in device.messages:
+      messages = device.messages[category]
+    else:
+      messages = []
+    
+    if required_suffix is None:
+      found = True
+    else:
+      found = False
+
+    for message in messages:
+      message = re.sub(r' \(.*\)$', '', message)
+      if required_suffix and message.endswith(required_suffix):
+        found = True
+      else:
+        if not message.endswith(allowed_suffixes):
+          notes = 'state message "%s" is not allowed' % message
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          return False
+
+    if found:
+      self.LogTest(test_id, test_name, 'Passed')
+      return True
+    else:
+      notes = 'required suffix "%s" is not in state messages' % required_suffix
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      return False
 
   def testLostNetworkConnection(self):
     """Verify printer that loses network connection reconnects properly."""
@@ -3065,41 +3142,29 @@ class PrinterState(LogoCert):
     time.sleep(10)
     device.GetDeviceDetails()
     try:
-      self.assertTrue(device.error_state)
+      self.assertTrue(device.error_state or device.warning_state)
     except AssertionError:
       notes = 'Printer is not in error state with open paper tray.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'Open paper tray alert should be reported on GCP Mgt page.'
-      print 'If not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      # Check state message. Some input trays may not be opened and be normally empty.
+      self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is open', (' is empty', '% full'))
 
-  def testClosedPaperTray(self):
-    """Verify open to closed paper tray is reported correctly."""
-    test_id = '5041f9a4-0b58-451a-906f-dec2375d93a4'
-    test_name = 'testClosedPaperTray'
-    if not Constants.CAPS['TRAY_SENSOR']:
-      notes = 'Printer does not have paper tray sensor.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    print 'Start with open paper tray.'
-    print 'GCP Mgt page should report an open paper tray.'
-    raw_input('Select enter when the GCP Mgt Page show open tray alert.')
+    test_id2 = '5041f9a4-0b58-451a-906f-dec2375d93a4'
+    test_name2 = 'testClosedPaperTray'
     print 'Now close the paper tray.'
     raw_input('Select enter once the paper tray is closed.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
-      self.assertFalse(device.error_state)
+      self.assertFalse(device.error_state or device.warning_state)
     except AssertionError:
       notes = 'Paper tray is closed but printer reports error.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'Closed paper tray should not be reported by GCP Mgt page.'
-      print 'If reported, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, (' is empty', '% full'))
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
@@ -3113,44 +3178,18 @@ class PrinterState(LogoCert):
     raw_input('Select enter once all media is removed.')
     time.sleep(10)
     device.GetDeviceDetails()
-    try:
-      self.assertTrue(device.error_state)
-    except AssertionError:
-      notes = 'Printer not in error state with no media in paper tray.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'GCP Mgt page should show empty paper tray alert.'
-      print 'Fail this test if it does not.'
-      self.ManualPass(test_id, test_name, print_test=False)
+    self.VerifyStateMessages(test_id, test_name, 'Input Trays', ' is empty')
 
-  def testMediaInTray(self):
-    """Verify when media put in empty tray, printer state is updated."""
-    test_id = '64e592be-d6c4-424e-9e69-021c92b09953'
-    test_name = 'testMediaInTray'
-    if not Constants.CAPS['MEDIA_SENSOR']:
-      notes = 'Printer does not have a paper tray sensor.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    print 'Start with no media in paper tray.'
-    raw_input('Select enter when GCP Mgt page shows missing media alert.')
-    print 'Place media in empty paper tray.'
+    test_id2 = '64e592be-d6c4-424e-9e69-021c92b09953'
+    test_name2 = 'testMediaInTray'
+    print 'Place media in all paper trays.'
     raw_input('Select enter once you have placed paper in paper tray.')
     time.sleep(10)
     device.GetDeviceDetails()
-    try:
-      self.assertFalse(device.error_state)
-    except AssertionError:
-      notes = 'Papaer in media tray but printer in error state.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'GCP Mgt page should not show missing paper alert.'
-      print 'If it has alert, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+    self.VerifyStateMessages(test_id2, test_name2, 'Input Trays', None, '% full')
 
   def testRemoveTonerCartridge(self):
-    """Verify missing toner cartridge is reported correctly."""
+    """Verify missing/empty toner cartridge is reported correctly."""
     test_id = '3be1a76e-b60f-4166-aeb2-0feed9de67c8'
     test_name = 'testRemoveTonerCartridge'
     if not Constants.CAPS['TONER']:
@@ -3168,18 +3207,10 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert for missing toner cartridge.'
-      print 'If it does not, faile this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id, test_name, 'Ink/Toner', ' is removed', ('%', ' pages remaining', ' is low'))
 
-  def testExhaustTonerCartridge(self):
-    """Verify empty toner is reported correctly."""
-    test_id = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
-    test_name = 'testExhaustTonerCartridge'
-    if not Constants.CAPS['TONER']:
-      notes = 'Printer does not contain ink toner.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
+    test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
+    test_name2 = 'testExhaustTonerCartridge'
     print 'Insert an empty toner cartridge in printer.'
     raw_input('Select enter once an empty toner cartridge is in printer.')
     time.sleep(10)
@@ -3188,23 +3219,13 @@ class PrinterState(LogoCert):
       self.assertTrue(device.error_state)
     except AssertionError:
       notes = 'Printer is not in error state with empty toner.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert for empty toner.'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id2, test_name2, 'Ink/Toner', ' is empty', ('%', ' pages remaining', ' is low'))
 
-  def testReplaceMissingToner(self):
-    """Verify correct printer state after replacing missing toner cartridge."""
-    test_id = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
-    test_name = 'testReplaceMissingToner'
-    if not Constants.CAPS['TONER']:
-      notes = 'Printer does not contain ink toner.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    print 'Start test with missing toner cartridge'
-    raw_input('Select enter once toner is removed from printer.')
+    test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
+    test_name3 = 'testReplaceMissingToner'
     print 'Verify the GCP Mgt page shows missing toner alert.'
     raw_input('Select enter once toner is replaced in printer.')
     time.sleep(10)
@@ -3213,12 +3234,10 @@ class PrinterState(LogoCert):
       self.assertFalse(device.error_state)
     except AssertionError:
       notes = 'Printer is in error state with good toner cartridge.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      self.LogTest(test_id3, test_name3, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt page should not show missing toner alert.'
-      print 'If it does, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id3, test_name3, 'Ink/Toner', None, ('%', ' pages remaining', ' is low'))
 
   def testCoverOpen(self):
     """Verify that an open door or cover is reported correctly."""
@@ -3239,20 +3258,10 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert of open door or cover'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id, test_name, 'Doors/Covers', ' is open')
 
-  def testCoverClosed(self):
-    """Verify that printer updates state from open to closed cover."""
-    test_id = 'a26b7d34-15b4-4819-84a5-4b8e5bc3a30e'
-    test_name = 'testCoverClosed'
-    if not Constants.CAPS['COVER']:
-      notes = 'Printer does not have a cover.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    print 'Start with open cover to printer.'
-    raw_input('Select enter once you see open cover indicator on GCP MGT page')
+    test_id2 = 'a26b7d34-15b4-4819-84a5-4b8e5bc3a30e'
+    test_name2 = 'testCoverClosed'
     print 'Now close the printer cover.'
     raw_input('Select enter once the printer cover is closed.')
     time.sleep(10)
@@ -3261,12 +3270,10 @@ class PrinterState(LogoCert):
       self.assertFalse(device.error_state)
     except AssertionError:
       notes = 'Printer error state is True with closed cover.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should remove alert about open door.'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id2, test_name2, 'Doors/Covers', None)
 
   def testPaperJam(self):
     """Verify printer properly reports a paper jam with correct state."""
@@ -3283,16 +3290,10 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt Page should show alert about papaer jam.'
-      print 'If it does not, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id, test_name, 'Paper Jams', 'Paper jam')
 
-  def testRemovePaperJam(self):
-    """Verify removing paper jam in printer reports correct state."""
-    test_id = 'ff7e0f11-4955-4510-8a5c-91f809f6b263'
-    test_name = 'testRemovePaperJam'
-    print 'Start with paper jam in printer.'
-    raw_input('Select enter once paper jam is reported on GCP Mgt page.')
+    test_id2 = 'ff7e0f11-4955-4510-8a5c-91f809f6b263'
+    test_name2 = 'testRemovePaperJam'
     print 'Now clear the paper jam.'
     raw_input('Select enter once the paper jam is clear from printer.')
     time.sleep(10)
@@ -3301,12 +3302,10 @@ class PrinterState(LogoCert):
       self.assertFalse(device.error_state)
     except AssertionError:
       notes = 'Printer is in error after paper jam was cleared.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      print 'The GCP Mgt page should not report paper jam.'
-      print 'If it does, fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
+      self.VerifyStateMessages(test_id2, test_name2, 'Paper Jams', None)
 
 
 class JobState(LogoCert):
@@ -3317,7 +3316,7 @@ class JobState(LogoCert):
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
-  def testOnePagePrintJob(self):
+  def testOnePagePrintJobState(self):
     """Verify a 1 page print job is reported correctly."""
     test_id = '345f2083-ec94-4548-9c01-ad7d8f1840ec'
     test_name = 'testOnePagePrintJobState'
@@ -3344,7 +3343,7 @@ class JobState(LogoCert):
         notes = 'Printed one page as expected. Status shows as printed.'
         self.LogTest(test_id, test_name, 'Passed', notes)
 
-  def testMultiPagePrintJob(self):
+  def testMultiPageJobState(self):
     """Verify a multi-page print job is reported with correct state."""
     test_id = '7bbf3e1f-c972-4414-ad7c-e6054aa7416f'
     test_name = 'testMultiPageJobState'
@@ -3878,21 +3877,6 @@ class Printing(LogoCert):
       self.assertTrue(output)
     except AssertionError:
       notes = 'Error printing with copies = 2.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.ManualPass(test_id, test_name)
-
-  def testPrintLandscape(self):
-    test_id = '2b7c81a9-9014-4236-8a1f-5daf4824a41a'
-    test_name = 'testPrintJpgLandscape'
-    logger.info('Setting orientation to landscape...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG7'],
-                              color=self.color, layout='Landscape')
-    try:
-      self.assertTrue(output)
-    except AssertionError:
-      notes = 'Error printing in landscape'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -4468,7 +4452,7 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfColorTicket'
     logger.info('Printing PDF Color ticket in with landscape orientation.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF2'],
-                              color=self.color)
+                              color=self.color, layout='Landscape')
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4639,7 +4623,7 @@ class Printing(LogoCert):
   def testPrintFileBlackNWhiteGIF(self):
     """Test printing a black & white GIF file."""
     test_id = '7fa69496-542e-4f71-8538-7f67b907a2ec'
-    test_name = 'testPrintBlackNWhiteGIF'
+    test_name = 'testPrintFileBlackNWhiteGIF'
     logger.info('Printing black and white GIF file.')
     output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF3'],
                               color='Monochrome')

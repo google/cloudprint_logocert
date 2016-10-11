@@ -107,10 +107,10 @@ class Transport(object):
     except urllib2.URLError as e:  # This includes the HTTPError subclass.
       if hasattr(e, 'code'):
         response['code'] = e.code
-        self.logger.warning('Return Code: %s', e.code)
+        self.logger.info('Return Code: %s', e.code)
       if hasattr(e, 'reason'):
         response['data'] = e.reason
-        self.logger.warning(e.reason)
+        self.logger.info(e.reason)
       self.logger.debug(response)
       return response
 

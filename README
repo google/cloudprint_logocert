@@ -84,6 +84,14 @@ to use this functionality, you will need to install gdata. Install gdata from:
 
 https://github.com/google/gdata-python-client
 
+gdata depends on tlslite, if you get an error stack trace such as:
+File "/usr/local/lib/python2.7/dist-packages/gdata/oauth/rsa.py", line 10
+  from tlslite.utils import keyfactory
+ImportError: No module named tlslite.utils
+
+then install tlslite by running:
+sudo pip install tlslite
+
 gdata also depends on ElementTree; however, most systems will have ElementTree
 installed already. To test if it's installed, from a Python shell try:
 
