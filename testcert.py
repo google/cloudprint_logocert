@@ -33,7 +33,7 @@ therefore watch the output of the script while it's running.
 test_id corresponds to an internal database used by Google, so don't change
 those IDs. These IDs are used when submitting test results to our database.
 """
-__version__ = '1.12'
+__version__ = '1.13'
 
 import optparse
 import re
@@ -1789,8 +1789,10 @@ class Registration(LogoCert):
       if chrome.RegisterPrinter(self.printer):
         self.User2RegistrationAttempt(chrome2)
         print 'Now accept the registration request from %s.' % self.username
+        raw_input('Select enter once the registration is accepted.');
+        print 'Waiting 1 minute to complete the registration.'
         #  Allow time for registration to complete.
-        time.sleep(20)
+        time.sleep(60)
         result = chrome.ConfirmPrinterRegistration(self.printer)
         try:
           self.assertTrue(result)
@@ -3356,8 +3358,8 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      raw_input('Select enter once 1st page is printed...')
-      job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+      print 'When printer starts printing, Job State should transition to in progress.'
+      job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
       try:
         self.assertEqual(job_state, 'In progress')
       except AssertionError:
@@ -3439,9 +3441,8 @@ class JobState(LogoCert):
           raise
         else:
           print 'Now place paper back in the input tray.'
-          raw_input('Once paper starts printing, select enter...')
-          time.sleep(10)
-          job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+          print 'After placing the paper back, Job State should transition to in progress.'
+          job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
           try:
             self.assertEqual(job_state, 'In progress')
           except AssertionError:
@@ -3452,8 +3453,7 @@ class JobState(LogoCert):
           else:
             print 'Wait for the print job to finish.'
             raw_input('Select enter once the job completes printing...')
-            time.sleep(10)
-            job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+            job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'Printed')
             try:
               self.assertEqual(job_state, 'Printed')
             except AssertionError:
@@ -3482,7 +3482,7 @@ class JobState(LogoCert):
     if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
       # give printer time to update our service.
       time.sleep(10)
-      job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+      job_state = gcpmgr.WaitJobStatusNotIn('PDF1.7.pdf', ['Queued', 'In progress'])
       try:
         self.assertEqual(job_state, 'Error')
       except AssertionError:
@@ -3503,9 +3503,8 @@ class JobState(LogoCert):
           raise
         else:
           print 'Now place toner or ink back in printer.'
-          raw_input('Once paper starts printing, select enter...')
-          time.sleep(10)
-          job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+          print 'After placing the toner back, Job State should transition to in progress.'
+          job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
           try:
             self.assertEqual(job_state, 'In progress')
           except AssertionError:
@@ -3516,8 +3515,7 @@ class JobState(LogoCert):
           else:
             print 'Wait for the print job to finish.'
             raw_input('Select enter once the job completes printing...')
-            time.sleep(10)
-            job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+            job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'Printed')
             try:
               self.assertEqual(job_state, 'Printed')
             except AssertionError:
@@ -3551,9 +3549,8 @@ class JobState(LogoCert):
         raise
       else:
         print 'Re-establish network connection to printer.'
-        raw_input('Select enter once network has been restored....')
-        time.sleep(10)
-        job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+        print 'Once network is reconnected, Job state should transition to in progress.'
+        job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
         try:
           self.assertEqual(job_state, 'In progress')
         except AssertionError:
@@ -3564,8 +3561,7 @@ class JobState(LogoCert):
         else:
           print 'Wait for the print job to finish.'
           raw_input('Select enter once the job completes printing...')
-          time.sleep(10)
-          job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+          job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'Printed')
           try:
             self.assertEqual(job_state, 'Printed')
           except AssertionError:
