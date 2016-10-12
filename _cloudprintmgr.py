@@ -711,3 +711,22 @@ class CloudPrintMgr(object):
       if timeout < time.time() - start:
         return job_status
       time.sleep(1)
+
+  def WaitForJobState(self, job_name, state):
+    """Wait until the jobstate is equal to the expected state.
+
+    Args:
+      job_name: string, name (or partial unique name) of print job.
+      state: string, the expected state
+    Returns:
+      string, current status of job.
+
+    """
+    t_end = time.time() + 60 * 10
+
+    while time.time() < t_end:
+      if state == self.GetJobStatus(job_name):
+        return state
+      time.sleep(1)
+
+    return self.GetJobStatus(job_name)
