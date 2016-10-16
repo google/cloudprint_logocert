@@ -33,7 +33,7 @@ therefore watch the output of the script while it's running.
 test_id corresponds to an internal database used by Google, so don't change
 those IDs. These IDs are used when submitting test results to our database.
 """
-__version__ = '1.11'
+__version__ = '1.12'
 
 import optparse
 import re
@@ -3726,7 +3726,7 @@ class JobState(LogoCert):
     time.sleep(10)
     # Now print a valid file.
     output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'])
-    time.sleep(10)
+    time.sleep(100)
     job_state = gcpmgr.WaitJobStatusNotIn('printtest.pdf', ['In progress'])
     try:
       self.assertTrue(output)
