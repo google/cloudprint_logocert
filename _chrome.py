@@ -1,4 +1,4 @@
-"""Copyright 2015 Google Inc. All Rights Reserved.
+"""Copyright 2016 Google Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -197,7 +197,7 @@ class Chrome(object):
     """Enter the number of copies to print from Chrome Print Dialog.
 
     Args:
-      copies: integer, number of copies ot print.
+      copies: integer, number of copies to print.
     Returns:
       boolean, True = copies set, False= error detected.
     """
@@ -241,7 +241,7 @@ class Chrome(object):
 
     print_option = self.cd.FindClass(option_classes[option])
     if not print_option:
-      self.logger.error('Error findind %s in print dialog', option)
+      self.logger.error('Error finding %s in print dialog', option)
       return False
     options = self.cd.FindTags('option', obj=print_option)
     if not options:
@@ -512,7 +512,7 @@ class Chrome(object):
 
     Args:
       printer_name: string, name (or unique partial name) of printer.
-      filename: absolute pathanme of file to print.
+      filename: absolute pathname of file to print.
       collate: boolean, True = collate, False = do not collate.
       color: string ["Color" or "Monochrome"]
       copies: integer, number of copies to print.
@@ -589,7 +589,7 @@ class Chrome(object):
       return False
     if not self.cd.ClickElement(upload):
       return False
-    # Now switcht to the dialog frame.
+    # Now switch to the dialog frame.
     dialog_frame = self.cd.FindClass('__gcp_dialog_iframe_cls')
     if not dialog_frame:
       return False

@@ -1,4 +1,4 @@
-"""Copyright 2015 Google Inc. All Rights Reserved.
+"""Copyright 2016 Google Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@ limitations under the License.
 
 Json parsing module for the LogoCert package.
 
-Use this module to handle parsing JSON messages into python dictionies, or for
+Use this module to handle parsing JSON messages into python dictionaries, or for
 packaging up various artifacts into JSON formatted messages.
 """
 
