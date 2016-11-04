@@ -1,4 +1,4 @@
-"""Copyright 2015 Google Inc. All Rights Reserved.
+"""Copyright 2016 Google Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ Methods to interact with higher level network protocols.
 Transport will provide methods to send and receive data using higher level
 protocols like HTTP, mDNS, etc.
 
-This module is dependent on modules from the LogoCert pacakge.
+This module is dependent on modules from the LogoCert package.
 """
 
 import mimetypes

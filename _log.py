@@ -1,4 +1,4 @@
-"""Copyright 2015 Google Inc. All Rights Reserved.
+"""Copyright 2016 Google Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ def GetLogger(name, logdir=None, loglevel='info', stdout=False):
 
   Args:
     name: string, name of logger.
-    logdir: string, path to a directy to place log files.
+    logdir: string, path to a directly to place log files.
     loglevel: string, debug level of logger.
     stdout: boolean, True = send messages to stdout and logfile.
                      False = only send messages to log file.
@@ -86,7 +86,7 @@ def GetLogger(name, logdir=None, loglevel='info', stdout=False):
         'Invocation started. Logger %s\nLogger Name: %s\nLog Mode: %s',
         logfile, name, loglevel)
   else:
-    logger.debug('Logger %s is already intialized', name)
+    logger.debug('Logger %s is already initialized', name)
 
   return logger
 
