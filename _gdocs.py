@@ -22,8 +22,6 @@ https://github.com/google/gdata-python-client
 """
 import time
 
-import _log
-
 import gdata.gauth
 import gdata.service
 import gdata.spreadsheets
@@ -34,8 +32,15 @@ import gdata.spreadsheets.data
 class GoogleDataMgr(object):
   """An object to interact with Google Drive and Docs."""
 
-  def __init__(self, chromedriver, Constants):
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger, chromedriver, Constants):
+    """ Use initialized objects from main module.
+    
+    Args:
+      logger: initialized logger object.
+      chromedriver: initialized chromedriver object.
+      Constants: object holding constant values.
+    """
+    self.logger = logger
     self.cd = chromedriver
     self.drive = 'https://drive.google.com'
 
@@ -59,9 +64,9 @@ class GoogleDataMgr(object):
     """
     button_found = False
     sheets_found = False
-    self.cd.driver.get(self.drive)
+    self.cd.Get(self.drive)
     # Select the New button in Google Drive.
-    button = self.cd.FindClasses('j-Ta-pb')
+    button = self.cd.FindClasses('h-sb-Ic')
     if not button:
       self.logger.error('New button not found.')
       return False
@@ -77,7 +82,7 @@ class GoogleDataMgr(object):
       return False
 
     # Select the spreadsheet menu item.
-    items = self.cd.FindClasses('a-D-P')
+    items = self.cd.FindClasses('a-v-T')
     if not items:
       self.logger.error('new submenu itemsnot found.')
       return False

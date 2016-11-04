@@ -26,7 +26,6 @@ from _common import Extract
 from _config import Constants
 from _cpslib import GCPService
 from _jsonparser import JsonParser
-import _log
 from _privet import Privet
 from _transport import Transport
 
@@ -34,37 +33,43 @@ from _transport import Transport
 class Device(object):
   """The basic device object."""
 
-  def __init__(self, auth_token, model=None):
+  def __init__(self, logger, auth_token, model=None, privet_port=None):
     """Initialize a device object.
 
     Args:
+      logger: initialized logger object.
       auth_token: string, auth_token of authenicated user.
       model: string, unique model or name of device.
+      privet_port: integer, tcp port devices uses for Privet protocol.
     """
     if model:
       self.model = model
     else:
       self.model = Constants.PRINTER['MODEL']
+
     self.auth_token = auth_token
-    self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
     self.ipv4 = Constants.PRINTER['IP']
-    self.port = Constants.PRINTER['PORT']
+    if privet_port:
+      self.port = privet_port
+    else:
+      self.port = Constants.PRINTER['PORT']
     self.dev_id = None
-    self.name = None
-    self.gcp = GCPService(auth_token)
+    self.name = Constants.PRINTER['NAME']
     self.status = None
-    self.messages = []
+    self.messages = {}
     self.details = {}
     self.error_state = False
+    self.warning_state = False
     self.cdd = {}
     self.info = None
 
     self.url = 'http://%s:%s' % (self.ipv4, self.port)
     self.logger.info('Device URL: %s', self.url)
-    self.transport = Transport()
-    self.jparser = JsonParser()
+    self.transport = Transport(logger)
+    self.jparser = JsonParser(logger)
     self.headers = None
-    self.privet = Privet()
+    self.privet = Privet(logger)
     self.privet_url = self.privet.SetPrivetUrls(self.ipv4, self.port)
     self.GetPrivetInfo()
 
@@ -149,6 +154,7 @@ class Device(object):
         self.error_state = False
       return True
     return False
+
 
   def ParseCDD(self, info):
     """Parse the CDD json string into a logical dictionary.
