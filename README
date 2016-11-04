@@ -55,10 +55,10 @@ execute the tests. ChromeDriver can be downloaded from:
 https://sites.google.com/a/chromium.org/chromedriver/
 
 Install ChromeDriver and ensure the binary is in the system path. Make sure you
-get at least version 2.17, which has a feature that allows access the Chrome
+get at least version 2.2, which has a feature that allows access the Chrome
 Print Dialog. Earlier versions of ChromeDriver cannot access the print dialog.
 
-ChromeDriver 2.17 requires Chrome version 43 or higher. Install at least version
+ChromeDriver 2.2 requires Chrome version 43 or higher. Install at least version
 43 on your system.
 
 Selenium is also required, as ChromeDriver has a dependency on Selenium. To
@@ -83,6 +83,14 @@ The tool will also store test results into a Google Spreadsheet. If you want
 to use this functionality, you will need to install gdata. Install gdata from:
 
 https://github.com/google/gdata-python-client
+
+gdata depends on tlslite, if you get an error stack trace such as:
+File "/usr/local/lib/python2.7/dist-packages/gdata/oauth/rsa.py", line 10
+  from tlslite.utils import keyfactory
+ImportError: No module named tlslite.utils
+
+then install tlslite by running:
+sudo pip install tlslite
 
 gdata also depends on ElementTree; however, most systems will have ElementTree
 installed already. To test if it's installed, from a Python shell try:

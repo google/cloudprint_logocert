@@ -21,8 +21,7 @@ present before proceeding, and will continue polling up to the value of timeout
 """
 
 import os
-
-import _log
+import time
 
 from selenium import webdriver
 from selenium.common.exceptions import ElementNotVisibleException
@@ -40,22 +39,25 @@ from selenium.webdriver.support.ui import WebDriverWait
 class ChromeDriver(object):
   """Provides webdriver functionality for Chrome."""
 
-  def __init__(self, user_data_dir, timeout):
+  def __init__(self, logger, user_data_dir, timeout):
     """Initialize chromedriver for use by all other modules.
 
     Args:
+      logger: initialized logger object.
       user_data_dir: string, directory for chrome data.
       timeout: integer, number of seconds to wait for web pages to load.
     """
     self.timeout = timeout
     data_dir = os.path.join(os.getcwd(), user_data_dir)
-    self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
     options = Options()
     data_dir_option = '--user-data-dir=%s' % data_dir
     options.add_argument(data_dir_option)
     options.add_argument('--enable-logging')
     options.add_argument('--v=1')
     options.add_argument('--lang=en')
+    options.add_argument('--disable-features=UsePasswordSeparatedSigninFlow')
+    options.add_experimental_option("windowTypes", ["webview"])
     self.driver = webdriver.Chrome(chrome_options=options)
     self.action_chain = ActionChains(self.driver)
 
@@ -63,7 +65,14 @@ class ChromeDriver(object):
     self.window['main'] = self.driver.current_window_handle
     self.window['logocert'] = None
 
-    self.wait = WebDriverWait(self.driver, timeout)
+    self.ActionPerformed()
+
+  def ActionPerformed(self):
+    """Call this function when any action performed.
+      It records current time and resets the 'page_id' field.
+    """
+    self.last_action_time = time.time()
+    self.page_id = None
 
   def CloseChrome(self):
     self.driver.quit()
@@ -77,7 +86,7 @@ class ChromeDriver(object):
       boolean: True = element clicked, False = element not clicked.
     """
     try:
-      self.wait.until(EC.visibility_of(element))
+      self.GetWait().until(EC.visibility_of(element))
     except TimeoutException:
       self.logger.error('Timed out because clickable element not visible.')
       return False
@@ -87,6 +96,8 @@ class ChromeDriver(object):
       except ElementNotVisibleException:
         self.logger.error('Error clicking element.')
         return False
+      finally:
+        self.ActionPerformed()
       return True
 
   def ExecScript(self, script):
@@ -102,6 +113,8 @@ class ChromeDriver(object):
     except WebDriverException:
       self.logger.error('Error executing %s', script)
       return False
+    finally:
+      self.ActionPerformed()
     return True
 
   def FindClass(self, classname, obj=None):
@@ -114,7 +127,7 @@ class ChromeDriver(object):
       webelement object with first occurrence of classname.
     """
     try:
-      self.wait.until(EC.presence_of_element_located((By.CLASS_NAME,
+      self.GetWait().until(EC.presence_of_element_located((By.CLASS_NAME,
                                                       classname)))
     except TimeoutException:
       self.logger.error('Timed out looking for class: %s', classname)
@@ -140,7 +153,7 @@ class ChromeDriver(object):
       list of web element objects containing classname.
     """
     try:
-      self.wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME,
+      self.GetWait().until(EC.presence_of_all_elements_located((By.CLASS_NAME,
                                                            classname)))
     except TimeoutException:
       self.logger.error('Timed out looking for class: %s', classname)
@@ -166,7 +179,7 @@ class ChromeDriver(object):
       web element object that contains css.
     """
     try:
-      self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
+      self.GetWait().until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
     except TimeoutException:
       self.logger.error('Timed out waiting for css: %s', css)
       return None
@@ -191,7 +204,7 @@ class ChromeDriver(object):
       list of web element objects that contain css.
     """
     try:
-      self.wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,
+      self.GetWait().until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,
                                                            css)))
     except TimeoutException:
       self.logger.error('Timed out looking for css: %s', css)
@@ -217,7 +230,7 @@ class ChromeDriver(object):
       web element object with element_id.
     """
     try:
-      self.wait.until(EC.visibility_of_element_located((By.ID, element_id)))
+      self.GetWait().until(EC.visibility_of_element_located((By.ID, element_id)))
     except TimeoutException:
       self.logger.error('Timed out looking for id: %s', element_id)
       return None
@@ -242,7 +255,7 @@ class ChromeDriver(object):
       web element object with link text.
     """
     try:
-      self.wait.until(EC.presence_of_element_located((By.LINK_TEXT, link)))
+      self.GetWait().until(EC.presence_of_element_located((By.LINK_TEXT, link)))
     except TimeoutException:
       self.logger.error('Timed out lookinf for link text: %s', link)
       return None
@@ -267,7 +280,7 @@ class ChromeDriver(object):
       web element object with first occurrence of name.
     """
     try:
-      self.wait.until(EC.presence_of_element_located((By.NAME, name)))
+      self.GetWait().until(EC.presence_of_element_located((By.NAME, name)))
     except TimeoutException:
       self.logger.error('Timed out looking for name: %s', name)
       return None
@@ -292,7 +305,7 @@ class ChromeDriver(object):
       list of web element objects containing name.
     """
     try:
-      self.wait.until(EC.presence_of_all_elements_located((By.NAME, name)))
+      self.GetWait().until(EC.presence_of_all_elements_located((By.NAME, name)))
     except TimeoutException:
       self.logger.error('Timed out finding names: %s', name)
       return None
@@ -317,7 +330,7 @@ class ChromeDriver(object):
       list of web element objects containing tagname.
     """
     try:
-      self.wait.until(EC.presence_of_all_elements_located((By.TAG_NAME,
+      self.GetWait().until(EC.presence_of_all_elements_located((By.TAG_NAME,
                                                            tagname)))
     except TimeoutException:
       self.logger.error('Timed out finding names: %s', tagname)
@@ -343,7 +356,7 @@ class ChromeDriver(object):
       web element object containing xpath.
     """
     try:
-      self.wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+      self.GetWait().until(EC.presence_of_element_located((By.XPATH, xpath)))
     except TimeoutException:
       self.logger.error('Timed out finding XPath: %s', xpath)
       return None
@@ -368,7 +381,7 @@ class ChromeDriver(object):
       list of web element objects containing xpath.
     """
     try:
-      self.wait.until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
+      self.GetWait().until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
     except TimeoutException:
       self.logger.error('Timed out finding XPaths: %s', xpath)
       return None
@@ -383,6 +396,28 @@ class ChromeDriver(object):
         return None
       return elements
 
+  def Get(self, url):
+    """Jump to the specified url.
+
+    Args:
+      url: URL to jump.
+    """
+
+    self.driver.get(url)
+    self.ActionPerformed()
+
+  def GetWait(self):
+    """Get wait object which waits loading the current page.
+
+    Returns:
+      WebDriver: wait object which waits loading the current page.
+    """
+    timeout = self.last_action_time + self.timeout - time.time()
+    if 0 > timeout:
+      timeout = 0
+    wait = WebDriverWait(self.driver, timeout)
+    return wait
+
   def MouseOver(self, obj):
     """Mouse over an element.
 
@@ -396,6 +431,8 @@ class ChromeDriver(object):
     except WebDriverException:
       self.logger.error('Error mousing over element.')
       return False
+    finally:
+      self.ActionPerformed()
     return True
 
   def SendKeys(self, keys, obj):
@@ -412,6 +449,8 @@ class ChromeDriver(object):
     except WebDriverException:
       self.logger.error('Error sending keys: %s', keys)
       return False
+    finally:
+      self.ActionPerformed()
     return True
 
   def SwitchFrame(self, frame, tagname=None):
@@ -425,10 +464,10 @@ class ChromeDriver(object):
     """
     try:
       if tagname:
-        self.wait.until(EC.frame_to_be_available_and_switch_to_it(
+        self.GetWait().until(EC.frame_to_be_available_and_switch_to_it(
             self.driver.find_element_by_tag_name(tagname)))
       else:
-        self.wait.until(EC.frame_to_be_available_and_switch_to_it(frame))
+        self.GetWait().until(EC.frame_to_be_available_and_switch_to_it(frame))
     except TimeoutException:
       self.logger.error('Timed out finding frame: %s', frame)
       return False

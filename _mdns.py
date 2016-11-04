@@ -18,8 +18,6 @@ Support for mdns operations.
 This module will provide a class to browse MDNS messages on the local network.
 It depends on the Python package zeroconf.
 """
-import _log
-
 from zeroconf import InterfaceChoice
 from zeroconf import ServiceBrowser
 from zeroconf import Zeroconf
@@ -33,23 +31,31 @@ class MDnsService(object):
   listener.
   """
 
-  def __init__(self):
-    self.logger = _log.GetLogger('LogoCert')
+  def __init__(self, logger):
+    """Initialization requires a logger.
+    
+    Args:
+      logger: initialized logger object.
+    """
+    self.logger = logger
     self.discovered = {}
 
   # pylint: disable=unused-argument
   def add_service(self, zeroconf, service_type, name):
     self.logger.info('Service added: "%s" (type is %s)', name, service_type)
-    self.discovered[name] = True
+    self.discovered[name] = {}
+    self.discovered[name]['proto'] = service_type
+    self.discovered[name]['found'] = True
 
     info = zeroconf.get_service_info(service_type, name)
     if info:
+      self.discovered[name]['info'] = info
       self.logger.debug('%s service info: %s', name, info)
     else:
       self.logger.debug('Service has no info.')
 
   def remove_service(self, zeroconf, service_type, name):
-    self.discovered[name] = False
+    self.discovered[name]['found'] = False
     self.logger.info('Service removed: %s', name)
   # pylint: enable=unused-argument
 
@@ -57,10 +63,20 @@ class MDnsService(object):
 class MDnsListener(object):
   """A MDNS Listener."""
 
-  def __init__(self):
-    self.logger = _log.GetLogger('LogoCert')
-    self.zeroconf = Zeroconf(InterfaceChoice.All)
-    self.listener = MDnsService()
+  def __init__(self, logger, if_addr=None):
+    """Initialization requires a logger.
+    
+    Args:
+      logger: initialized logger object.
+      if_addr: string, interface address for Zeroconf, None means all interfaces.
+    """
+    # self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
+    if if_addr:
+      self.zeroconf = Zeroconf([if_addr])
+    else:
+      self.zeroconf = Zeroconf(InterfaceChoice.All)
+    self.listener = MDnsService(logger)
 
   def add_listener(self, proto):
     """Browse for announcements of a particular protocol.

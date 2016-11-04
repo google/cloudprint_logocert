@@ -23,21 +23,22 @@ import time
 
 from _common import Retry
 from _config import Constants
-import _log
 
 from selenium.common.exceptions import NoSuchWindowException
+from selenium.common.exceptions import WebDriverException
 
 
 class Chrome(object):
   """The Page Object for Chrome."""
 
-  def __init__(self, chromedriver):
+  def __init__(self, logger, chromedriver):
     """Set the resources that will be used for the life of this page object.
 
     Args:
+      logger: initialized logger object.
       chromedriver: initialized webdriver object using Chrome.
     """
-    self.logger = _log.GetLogger('LogoCert')
+    self.logger = logger
 
     self.cd = chromedriver
     self.chrome_version = 'Unknown'
@@ -54,13 +55,13 @@ class Chrome(object):
     self.GetVersion()
 
   def DevicePage(self):
-    self.cd.driver.get(self.devices)
+    self.cd.Get(self.devices)
 
   def GetFlags(self):
-    self.cd.driver.get(self.flags)
+    self.cd.Get(self.flags)
 
   def GetSettings(self):
-    self.cd.driver.get(self.settings)
+    self.cd.Get(self.settings)
 
   def GetVersion(self):
     """Get the version of Chrome and the OS.
@@ -68,7 +69,7 @@ class Chrome(object):
     Returns:
       boolean: True = set versions, False = error getting versions.
     """
-    self.cd.driver.get(self.version)
+    self.cd.Get(self.version)
     version = self.cd.FindID('version')
     os = self.cd.FindID('os_type')
     if version:
@@ -82,7 +83,7 @@ class Chrome(object):
     return True
 
   def PrintPage(self):
-    self.cd.driver.get(self.printpage)
+    self.cd.Get(self.printpage)
 
   def Print(self):
     """This method will open the Chrome Print Dialog.
@@ -397,7 +398,8 @@ class Chrome(object):
 
     # Mouse over the element so it become visible.
     print_labels = self.cd.FindClass('ade')
-    self.cd.MouseOver(print_labels)
+    if print_labels:
+      self.cd.MouseOver(print_labels)
     print_icon = self.cd.FindCss("div[aria-label='Print all']")
     if print_icon:
       doctype['gmail'] = True
@@ -525,7 +527,7 @@ class Chrome(object):
     Returns:
       boolean: True = file printed, False = file not printed.
     """
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
 
     print_button = self.cd.FindName('cp-button-print')
     if not print_button:
@@ -658,9 +660,13 @@ class Chrome(object):
       list: list of all available options for this menu item.
     """
     values = []
-    filename = '/tmp/testfile.jpg'  # This file does not exist.
-    self.cd.driver.get(Constants.GCP['MGT'])
-
+    # Give filename a fake pathname, as this doesn't need to be a real file.
+    if 'Windows' in Constants.TESTENV['OS']:
+      filename = 'C:/testfile.jpg'
+    else:
+      filename = '/tmp/testfile.jpg'
+      
+    self.cd.Get(Constants.GCP['MGT'])
     print_button = self.cd.FindName('cp-button-print')
     if not print_button:
       return False
@@ -675,7 +681,7 @@ class Chrome(object):
       for item in items:
         values.append(item.text)
 
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
 
     return values
 
@@ -687,6 +693,9 @@ class Chrome(object):
     Returns:
       list of available selections for a given option.
     """
+
+    RETRY_COUNT = 3
+
     container = 'cp-capabilities-capabilities-%s-container' % option
     cap = self.cd.FindClass(container)
     if not cap:
@@ -694,9 +703,20 @@ class Chrome(object):
     button = self.cd.FindClass('jfk-select', obj=cap)
     if not button:
       return None
-    if not self.cd.ClickElement(button):
-      return None
-    menus = self.cd.FindClasses('goog-menu-vertical')
+
+    for i in range(-1, RETRY_COUNT):
+      try:
+        if not self.cd.ClickElement(button):
+          return None
+        menus = self.cd.FindClasses('goog-menu-vertical')
+        if menus is None:
+          # maybe failed to clicking silently.
+          continue
+        break
+      except WebDriverException:
+        # maybe the button has been moved.
+        time.sleep(1)
+        continue
     if not menus:
       return None
     for m in menus:
@@ -779,7 +799,7 @@ class Chrome(object):
     Returns:
       boolean, True = signed in, False = not signed in.
     """
-    self.cd.driver.get(self.settings)
+    self.cd.Get(self.settings)
     if not self.cd.SwitchFrame('settings'):
       return False
     account = self.cd.FindID('sync-status-text')
@@ -799,64 +819,81 @@ class Chrome(object):
     Returns:
       boolean, True = successful login, False = unsuccessful login.
     """
-    email_required = True
-    self.cd.driver.get(Constants.ACCOUNTS)
-    if 'myaccount' not in self.cd.driver.current_url:
-      reauth = self.cd.FindID('reauthEmail')
-      if reauth:
-        if username != reauth.text:
-          account_chooser = self.cd.FindID('account-chooser-link')
-          self.cd.ClickElement(account_chooser)
-          add_account = self.cd.FindID('account-chooser-add-account')
-          self.cd.ClickElement(add_account)
-        else:
-          email_required = False
-      if email_required:
-        email = self.cd.FindID('Email')
-        if not email:
-          return False
-        else:
-          email.clear()
-          if not self.cd.SendKeys(username, email):
-            return False
-      pw = self.cd.FindID('Passwd')
-      if not pw:
-        next_button = self.cd.FindID('next')
-        if next_button:
-          if not self.cd.ClickElement(next_button):
-            return False
-        else:
-          self.logger.error('Coud not find next button.')
-          return False
-        pw = self.cd.FindID('Passwd')
-        if not pw:
-          self.logger.error('Passwd id not found on next screen.')
-          return False
-      if not self.cd.SendKeys(password, pw):
-        return False
-      signin = self.cd.FindID('signIn')
-      if not signin:
-        self.logger.info('Account is logged in.')
-      else:
-        if not self.cd.ClickElement(signin):
-          return False
 
-    self.cd.driver.get(self.devices)
+    # Sign in to Chrome
+    self.cd.Get(self.devices)
     login = self.cd.FindID('cloud-devices-login-link')
     if login:
       if login.is_displayed():
-        self.cd.driver.get(self.signin)
-        print 'Please sign in manually to the chrome sign in page.'
-        raw_input('Hit enter when finished.')
+        self.cd.Get(self.signin)
+        time.sleep(3);
+        self.cd.driver.switch_to.window(self.cd.driver.window_handles[1])
+        try:
+          signed_in = self.SignInImpl(username, password)
+        finally:
+          self.cd.driver.switch_to.window(self.cd.driver.window_handles[0])
+        if not signed_in:
+          return False
+    time.sleep(3);
+
+    # Sign in to the server
+    self.cd.Get(Constants.ACCOUNTS)
+    time.sleep(3);
+    if 'myaccount' not in self.cd.driver.current_url:
+      if not self.SignInImpl(username, password):
+        return False
 
     return True
+
+  def SignInImpl(self, username, password):
+    email_required = True
+    reauth = self.cd.FindID('reauthEmail')
+    if reauth:
+      if username != reauth.text:
+        account_chooser = self.cd.FindID('account-chooser-link')
+        self.cd.ClickElement(account_chooser)
+        add_account = self.cd.FindID('account-chooser-add-account')
+        self.cd.ClickElement(add_account)
+      else:
+        email_required = False
+    if email_required:
+      email = self.cd.FindID('Email')
+      if not email:
+        return False
+      else:
+        email.clear()
+        if not self.cd.SendKeys(username, email):
+          return False
+    pw = self.cd.FindID('Passwd')
+    if not pw:
+      next_button = self.cd.FindID('next')
+      if next_button:
+        if not self.cd.ClickElement(next_button):
+          return False
+      else:
+        self.logger.error('Coud not find next button.')
+        return False
+      pw = self.cd.FindID('Passwd')
+      if not pw:
+        self.logger.error('Passwd id not found on next screen.')
+        return False
+    if not self.cd.SendKeys(password, pw):
+      return False
+    signin = self.cd.FindID('signIn')
+    if not signin:
+      self.logger.info('Account is logged in.')
+    else:
+      if not self.cd.ClickElement(signin):
+        return False
+    return True
+
 
   def GetTokens(self):
     """Get the tokens that are set in Chrome.
 
     This method should be run after a user is logged in.
     """
-    self.cd.driver.get(Constants.GCP['MGT'])
+    self.cd.Get(Constants.GCP['MGT'])
     cookies = self.cd.driver.get_cookies()
     for d in cookies:
       for k in d:
@@ -872,7 +909,7 @@ class Chrome(object):
     Returns:
       boolean: True = signed out, False = not signed in or error.
     """
-    self.cd.driver.get(self.settings)
+    self.cd.Get(self.settings)
     if not self.cd.SwitchFrame('settings'):
       return False
     account = self.cd.FindID('start-stop-sync')
@@ -943,10 +980,7 @@ class Chrome(object):
       integer: position found in list of new devices. 0 means not found.
     """
     self.DevicePage()
-    new_devices = self.cd.FindID(div_id)
-    if not new_devices:
-      return 0
-    devices = self.cd.FindClasses('device-info', obj=new_devices)
+    devices = self.cd.FindXPaths('//*[@id="%s"]//*[@class="device-info"]' % div_id)
     if not devices:
       return 0
     dev_num = devices.__len__()

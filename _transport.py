@@ -30,16 +30,19 @@ import urllib2
 import _common
 from _config import Constants
 from _jsonparser import JsonParser
-import _log
 
 
 class Transport(object):
   """Send and receive network messages and communication."""
 
-  def __init__(self):
-    """Get a reference to a logger object."""
-    self.logger = _log.GetLogger('LogoCert')
-    self.jparser = JsonParser()
+  def __init__(self, logger):
+    """Get a reference to a logger object and JsonParser.
+    
+    Args:
+        logger: initialized logger object.
+    """
+    self.logger = logger
+    self.jparser = JsonParser(logger)
     socket.setdefaulttimeout(Constants.URL['TIMEOUT'])
 
   def HTTPReq(self, url, auth_token=None, cloudprint=True, data=None,
@@ -104,10 +107,10 @@ class Transport(object):
     except urllib2.URLError as e:  # This includes the HTTPError subclass.
       if hasattr(e, 'code'):
         response['code'] = e.code
-        self.logger.warning('Return Code: %s', e.code)
+        self.logger.info('Return Code: %s', e.code)
       if hasattr(e, 'reason'):
         response['data'] = e.reason
-        self.logger.warning(e.reason)
+        self.logger.info(e.reason)
       self.logger.debug(response)
       return response
 
