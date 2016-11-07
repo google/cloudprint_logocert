@@ -34,15 +34,13 @@ from _config import Constants
 class CloudPrintMgr(object):
   """An object to interact with our management pages."""
 
-  def __init__(self, logger, chromedriver):
-    """Use initialized objects for logger and chromedriver.
+  def __init__(self, logger):
+    """Use initialized object for logger.
     
     Args:
       logger: initialized logger object.
-      chromedriver: initialized chromedriver object.
     """
     self.logger = logger
-    self.cd = chromedriver
 
   def SelectPrinter(self, printer_name):
     """Select a registered printer from the management page.
