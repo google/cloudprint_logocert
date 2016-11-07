@@ -38,7 +38,7 @@ class Device(object):
 
     Args:
       logger: initialized logger object.
-      auth_token: string, auth_token of authenicated user.
+      auth_token: string, auth_token of authenticated user.
       model: string, unique model or name of device.
       privet_port: integer, tcp port devices uses for Privet protocol.
     """
@@ -56,6 +56,7 @@ class Device(object):
       self.port = Constants.PRINTER['PORT']
     self.dev_id = None
     self.name = Constants.PRINTER['NAME']
+    self.gcp = GCPService(auth_token)
     self.status = None
     self.messages = {}
     self.details = {}

@@ -36,6 +36,7 @@ those IDs. These IDs are used when submitting test results to our database.
 __version__ = '1.13'
 
 import optparse
+import platform
 import re
 import sys
 import time
@@ -132,19 +133,10 @@ def setUpModule():
   data_dir = options.email.split('@')[0]
   logger = _log.GetLogger('LogoCert', logdir=options.logdir,
                           loglevel=options.debug, stdout=options.stdout)
-  chromedriver = _chromedriver.ChromeDriver(logger, data_dir, options.loadtime)
-  chrome = _chrome.Chrome(logger, chromedriver)
-  os_type = chromedriver.FindID('os_type')
-  Constants.TESTENV['OS'] = os_type.text
-  chrome_version = chromedriver.FindID('version')
-  Constants.TESTENV['CHROME'] = chrome_version.text
-  Constants.TESTENV['CHROMEDRIVER'] = (
-      chromedriver.driver.__dict__['capabilities']['chrome'][
-          'chromedriverVersion'])
+  os_type = '%s %s' % (platform.system(), platform.release())
+  Constants.TESTENV['OS'] = os_type
   Constants.TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
-  chrome.SignIn(options.email, options.passwd)
   CheckCredentials()
-  gcpmgr = _cloudprintmgr.CloudPrintMgr(logger, chromedriver)
   mdns_browser = _mdns.MDnsListener(logger, options.if_addr)
   mdns_browser.add_listener('privet')
   # Wait to receive Privet printer advertisements.
@@ -159,13 +151,13 @@ def setUpModule():
           if 'port' in item:
             privet_port = int(item.split('=')[1])
             logger.debug('Privet advertises port: %d', privet_port)
-  device = Device(logger, chromedriver, privet_port=privet_port)
+  device = Device(logger, Constants.AUTH["ACCESS"], privet_port=privet_port)
   transport = Transport(logger)
   time.sleep(2)
 
   if Constants.TEST['SPREADSHEET']:
     global sheet
-    sheet = _sheets.SheetMgr(logger, chromedriver, Constants)
+    sheet = _sheets.SheetMgr(logger, Constants)
     sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
 
@@ -214,10 +206,14 @@ def GetNewTokens():
   """
   auth_code = None
   permit_url = _oauth2.GenerateUrl()
+  logger.debug('permit_url %s' % permit_url)
   chromedriver.Get(permit_url)
   #  This may take awhile, so wait for the page to load.
   time.sleep(5)
   approve = chromedriver.FindID('submit_approve_access')
+  if approve is None:
+    logger.error('No submit_approve_access element not found.')
+    sys.exit(1)
   chromedriver.ClickElement(approve)
   code = chromedriver.FindID('code')
   auth_code = code.get_attribute('value')
@@ -4840,7 +4836,7 @@ if __name__ == '__main__':
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(SystemUnderTest))
   suite.addTest(unittest.makeSuite(Privet))
-  suite.addTest(unittest.makeSuite(PreRegistration))
+  '''suite.addTest(unittest.makeSuite(PreRegistration))
   suite.addTest(unittest.makeSuite(Registration))
   suite.addTest(unittest.makeSuite(PostRegistration))
   suite.addTest(unittest.makeSuite(LocalDiscovery))
@@ -4852,5 +4848,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.makeSuite(Printing))
   suite.addTest(unittest.makeSuite(RunAfter24Hours))
   suite.addTest(unittest.makeSuite(Unregister))
-  suite.addTest(unittest.makeSuite(PostUnregister))
+  suite.addTest(unittest.makeSuite(PostUnregister))'''
   runner.run(suite)

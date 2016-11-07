@@ -97,7 +97,7 @@ installed already. To test if it's installed, from a Python shell try:
 
 from xml.etree import ElementTree
 
-Before executing the Logo Certification Tool, a number of prepatory steps are
+Before executing the Logo Certification Tool, a number of preparatory steps are
 required to get your test environment set up correctly.
 
 1. Test Account - Use a test account that uses Gmail, in order to properly
@@ -110,8 +110,10 @@ credentials.
 - Access the Google Developers Console: https://console.developers.google.com
 - Create a project
 - Access the project you just created
-- Select the APIs & auth tab
-- Select the Credentials link
+- In the left three-bar/hamburger menu, open "API Manager"
+- Select the Credentials link on the left
+- Create an OAuth2.0 Client ID of type "Other", native has been renamed to
+  "Other" in many places.
 - Two tokens are needed: under Client ID for native applications, copy the
 -- Client ID
 -- Client Secret
@@ -161,7 +163,7 @@ Chromebook, Firefox, IE, and tablet used.
 Also add the email address and password of this user.
 - USER2 --> add the email address and password of the 2nd test account.
 
-Save the _config.py and then all of the prepatory work is completed. Now simply
+Save the _config.py and then all of the preparatory work is completed. Now simply
 execute testcert.py:
 
 ./testcert.py

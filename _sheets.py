@@ -27,23 +27,22 @@ import _gdocs
 class SheetMgr(object):
   """Create and populate a Google spreadsheet."""
 
-  def __init__(self, logger, chromedriver, Constants):
+  def __init__(self, logger, Constants):
     """ Sheet manager will use some objects from main module.
     
     Args:
       logger: initialized logger object.
-      chromedriver: initialized chromedriver object.
       Constants: object that contains contants.
     """
     self.logger = logger
     self.headers = Constants.TEST['RESULTS']
-    self.sheet = _gdocs.GoogleDataMgr(logger, chromedriver, Constants)
+    self.sheet = _gdocs.GoogleDataMgr(logger, Constants)
     # First see if Spreadsheet Already exists.
     self.sheet_id = self.sheet.GetSpreadSheetID(Constants.TEST['NAME'])
     if not self.sheet_id:
       self.sheet.CreateSheet(Constants.TEST['NAME'])
       time.sleep(5)
-      chromedriver.driver.switch_to_window(chromedriver.window['main'])
+      #TODO: chromedriver.driver.switch_to_window(chromedriver.window['main'])
       self.sheet_id = self.sheet.GetSpreadSheetID(Constants.TEST['NAME'])
     self.worksheet_id = self.sheet.GetWorkSheetID(self.sheet_id)
 
