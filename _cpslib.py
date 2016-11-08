@@ -52,8 +52,8 @@ class GCPService(object):
     """Get a reference to a logger object."""
     self.auth_token = auth_token
     self.logger = _log.GetLogger('LogoCert')
-    self.jparser = JsonParser()
-    self.transport = Transport()
+    self.jparser = JsonParser(self.logger)
+    self.transport = Transport(self.logger)
 
   def FormatResponse(self, response):
     """Format a JSON reponse from the GCP Service into a dictionary.

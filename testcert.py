@@ -44,9 +44,7 @@ import unittest
 
 import _chrome
 import _chromedriver
-import _cloudprintmgr
-from _common import ReadJsonFile
-from _common import WriteJsonFile
+import selenium.webdriver.support.ui as ui
 from _config import Constants
 from _device import Device
 import _log
@@ -54,6 +52,13 @@ import _mdns
 import _oauth2
 import _sheets
 from _transport import Transport
+
+import requests
+import httplib2
+from oauth2client.client import OAuth2WebServerFlow
+from oauth2client.file import Storage
+from oauth2client.tools import run_flow
+from oauth2client.tools import argparser
 
 
 def _ParseArgs():
@@ -121,14 +126,16 @@ def _ParseArgs():
 
 def setUpModule():
   # pylint: disable=global-variable-undefined
-  global chrome
   global chromedriver
+  global chrome
   global gcpmgr
   global logger
   global mdns_browser
   global transport
   global device
+  global storage
 
+  # Initialize globals and constants
   options, unused_args = _ParseArgs()
   data_dir = options.email.split('@')[0]
   logger = _log.GetLogger('LogoCert', logdir=options.logdir,
@@ -136,47 +143,51 @@ def setUpModule():
   os_type = '%s %s' % (platform.system(), platform.release())
   Constants.TESTENV['OS'] = os_type
   Constants.TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
-  CheckCredentials()
+  storage = Storage(Constants.AUTH['CRED_FILE'])
+  # Retrieve access + refresh tokens
+  getTokens()
   mdns_browser = _mdns.MDnsListener(logger, options.if_addr)
   mdns_browser.add_listener('privet')
   # Wait to receive Privet printer advertisements.
-  time.sleep(30)
+  time.sleep(5)
   privet_port = None
+  #TODO what if there are no discovered values
+  #TODO smarter wait where we just wait until we find the one we are looking for up until a timeout value
   for v in mdns_browser.listener.discovered.values():
     logger.debug('Found printer in Privet advertisements.')
     if 'ty' in v['info'].properties:
       if options.printer in v['info'].properties['ty']:
-        pinfo = str(v['info']).split(',') 
+        pinfo = str(v['info']).split(',')
         for item in pinfo:
           if 'port' in item:
             privet_port = int(item.split('=')[1])
             logger.debug('Privet advertises port: %d', privet_port)
   device = Device(logger, Constants.AUTH["ACCESS"], privet_port=privet_port)
   transport = Transport(logger)
-  time.sleep(2)
+  #TODO Figure out why we need this here:
+  #time.sleep(2)
 
   if Constants.TEST['SPREADSHEET']:
     global sheet
-    sheet = _sheets.SheetMgr(logger, Constants)
+    sheet = _sheets.SheetMgr(logger, storage.get(), Constants)
     sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
 
 
 def tearDownModule():
   chromedriver.CloseChrome()
+  ui.WebDriverWait
 
 
-def CheckCredentials():
-  """Check for credentials."""
+def getTokens():
+  """Retrieve credentials."""
   if 'REFRESH' in Constants.AUTH:
     RefreshToken()
   else:
-    credentials = ReadJsonFile(Constants.AUTH['CRED_FILE'])
-    if credentials:
-      if 'refresh_token' in credentials:
-        Constants.AUTH['REFRESH'] = credentials['refresh_token']
-      if 'access_token' in credentials:
-        Constants.AUTH['ACCESS'] = credentials['access_token']
+    creds = storage.get()
+    if creds:
+      Constants.AUTH['REFRESH'] = creds.refresh_token
+      Constants.AUTH['ACCESS'] = creds.access_token
       RefreshToken()
     else:
       GetNewTokens()
@@ -204,27 +215,22 @@ def GetNewTokens():
   may need to manually access the permit_url while logged in as the test user
   you are using for this automation.
   """
-  auth_code = None
-  permit_url = _oauth2.GenerateUrl()
-  logger.debug('permit_url %s' % permit_url)
-  chromedriver.Get(permit_url)
-  #  This may take awhile, so wait for the page to load.
-  time.sleep(5)
-  approve = chromedriver.FindID('submit_approve_access')
-  if approve is None:
-    logger.error('No submit_approve_access element not found.')
-    sys.exit(1)
-  chromedriver.ClickElement(approve)
-  code = chromedriver.FindID('code')
-  auth_code = code.get_attribute('value')
+  flow = OAuth2WebServerFlow( client_id = Constants.USER['CLIENT_ID'],
+                              client_secret = Constants.USER['CLIENT_SECRET'],
+                              login_hint= Constants.USER['EMAIL'],
+                              redirect_uri= Constants.AUTH['REDIRECT'],
+                              scope = Constants.AUTH['SCOPE'],
+                              user_agent = Constants.AUTH['USER_AGENT'])
 
-  if auth_code:
-    creds = _oauth2.GetTokens(auth_code)
-    if 'refresh_token' in creds:
-      Constants.AUTH['REFRESH'] = creds['refresh_token']
-    if 'access_token' in creds:
-      Constants.AUTH['ACCESS'] = creds['access_token']
-    WriteJsonFile(Constants.AUTH['CRED_FILE'], creds)
+  http = httplib2.Http()
+  flags = argparser.parse_args(args=[])
+
+  # retrieves creds and stores it into storage
+  creds = run_flow(flow, storage, flags=flags,http=http)
+
+  if creds:
+    Constants.AUTH['REFRESH'] = creds.refresh_token
+    Constants.AUTH['ACCESS'] = creds.access_token
   else:
     logger.error('Error getting authorization code.')
 

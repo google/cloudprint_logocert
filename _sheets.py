@@ -19,15 +19,13 @@ This class depends on the module _gdocs and will interact with a
 Google spreadsheet. This class supports placing Logo Certification test results
 in a spreadsheet to assist in summarizing the test results.
 """
-import time
-
 import _gdocs
 
 
 class SheetMgr(object):
   """Create and populate a Google spreadsheet."""
 
-  def __init__(self, logger, Constants):
+  def __init__(self, logger, creds, Constants):
     """ Sheet manager will use some objects from main module.
     
     Args:
@@ -36,14 +34,15 @@ class SheetMgr(object):
     """
     self.logger = logger
     self.headers = Constants.TEST['RESULTS']
-    self.sheet = _gdocs.GoogleDataMgr(logger, Constants)
+    self.sheet = _gdocs.GoogleDataMgr(logger, creds, Constants)
     # First see if Spreadsheet Already exists.
     self.sheet_id = self.sheet.GetSpreadSheetID(Constants.TEST['NAME'])
     if not self.sheet_id:
       self.sheet.CreateSheet(Constants.TEST['NAME'])
-      time.sleep(5)
-      #TODO: chromedriver.driver.switch_to_window(chromedriver.window['main'])
       self.sheet_id = self.sheet.GetSpreadSheetID(Constants.TEST['NAME'])
+      if not self.sheet_id:
+        # Something went wrong
+        self.logger.error('Error creating spreadsheet.')
     self.worksheet_id = self.sheet.GetWorkSheetID(self.sheet_id)
 
   def MakeHeaders(self):
