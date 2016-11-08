@@ -28,19 +28,23 @@ import gdata.spreadsheets
 import gdata.spreadsheets.client
 import gdata.spreadsheets.data
 
+from googleapiclient import discovery
+from httplib2 import Http
 
 class GoogleDataMgr(object):
   """An object to interact with Google Drive and Docs."""
 
-  def __init__(self, logger, Constants):
+  def __init__(self, logger, creds, Constants):
     """ Use initialized objects from main module.
     
     Args:
       logger: initialized logger object.
+      creds: OAuth2Credentials.
       Constants: object holding constant values.
     """
     self.logger = logger
     self.drive = 'https://drive.google.com'
+    self.creds = creds
 
     self.token = gdata.gauth.OAuth2Token(
         client_id=Constants.USER['CLIENT_ID'],
@@ -58,71 +62,13 @@ class GoogleDataMgr(object):
     Args:
       name: string, name to assign the spreadsheet.
     Returns:
-      boolean: True = spreadsheet created, False = errors.
+      void - this should not fail
     """
-    button_found = False
-    sheets_found = False
-    self.cd.Get(self.drive)
-    # Select the New button in Google Drive.
-    button = self.cd.FindClasses('h-sb-Ic')
-    if not button:
-      self.logger.error('New button not found.')
-      return False
-    for b in button:
-      if 'NEW' in b.text:
-        button_found = True
-        if not self.cd.ClickElement(b):
-          self.logger.error('Error clicking new button in Google Drive.')
-          return False
-        break
-    if not button_found:
-      self.logger.error('New button not found.')
-      return False
+    SHEETS = discovery.build('sheets', 'v4', http=self.creds.authorize(Http()))
+    data = {'properties': {'title': name}}
+    res = SHEETS.spreadsheets().create(body=data).execute()
+    self.logger.info('Created a new google spreadsheet.')
 
-    # Select the spreadsheet menu item.
-    items = self.cd.FindClasses('a-v-T')
-    if not items:
-      self.logger.error('new submenu itemsnot found.')
-      return False
-    for i in items:
-      if 'Sheets' in i.text:
-        sheets_found = True
-        if not self.cd.ClickElement(i):
-          self.logger.error('Error clicking sheets submenu item.')
-          return False
-        break
-    if not sheets_found:
-      self.logger.error('Sheets submenu item not found.')
-      return False
-
-    time.sleep(5)
-    # Switch to the new Untitled spreadsheet window.
-    for handle in self.cd.driver.window_handles:
-      self.cd.driver.switch_to_window(handle)
-      if 'Untitled spreadsheet' in self.cd.driver.title:
-        self.cd.window['logocert'] = handle
-        break
-
-    # Change the document title.
-    title = self.cd.FindClass('docs-title-input')
-    if not title:
-      self.logger.error('Document Title not found.')
-      return False
-    if not self.cd.ClickElement(title):
-      self.logger.error('Error selecting document rename function.')
-      return False
-    time.sleep(5)
-    if not self.cd.SendKeys(name, title):
-      self.logger.error('Error inputing new spreadsheet name.')
-      return False
-    main_body = self.cd.FindID('docs-editor-container')
-    if not main_body:
-      self.logger.error('Error finding docs-editor-container.')
-      return False
-    if not self.cd.ClickElement(main_body):
-      self.logger.error('Error clicking in main body of spreadsheet.')
-      return False
-    return True
 
   def GetSpreadSheetID(self, name):
     """Return the spreadsheet id that has the matching name.
