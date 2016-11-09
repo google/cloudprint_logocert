@@ -148,11 +148,18 @@ def setUpModule():
   getTokens()
   mdns_browser = _mdns.MDnsListener(logger, options.if_addr)
   mdns_browser.add_listener('privet')
-  # Wait to receive Privet printer advertisements.
-  time.sleep(5)
+
+  # Wait to receive Privet printer advertisements. Timeout in 30 seconds
+  # time.sleep(30)
+  # TODO: This mainly helps in development, replace this with a simple time.sleep() for release
+  found = waitForPrivetDiscovery(options)
+
+  if not found:
+    logger.info("No printers discovered under "+ options.printer)
+    sys.exit()
+
   privet_port = None
-  #TODO what if there are no discovered values
-  #TODO smarter wait where we just wait until we find the one we are looking for up until a timeout value
+
   for v in mdns_browser.listener.discovered.values():
     logger.debug('Found printer in Privet advertisements.')
     if 'ty' in v['info'].properties:
@@ -172,6 +179,18 @@ def setUpModule():
     sheet = _sheets.SheetMgr(logger, storage.get(), Constants)
     sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
+
+
+def waitForPrivetDiscovery(options):
+  t_end = time.time() + 30
+
+  while time.time() < t_end:
+    for v in mdns_browser.listener.discovered.values():
+      if 'ty' in v['info'].properties:
+        if options.printer in v['info'].properties['ty']:
+          return True
+  # Timed out
+  return False
 
 
 def tearDownModule():
