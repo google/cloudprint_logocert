@@ -186,16 +186,16 @@ def waitForPrivetDiscovery(options):
 
   while time.time() < t_end:
     for v in mdns_browser.listener.discovered.values():
-      if 'ty' in v['info'].properties:
-        if options.printer in v['info'].properties['ty']:
-          return True
+      if 'info' in v:
+        if 'ty' in v['info'].properties:
+          if options.printer in v['info'].properties['ty']:
+            return True
   # Timed out
   return False
 
 
 def tearDownModule():
-  chromedriver.CloseChrome()
-  ui.WebDriverWait
+  return
 
 
 def getTokens():
@@ -340,7 +340,7 @@ class LogoCert(unittest.TestCase):
         logger.info(k)
         logger.info(device.details[k])
         logger.info('===============================')
-      device.GetDeviceCDD(device.details['Printer ID'])
+      device.GetDeviceCDD(device.dev_id)
       for k in device.cdd:
         logger.info(k)
         logger.info(device.cdd[k])
@@ -827,7 +827,7 @@ class Privet(LogoCert):
         time.sleep(10)
 
   def testDeviceRegistrationInvalidUserAuthToken(self):
-    """Verify a device will not register is user auth token is invalid."""
+    """Verify a device will not register if the user auth token is invalid."""
     test_id = 'da3d4ce4-5b81-4bb4-a487-7c8e92b552c6'
     test_name = 'testDeviceRegistrationInvalidUserAuthToken'
     try:
