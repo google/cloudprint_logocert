@@ -1,3 +1,4 @@
 <test_account/*
 .idea/*
 credentials.txt
+*.pyc
