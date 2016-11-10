@@ -44,6 +44,8 @@ from _jsonparser import JsonParser
 import _log
 from _transport import Transport
 
+from json import dumps
+import requests
 
 class GCPService(object):
   """Send and receive network messages and communication."""
@@ -84,6 +86,33 @@ class GCPService(object):
 
     return GCPQuery
 
+  # Not decorated with @InterfaceQuery since Submit() also posts data
+  def Submit(self, printer_id, content, title, cjt, content_type = None ):
+    if title is None:
+      title = "LogoCert Testing"
+    if cjt is None:
+      cjt = [{}]
+
+    data = {"printerid": printer_id,
+            "title": title,
+            'contentType': content_type,
+            'ticket': dumps(cjt),
+            'content': content}
+
+    url = '%s/submit' % (Constants.GCP['MGT'])
+
+    res = self.transport.HTTPReq(url, auth_token=self.auth_token, data=data)
+    if res is None or res['code'] != 200:
+      # Something failed
+      return False
+
+    resJson = self.FormatResponse(res)
+    is_success = resJson['success'] and 'Print job added.' in resJson['message']
+
+    return is_success
+
+
+
   @InterfaceQuery
   def Delete(self, printer_id):
     """Delete a printer owned by a user.
@@ -115,7 +144,7 @@ class GCPService(object):
     """Get a list of print jobs which user has permission to view.
 
     Args:
-      printer_id: string, filer jobs sent to this printer.
+      printer_id: string, filter jobs sent to this printer.
       owner: string, filter jobs submitted by this owner.
       job_title: string, filter jobs whose title or tags contain this string.
       status: string, filter jobs that match this status.
