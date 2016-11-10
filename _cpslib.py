@@ -61,7 +61,7 @@ class GCPService(object):
     """Format a JSON reponse from the GCP Service into a dictionary.
 
     Args:
-      response: jason response from GCP Service.
+      response: json response from GCP Service.
     Returns:
       dictionary of keys and values found in response.
     """
@@ -86,7 +86,7 @@ class GCPService(object):
 
     return GCPQuery
 
-  # Not decorated with @InterfaceQuery since Submit() also posts data
+  # Not decorated with @InterfaceQuery since Submit() uses 'requests' instead of '_transport'
   def Submit(self, printer_id, content, title, cjt, content_type = None ):
     if title is None:
       title = "LogoCert Testing"
@@ -99,15 +99,20 @@ class GCPService(object):
             'ticket': dumps(cjt),
             'content': content}
 
+    files = {"content":content}
+
     url = '%s/submit' % (Constants.GCP['MGT'])
 
-    res = self.transport.HTTPReq(url, auth_token=self.auth_token, data=data)
-    if res is None or res['code'] != 200:
+
+    r = requests.post(url, data = data, files = files , headers= {'Authorization': 'Bearer %s' % self.auth_token})
+
+    if r is None or requests.codes.ok != r.status_code:
       # Something failed
       return False
 
-    resJson = self.FormatResponse(res)
-    is_success = resJson['success'] and 'Print job added.' in resJson['message']
+    res = r.json()
+
+    is_success = res['success'] and 'Print job added.' in res['message']
 
     return is_success
 
