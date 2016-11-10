@@ -2834,9 +2834,6 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    # TODO - Passed! skip for now
-    return
-
     option = {}
     option['copies'] = {'copies': '2'}
 
