@@ -59,6 +59,7 @@ from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.file import Storage
 from oauth2client.tools import run_flow
 from oauth2client.tools import argparser
+from _cpslib import GCPService
 
 
 def _ParseArgs():
@@ -134,6 +135,7 @@ def setUpModule():
   global transport
   global device
   global storage
+  global gcp
 
   # Initialize globals and constants
   options, unused_args = _ParseArgs()
@@ -169,7 +171,9 @@ def setUpModule():
           if 'port' in item:
             privet_port = int(item.split('=')[1])
             logger.debug('Privet advertises port: %d', privet_port)
-  device = Device(logger, Constants.AUTH["ACCESS"], privet_port=privet_port)
+
+  gcp = GCPService(Constants.AUTH["ACCESS"])
+  device = Device(logger, Constants.AUTH["ACCESS"], gcp, privet_port=privet_port)
   transport = Transport(logger)
   #TODO Figure out why we need this here:
   #time.sleep(2)
@@ -2693,17 +2697,28 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.Get('http://www.google.com/cloudprint/learn/')
-    printed = chrome.PrintFromPrintDialog(self.printer, color=True)
+    #TODO - Passed! skip for now
+    return
+
+    option = {}
+    option['color'] = {'type': 'STANDARD_COLOR'}
+
+    cjt = {}
+    cjt['version'] = device.details['gcpVersion']
+    cjt['print'] = option
+
+    printed = gcp.Submit(device.dev_id, 'http://www.google.com/cloudprint/learn/', test_name, cjt, 'url')
     try:
       self.assertTrue(printed)
     except AssertionError:
       notes = 'Error while printing from Chrome with color selected.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
     else:
       print 'Print job should be printed in color.'
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
+
 
   def testChromePrintHeadersFooters(self):
     """Verify printer respects headers and footers in Chrome Print Dialog."""
@@ -2754,26 +2769,12 @@ class ChromePrinting(LogoCert):
     """Verify printer respects background option in Chrome Print Dialog."""
     test_id = 'd8ea8089-3d6c-44ea-89d9-3d048a5f68f2'
     test_name = 'testChromePrintBackground'
-    # First navigate to a web page to print.
-    chromedriver.Get(Constants.GOOGLE)
-    printed = chrome.PrintFromPrintDialog(self.printer)
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error printing in Chrome Print Dialog.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
 
-    printed = chrome.PrintFromPrintDialog(self.printer, background=True)
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error printing with background in Chrome Print Dialog.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+    notes = 'Background option is not in the scope of GCP testing'
+    self.LogTest(test_id, test_name, 'Skipped', notes)
 
-    print 'The 1st print job should not use background images.'
-    print 'The 2nd print job should print with background images.'
-    print 'If the background options are not observed, fail this test.'
-    self.ManualPass(test_id, test_name)
+    #TODO remove this whole test case once confirmed that it's out of scope
+
 
   def testChromePrintMargins(self):
     """Verify printer respects margins selected in Chrome Print Dialog."""
@@ -2833,8 +2834,17 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.Get(chrome.version)
-    printed = chrome.PrintFromPrintDialog(self.printer, copies=2)
+    # TODO - Passed! skip for now
+    return
+
+    option = {}
+    option['copies'] = {'copies': '2'}
+
+    cjt = {}
+    cjt['version'] = device.details['gcpVersion']
+    cjt['print'] = option
+
+    printed = gcp.Submit(device.dev_id, Constants.GOOGLE, test_name, cjt, 'url')
     try:
       self.assertTrue(printed)
     except AssertionError:
@@ -2844,6 +2854,7 @@ class ChromePrinting(LogoCert):
       print 'The print job should have printed 2 copies.'
       print 'If copies is not 2, fail this test.'
       self.ManualPass(test_id, test_name)
+
 
   def testChromePrintGoogleDoc(self):
     """Verify a Google Doc prints from Chrome Print Dialog."""
@@ -2918,7 +2929,6 @@ class ChromePrinting(LogoCert):
     except AssertionError:
       notes = 'Error printing URL from Chrome.'
       self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
     else:
       print 'URL should print without errors.'
       print 'Fail this test if there are errors or quality issues.'
@@ -2929,10 +2939,11 @@ class ChromePrinting(LogoCert):
     test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testChromePrintGmail'
 
-    chromedriver.Get('about:blank')
-    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL1'])
-    printed = chrome.PrintGoogleItem(self.printer)
+    cjt = {}
+    cjt['version'] = device.details['gcpVersion']
+    cjt['print'] = {}
 
+    printed = gcp.Submit(device.dev_id, Constants.GOOGLE_DOCS['GMAIL1'], test_name, cjt, 'url')
     try:
       self.assertTrue(printed)
     except AssertionError:
@@ -2943,6 +2954,7 @@ class ChromePrinting(LogoCert):
       print 'Gmail message should print without errors.'
       print 'Fail this test if there are errors or quality issues.'
       self.ManualPass(test_id, test_name)
+
 
   def testChromePrintGmailI18n(self):
     """Verify Gmail with foreign characters prints from Chrome Print Dialog."""
@@ -4866,11 +4878,11 @@ if __name__ == '__main__':
   #suite.addTest(unittest.makeSuite(PostRegistration))
   #suite.addTest(unittest.makeSuite(LocalDiscovery))
   #suite.addTest(unittest.makeSuite(LocalPrinting))
-  suite.addTest(unittest.makeSuite(ChromePrinting))
+  #?scope? suite.addTest(unittest.makeSuite(ChromePrinting))
   #suite.addTest(unittest.makeSuite(Printer))
   #suite.addTest(unittest.makeSuite(PrinterState))
   #suite.addTest(unittest.makeSuite(JobState))
-  #suite.addTest(unittest.makeSuite(Printing))
+  suite.addTest(unittest.makeSuite(Printing))
   #suite.addTest(unittest.makeSuite(RunAfter24Hours))
   #suite.addTest(unittest.makeSuite(Unregister))
   #suite.addTest(unittest.makeSuite(PostUnregister))
