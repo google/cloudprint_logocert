@@ -60,6 +60,7 @@ from oauth2client.file import Storage
 from oauth2client.tools import run_flow
 from oauth2client.tools import argparser
 from _cpslib import GCPService
+from _ticket import CloudJobTicket
 
 
 def _ParseArgs():
@@ -269,11 +270,26 @@ class LogoCert(unittest.TestCase):
     cls.pw = options.passwd
     cls.autorun = options.autorun
     cls.printer = options.printer
+	
+	# TODO Make these into enums
+    cls.monochrome = 'STANDARD_MONOCHROME'
+    cls.color = 'STANDARD_COLOR' if Constants.CAPS['COLOR'] else cls.monochrome
 
-    if Constants.CAPS['COLOR']:
-      cls.color = 'Color'
-    else:
-      cls.color = 'Monochrome'
+    cls.landscape = 'LANDSCAPE'
+    cls.portrait = 'PORTRAIT'
+
+    cls.long_edge = 'LONG_EDGE'
+    cls.short_edge = 'SHORT_EDGE'
+
+    cls.no_fitting = 'NO_FITTING'
+    cls.fit = 'FIT_TO_PAGE'
+    cls.grow = 'GROW_TO_PAGE'
+    cls.shrink = 'SHRINK_TO_PAGE'
+    cls.fill = 'FILL_PAGE'
+
+    cls.A4_height_microns = 297000
+    cls.A4_width_microns = 210000
+
     time.sleep(2)
 
   def ManualPass(self, test_id, test_name, print_test=True):
@@ -2697,17 +2713,10 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    #TODO - Passed! skip for now
-    return
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
 
-    option = {}
-    option['color'] = {'type': 'STANDARD_COLOR'}
-
-    cjt = {}
-    cjt['version'] = device.details['gcpVersion']
-    cjt['print'] = option
-
-    printed = gcp.Submit(device.dev_id, 'http://www.google.com/cloudprint/learn/', test_name, cjt, 'url')
+    printed = gcp.Submit(device.dev_id, 'http://www.google.com/cloudprint/learn/', test_name, cjt, is_url=True)
     try:
       self.assertTrue(printed)
     except AssertionError:
@@ -2834,14 +2843,10 @@ class ChromePrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    option = {}
-    option['copies'] = {'copies': '2'}
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddCopiesOption(2)
 
-    cjt = {}
-    cjt['version'] = device.details['gcpVersion']
-    cjt['print'] = option
-
-    printed = gcp.Submit(device.dev_id, Constants.GOOGLE, test_name, cjt, 'url')
+    printed = gcp.Submit(device.dev_id, Constants.GOOGLE, test_name, cjt, is_url=True)
     try:
       self.assertTrue(printed)
     except AssertionError:
@@ -2936,11 +2941,10 @@ class ChromePrinting(LogoCert):
     test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testChromePrintGmail'
 
-    cjt = {}
-    cjt['version'] = device.details['gcpVersion']
-    cjt['print'] = {}
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.monochrome)
 
-    printed = gcp.Submit(device.dev_id, Constants.GOOGLE_DOCS['GMAIL1'], test_name, cjt, 'url')
+    printed = gcp.Submit(device.dev_id, Constants.GOOGLE_DOCS['GMAIL1'], test_name, cjt)
     try:
       self.assertTrue(printed)
     except AssertionError:
@@ -3897,8 +3901,13 @@ class Printing(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     logger.info('Setting copies to 2...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG12'],
-                              color=self.color, copies=2)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddCopiesOption(2)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG12'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3916,8 +3925,12 @@ class Printing(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     logger.info('Setting duplex to long edge...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
-                              duplex='Long Edge')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddDuplexOption(self.long_edge)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3935,8 +3948,11 @@ class Printing(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     logger.info('Setting duplex to short edge...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
-                              duplex='Short Edge')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddDuplexOption(self.short_edge)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3955,8 +3971,11 @@ class Printing(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     logger.info('Printing with color selected.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF13'],
-                              color='Color')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, cjt)
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3969,10 +3988,15 @@ class Printing(LogoCert):
   def testPrintMediaSizeSelect(self):
     test_id = '14ee1e62-7b38-423c-8637-50a2ae460ddc'
     test_name = 'testPrintMediaSizeSelect'
+
     logger.info('Testing the selection of A4 media size.')
     raw_input('Load printer with A4 size paper. Select return when ready.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG1'],
-                              size='A4')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddSizeOption(self.A4_height_microns, self.A4_width_microns)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3981,14 +4005,17 @@ class Printing(LogoCert):
       raise
     else:
       self.ManualPass(test_id, test_name)
-    raw_input('Load printer with letter size papaer. Select return when ready.')
+    raw_input('Load printer with letter size paper. Select return when ready.')
 
   def testPrintPdfReverseOrder(self):
     test_id = '1c2610c9-4f16-42ca-9d4a-018f127c4b58'
     test_name = 'testPrintPdfReverseOrder'
     logger.info('Print with reverse order flag set...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
-                              reverse=True)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddReverseOption()
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3998,16 +4025,21 @@ class Printing(LogoCert):
     else:
       self.ManualPass(test_id, test_name)
 
-  def testPrintPdfPageRangePage2(self):
+  def testPrintPdfPageRangePage(self):
     test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
-    test_name = 'testPrintPdfPageRangePage2'
-    logger.info('Setting page range to page 2...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1'],
-                              pagerange='2')
+    test_name = 'testPrintPdfPageRangePage'
+    logger.info('Setting page range to page 2 and 4-6...')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddPageRangeOption(2, end = 2)
+    cjt.AddPageRangeOption(4, end = 6)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
-      notes = 'Error printing with page range set to page 2.'
+      notes = 'Error printing with page range set to page 2 and 4-6.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -4016,11 +4048,17 @@ class Printing(LogoCert):
   def testPrintJpgDpiSetting(self):
     test_id = '93c42b61-30e9-407c-bcd5-df50f418c53b'
     test_name = 'testPrintJpgDpiSetting'
-    dpi_settings = chrome.GetOptions('dpi', self.printer)
-    for dpi_option in dpi_settings:
+
+    dpi_options = device.cdd['caps']['dpi']['option']
+
+    for dpi_option in dpi_options:
       logger.info('Setting dpi to %s', dpi_option)
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG8'],
-                                dpi=dpi_option)
+
+      cjt = CloudJobTicket(device.details['gcpVersion'])
+      cjt.AddDpiOption(dpi_option['horizontal_dpi'], dpi_option['vertical_dpi'])
+
+      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, cjt)
+
       try:
         self.assertTrue(output)
       except AssertionError:
@@ -4033,8 +4071,12 @@ class Printing(LogoCert):
     test_id = '0f911f5f-7001-4d87-933f-c15f42823da6'
     test_name = 'testPrintPngFillPage'
     logger.info('Setting print option to Fill Page...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
-                              pagefit='Fill Page')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddFitToPageOption(self.fill)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4048,8 +4090,12 @@ class Printing(LogoCert):
     test_id = '5f2ab7d7-663b-4b86-b4e5-c38979baad11'
     test_name = 'testPrintPngFitToPage'
     logger.info('Setting print option to Fit to Page...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
-                              pagefit='Fit to Page')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddFitToPageOption(self.fit)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4063,8 +4109,12 @@ class Printing(LogoCert):
     test_id = '09532b30-f853-458e-99bf-5c1c532573c8'
     test_name = 'testPrintPngGrowToPage'
     logger.info('Setting print option to Grow to Page...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
-                              pagefit='Grow to Page')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddFitToPageOption(self.grow)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4078,8 +4128,12 @@ class Printing(LogoCert):
     test_id = '3309482d-d23a-4ad7-8161-8c474ab1e6de'
     test_name = 'testPrintPngShrinkToPage'
     logger.info('Setting print option to Shrink to Page...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
-                              pagefit='Shrink to Page')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddFitToPageOption(self.shrink)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4093,8 +4147,12 @@ class Printing(LogoCert):
     test_id = '0c8c1bd5-7d2a-4f51-9219-36d1f6957b57'
     test_name = 'testPrintPngNoFitting'
     logger.info('Setting print option to No Fitting...')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
-                              pagefit='No Fitting')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddFitToPageOption(self.no_fitting)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4108,8 +4166,13 @@ class Printing(LogoCert):
     test_id = '6e36efd8-fb5b-4fce-8d24-2cc1097a88f5'
     test_name = 'testPrintJpgPortrait'
     logger.info('Print simple JPG file with portrait orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG14'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.portrait)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG14'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4123,8 +4186,13 @@ class Printing(LogoCert):
     test_id = '1d97a167-bc37-4e24-adf9-7e4bdbfff553'
     test_name = 'testPrintJpgLandscape'
     logger.info('Print simple JPG file with landscape orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG7'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4138,8 +4206,12 @@ class Printing(LogoCert):
     test_id = 'bbd3c533-fcc2-4bf1-adc9-9cd63cc35a80'
     test_name = 'testPrintJpgBlacknWhite'
     logger.info('Print black and white JPG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG1'],
-                              color='Monochrome')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.monochrome)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4153,8 +4225,13 @@ class Printing(LogoCert):
     test_id = '26076864-6aad-44e5-96a6-4f455e751fe7'
     test_name = 'testPrintJpgColorTestLandscape'
     logger.info('Print color test JPG file with landscape orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG2'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG2'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4168,8 +4245,13 @@ class Printing(LogoCert):
     test_id = '1f0e4b40-a164-4441-b3cb-182e2a5a5cdb'
     test_name = 'testPrintJpgPhoto'
     logger.info('Print JPG photo in landscape orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG5'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG5'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4183,8 +4265,13 @@ class Printing(LogoCert):
     test_id = '03a22a19-8089-4150-8f1b-ceb78180713e'
     test_name = 'testPrintJpgSingleObject'
     logger.info('Print JPG file single object in landscape.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG7'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4198,8 +4285,13 @@ class Printing(LogoCert):
     test_id = '8ce44d03-ba45-40c5-af0f-2aacb8a6debf'
     test_name = 'testPrintJpgProgressive'
     logger.info('Print a Progressive JPG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG8'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG8'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4213,8 +4305,13 @@ class Printing(LogoCert):
     test_id = '2d7ba1af-917b-467b-9e09-72f77cf58a56'
     test_name = 'testPrintJpgMultiImageWithText'
     logger.info('Print multi image with text JPG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG9'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG9'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4228,8 +4325,12 @@ class Printing(LogoCert):
     test_id = 'c8208125-e720-406a-9308-bc80d461b08e'
     test_name = 'testPrintJpgMaxComplex'
     logger.info('Print complex JPG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG10'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG10'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4243,8 +4344,13 @@ class Printing(LogoCert):
     test_id = '3ff201de-77f3-4be1-9cf2-60dc29698f0b'
     test_name = 'testPrintJpgMultiTargetPortrait'
     logger.info('Print multi-target JPG file with portrait orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG11'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.portrait)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG11'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4258,8 +4364,13 @@ class Printing(LogoCert):
     test_id = 'f2f2cae4-e835-48e0-8632-953dd50be0ca'
     test_name = 'testPrintJpgStepChartLandscape'
     logger.info('Print step chart JPG file in landscape orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG13'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG13'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4273,8 +4384,13 @@ class Printing(LogoCert):
     test_id = 'c45e7ebf-241b-4fdf-8d0b-4d7f850a2b1a'
     test_name = 'testPrintJpgLarge'
     logger.info('Print large JPG file with landscape orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG3'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4288,8 +4404,13 @@ class Printing(LogoCert):
     test_id = 'e30fefe9-1a32-4b22-9088-0af5fe2ffd57'
     test_name = 'testPrintJpgLargePhoto'
     logger.info('Print large photo JPG file with landscape orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG4'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG4'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4304,8 +4425,12 @@ class Printing(LogoCert):
     test_id = '0d4d0d33-b170-414d-a722-00e848bede10'
     test_name = 'testPrintFilePdf'
     logger.info('Printing a black and white 1 page PDF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF4'],
-                              color='Monochrome')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.monochrome)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF4'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4320,8 +4445,12 @@ class Printing(LogoCert):
     test_id = 'd81fe624-c6ec-4e72-9535-9cead873a4fa'
     test_name = 'testPrintFileColorPdf'
     logger.info('Printing a color, 1 page PDF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF13'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4336,8 +4465,12 @@ class Printing(LogoCert):
     test_id = '84e4d761-594d-4930-8a91-b43d037a7422'
     test_name = 'testPrintFileMultiPagePdf'
     logger.info('Printing a 3 page, color PDF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4352,8 +4485,12 @@ class Printing(LogoCert):
     test_id = '005a9954-b55e-40f9-8a66-aa06b5528a78'
     test_name = 'testPrintFileLargeColorPdf'
     logger.info('Printing a 20 page, color PDF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4368,7 +4505,11 @@ class Printing(LogoCert):
     test_id = '7cd98a62-d209-4d5a-934d-f951e0db9666'
     test_name = 'testPrintFilePdfV1_2'
     logger.info('Printing a PDF v1.2 file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.2'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.2'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4383,7 +4524,11 @@ class Printing(LogoCert):
     test_id = 'dec3eebc-75b3-47c2-8619-0451e172cb08'
     test_name = 'testPrintFilePdfV1_3'
     logger.info('Printing a PDF v1.3 file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.3'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4398,7 +4543,11 @@ class Printing(LogoCert):
     test_id = '881cdd22-49e8-4560-ae13-b8c79741f7d1'
     test_name = 'testPrintFilePdfV1_4'
     logger.info('Printing a PDF v1.4 file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.4'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.4'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4413,7 +4562,11 @@ class Printing(LogoCert):
     test_id = '518c3a4b-1335-4979-b1e6-2b06acad8905'
     test_name = 'testPrintFilePdfV1_5'
     logger.info('Printing a PDF v1.5 file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.5'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.5'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4428,7 +4581,11 @@ class Printing(LogoCert):
     test_id = '94dbee8a-e02c-4926-ad7e-a83dbff716dd'
     test_name = 'testPrintFilePdfV1_6'
     logger.info('Printing a PDF v1.6 file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.6'])
+    return
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.6'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4443,7 +4600,11 @@ class Printing(LogoCert):
     test_id = '2ee12493-eeaf-43cd-a136-d01227d63e9a'
     test_name = 'testPrintFilePdfV1_7'
     logger.info('Printing a PDF v1.7 file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4458,8 +4619,13 @@ class Printing(LogoCert):
     test_id = '4bddcf56-984b-4c4d-9c39-63459b295247'
     test_name = 'testPrintFilePdfColorTicket'
     logger.info('Printing PDF Color ticket in with landscape orientation.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF2'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF2'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4474,7 +4640,11 @@ class Printing(LogoCert):
     test_id = 'a7328247-84ab-4a8f-865a-f8f30ed20fc2'
     test_name = 'testPrintFilePdfLetterMarginTest'
     logger.info('Printing PDF Letter Margin Test.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF3'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4489,7 +4659,11 @@ class Printing(LogoCert):
     test_id = '215a7db8-ae4b-4784-b49a-49c30cf82b53'
     test_name = 'testPrintFilePdfMarginTest2'
     logger.info('Printing PDF Margin Test 2 file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF6'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF6'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4504,8 +4678,12 @@ class Printing(LogoCert):
     test_id = '2aaa222a-7d35-4f88-bfc0-8cf2eb5f8373'
     test_name = 'testPrintFilePdfSimpleLandscape'
     logger.info('Printing simple PDF file in landscape.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF8'],
-                              layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF8'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4520,8 +4698,12 @@ class Printing(LogoCert):
     test_id = 'ae2a075b-ee7c-409c-8d2d-d08f5c2e868b'
     test_name = 'testPrintFilePdfCupsTestPage'
     logger.info('Printing PDF CUPS test page.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4536,8 +4718,12 @@ class Printing(LogoCert):
     test_id = '882efbf9-47f2-43cd-9ee9-d4b026679406'
     test_name = 'testPrintFilePdfColorTest'
     logger.info('Printing PDF Color Test page.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF11'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF11'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4552,8 +4738,12 @@ class Printing(LogoCert):
     test_id = 'b38c0113-095e-4e73-8efe-7352852cafb7'
     test_name = 'testPrintFilePdfBarCodeTicket'
     logger.info('Printing PDF Bar coded ticket.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF12'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF12'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4568,8 +4758,12 @@ class Printing(LogoCert):
     test_id = '12555398-4e1f-4305-bcc6-b2b82d665634'
     test_name = 'testPrintFilePdfComplexTicket'
     logger.info('Printing PDF of complex ticket.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF14'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF14'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4584,8 +4778,12 @@ class Printing(LogoCert):
     test_id = '7c346ab2-d8b4-407b-b477-755a0432ace5'
     test_name = 'testPrintFileSimpleGIF'
     logger.info('Printing simple GIF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF2'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF2'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4600,8 +4798,12 @@ class Printing(LogoCert):
     test_id = '2e81decf-e364-4651-af1b-a516ac51f4bb'
     test_name = 'testPrintFileSmallGIF'
     logger.info('Printing small GIF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF4'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF4'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4616,8 +4818,12 @@ class Printing(LogoCert):
     test_id = '72ed6bc4-1b42-4bc1-921c-4ab205dd56cd'
     test_name = 'testPrintFileLargeGIF'
     logger.info('Printing large GIF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF1'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4632,8 +4838,12 @@ class Printing(LogoCert):
     test_id = '7fa69496-542e-4f71-8538-7f67b907a2ec'
     test_name = 'testPrintFileBlackNWhiteGIF'
     logger.info('Printing black and white GIF file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['GIF3'],
-                              color='Monochrome')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.monochrome)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4648,7 +4858,11 @@ class Printing(LogoCert):
     test_id = '46164630-7c6e-4b37-b829-5edac13888ac'
     test_name = 'testPrintFileHTML'
     logger.info('Printing HTML file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['HTML1'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['HTML1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4663,8 +4877,12 @@ class Printing(LogoCert):
     test_id = '4c1e7474-3471-46b2-8e0d-2e605f89c129'
     test_name = 'testPrintFilePngA4Test'
     logger.info('Printing A4 Test PNG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG1'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4679,8 +4897,12 @@ class Printing(LogoCert):
     test_id = '7f1e0a95-767e-4302-8225-61d93e127a41'
     test_name = 'testPrintFilePngPortrait'
     logger.info('Printing PNG portrait file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG8'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4695,8 +4917,13 @@ class Printing(LogoCert):
     test_id = '6b386438-d5cd-46c5-9b25-4ac50faf169c'
     test_name = 'testPrintFileColorPngLandscape'
     logger.info('Printing Color PNG file in landscape.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG2'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG2'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4711,8 +4938,12 @@ class Printing(LogoCert):
     test_id = '213b84ed-6ddb-4d9b-ab27-be8d5f6d8370'
     test_name = 'testPrintFileSmallPng'
     logger.info('Printing a small PNG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG3'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4727,8 +4958,13 @@ class Printing(LogoCert):
     test_id = '83b38406-74f2-4b2e-a74c-54998956ee18'
     test_name = 'testPrintFilePngWithLetters'
     logger.info('Printing PNG file with letters.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG4'],
-                              color=self.color, layout='Landscape')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+    cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG4'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4743,8 +4979,12 @@ class Printing(LogoCert):
     test_id = '8f66270d-64df-49c7-bb49-01705b65d089'
     test_name = 'testPrintFilePngColorTest'
     logger.info('Printing PNG Color Test file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG5'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG5'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4759,8 +4999,12 @@ class Printing(LogoCert):
     test_id = '931f1994-eebf-4fa6-9549-f8811b4ed641'
     test_name = 'testPrintFilePngColorImageWithText'
     logger.info('Printing color images with text PNG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG6'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG6'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4775,8 +5019,12 @@ class Printing(LogoCert):
     test_id = '055898ba-25f7-4b4b-b116-ff7d499c8994'
     test_name = 'testPrintFilePngCupsTest'
     logger.info('Printing Cups Test PNG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4791,8 +5039,12 @@ class Printing(LogoCert):
     test_id = '852fab66-af6b-4f06-b94f-9d04508be3c6'
     test_name = 'testPrintFileLargePng'
     logger.info('Printing large PNG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG9'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG9'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4807,7 +5059,11 @@ class Printing(LogoCert):
     test_id = 'f10c0c3c-0d44-440f-8058-a0643235e2f8'
     test_name = 'testPrintFileSvgSimple'
     logger.info('Printing simple SVG file.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['SVG2'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG2'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4822,8 +5078,12 @@ class Printing(LogoCert):
     test_id = '613e3f50-365f-4d4e-be72-d04202f74de4'
     test_name = 'testPrintFileSvgWithImages'
     logger.info('Printing SVG file with images.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['SVG1'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4838,7 +5098,11 @@ class Printing(LogoCert):
     test_id = 'ff85ffb1-7032-4006-948d-1725d93c5c5a'
     test_name = 'testPrintFileTiffRegLink'
     logger.info('Printing TIFF file of GCP registration link.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['TIFF1'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF1'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -4853,8 +5117,12 @@ class Printing(LogoCert):
     test_id = '983ba7b4-ced0-4144-81cc-6abe89e63f78'
     test_name = 'testPrintFileTiffPhoto'
     logger.info('Printing TIFF file of photo.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['TIFF2'],
-                              color=self.color)
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF2'], test_name, cjt)
+
     try:
       self.assertTrue(output)
     except AssertionError:
