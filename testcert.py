@@ -3888,6 +3888,10 @@ class PostUnregister(LogoCert):
 class Printing(LogoCert):
   """Test printing using Cloud Print."""
 
+  def setUp(self):
+    # Create a fresh CJT for each test case
+    self.cjt = CloudJobTicket(device.details['gcpVersion'])
+
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass()
@@ -3902,11 +3906,11 @@ class Printing(LogoCert):
       return
     logger.info('Setting copies to 2...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddCopiesOption(2)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG12'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddCopiesOption(2)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG12'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -3926,10 +3930,10 @@ class Printing(LogoCert):
       return
     logger.info('Setting duplex to long edge...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddDuplexOption(self.long_edge)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+    self.cjt.AddDuplexOption(self.long_edge)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -3949,10 +3953,10 @@ class Printing(LogoCert):
       return
     logger.info('Setting duplex to short edge...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddDuplexOption(self.short_edge)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+    self.cjt.AddDuplexOption(self.short_edge)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3972,10 +3976,9 @@ class Printing(LogoCert):
       return
     logger.info('Printing with color selected.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
+    self.cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
     try:
       self.assertTrue(output)
     except AssertionError:
@@ -3992,10 +3995,10 @@ class Printing(LogoCert):
     logger.info('Testing the selection of A4 media size.')
     raw_input('Load printer with A4 size paper. Select return when ready.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddSizeOption(self.A4_height_microns, self.A4_width_microns)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, cjt)
+    self.cjt.AddSizeOption(self.A4_height_microns, self.A4_width_microns)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4012,9 +4015,9 @@ class Printing(LogoCert):
     test_name = 'testPrintPdfReverseOrder'
     logger.info('Print with reverse order flag set...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddReverseOption()
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+
+    self.cjt.AddReverseOption()
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4030,11 +4033,11 @@ class Printing(LogoCert):
     test_name = 'testPrintPdfPageRangePage'
     logger.info('Setting page range to page 2 and 4-6...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddPageRangeOption(2, end = 2)
-    cjt.AddPageRangeOption(4, end = 6)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, cjt)
+    self.cjt.AddPageRangeOption(2, end = 2)
+    self.cjt.AddPageRangeOption(4, end = 6)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4054,10 +4057,10 @@ class Printing(LogoCert):
     for dpi_option in dpi_options:
       logger.info('Setting dpi to %s', dpi_option)
 
-      cjt = CloudJobTicket(device.details['gcpVersion'])
-      cjt.AddDpiOption(dpi_option['horizontal_dpi'], dpi_option['vertical_dpi'])
 
-      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, cjt)
+      self.cjt.AddDpiOption(dpi_option['horizontal_dpi'], dpi_option['vertical_dpi'])
+
+      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
 
       try:
         self.assertTrue(output)
@@ -4072,10 +4075,10 @@ class Printing(LogoCert):
     test_name = 'testPrintPngFillPage'
     logger.info('Setting print option to Fill Page...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddFitToPageOption(self.fill)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+    self.cjt.AddFitToPageOption(self.fill)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4091,10 +4094,10 @@ class Printing(LogoCert):
     test_name = 'testPrintPngFitToPage'
     logger.info('Setting print option to Fit to Page...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddFitToPageOption(self.fit)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+    self.cjt.AddFitToPageOption(self.fit)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4110,10 +4113,10 @@ class Printing(LogoCert):
     test_name = 'testPrintPngGrowToPage'
     logger.info('Setting print option to Grow to Page...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddFitToPageOption(self.grow)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+    self.cjt.AddFitToPageOption(self.grow)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4129,10 +4132,10 @@ class Printing(LogoCert):
     test_name = 'testPrintPngShrinkToPage'
     logger.info('Setting print option to Shrink to Page...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddFitToPageOption(self.shrink)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+    self.cjt.AddFitToPageOption(self.shrink)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4148,10 +4151,10 @@ class Printing(LogoCert):
     test_name = 'testPrintPngNoFitting'
     logger.info('Setting print option to No Fitting...')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddFitToPageOption(self.no_fitting)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+    self.cjt.AddFitToPageOption(self.no_fitting)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4167,11 +4170,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgPortrait'
     logger.info('Print simple JPG file with portrait orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.portrait)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG14'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.portrait)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG14'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4187,11 +4190,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgLandscape'
     logger.info('Print simple JPG file with landscape orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4207,10 +4210,10 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgBlacknWhite'
     logger.info('Print black and white JPG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.monochrome)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG1'], test_name, cjt)
+    self.cjt.AddColorOption(self.monochrome)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4226,11 +4229,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgColorTestLandscape'
     logger.info('Print color test JPG file with landscape orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG2'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG2'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4246,11 +4249,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgPhoto'
     logger.info('Print JPG photo in landscape orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG5'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG5'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4266,11 +4269,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgSingleObject'
     logger.info('Print JPG file single object in landscape.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4286,11 +4289,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgProgressive'
     logger.info('Print a Progressive JPG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG8'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG8'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4306,11 +4309,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgMultiImageWithText'
     logger.info('Print multi image with text JPG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG9'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG9'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4326,10 +4329,10 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgMaxComplex'
     logger.info('Print complex JPG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG10'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG10'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4345,11 +4348,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgMultiTargetPortrait'
     logger.info('Print multi-target JPG file with portrait orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.portrait)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG11'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.portrait)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG11'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4365,11 +4368,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgStepChartLandscape'
     logger.info('Print step chart JPG file in landscape orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG13'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG13'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4385,11 +4388,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgLarge'
     logger.info('Print large JPG file with landscape orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG3'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4405,11 +4408,11 @@ class Printing(LogoCert):
     test_name = 'testPrintJpgLargePhoto'
     logger.info('Print large photo JPG file with landscape orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG4'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG4'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4426,10 +4429,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdf'
     logger.info('Printing a black and white 1 page PDF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.monochrome)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF4'], test_name, cjt)
+    self.cjt.AddColorOption(self.monochrome)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF4'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4446,10 +4449,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileColorPdf'
     logger.info('Printing a color, 1 page PDF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4466,10 +4469,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileMultiPagePdf'
     logger.info('Printing a 3 page, color PDF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4486,10 +4489,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileLargeColorPdf'
     logger.info('Printing a 20 page, color PDF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4506,9 +4509,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfV1_2'
     logger.info('Printing a PDF v1.2 file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.2'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.2'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4525,9 +4528,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfV1_3'
     logger.info('Printing a PDF v1.3 file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.3'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4544,9 +4547,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfV1_4'
     logger.info('Printing a PDF v1.4 file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.4'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.4'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4563,9 +4566,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfV1_5'
     logger.info('Printing a PDF v1.5 file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.5'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.5'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4582,9 +4585,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfV1_6'
     logger.info('Printing a PDF v1.6 file.')
     return
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.6'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.6'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4601,9 +4604,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfV1_7'
     logger.info('Printing a PDF v1.7 file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4620,11 +4623,11 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfColorTicket'
     logger.info('Printing PDF Color ticket in with landscape orientation.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF2'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF2'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4641,9 +4644,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfLetterMarginTest'
     logger.info('Printing PDF Letter Margin Test.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF3'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4660,9 +4663,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfMarginTest2'
     logger.info('Printing PDF Margin Test 2 file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF6'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF6'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4679,10 +4682,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfSimpleLandscape'
     logger.info('Printing simple PDF file in landscape.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF8'], test_name, cjt)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF8'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4699,10 +4702,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfCupsTestPage'
     logger.info('Printing PDF CUPS test page.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4719,10 +4722,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfColorTest'
     logger.info('Printing PDF Color Test page.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF11'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF11'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4739,10 +4742,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfBarCodeTicket'
     logger.info('Printing PDF Bar coded ticket.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF12'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF12'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4759,10 +4762,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePdfComplexTicket'
     logger.info('Printing PDF of complex ticket.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF14'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF14'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4779,10 +4782,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileSimpleGIF'
     logger.info('Printing simple GIF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF2'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF2'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4799,10 +4802,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileSmallGIF'
     logger.info('Printing small GIF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF4'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF4'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4819,10 +4822,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileLargeGIF'
     logger.info('Printing large GIF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF1'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4839,10 +4842,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFileBlackNWhiteGIF'
     logger.info('Printing black and white GIF file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.monochrome)
+    self.cjt.AddColorOption(self.monochrome)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF3'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4859,9 +4861,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFileHTML'
     logger.info('Printing HTML file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['HTML1'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['HTML1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4878,10 +4880,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePngA4Test'
     logger.info('Printing A4 Test PNG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4898,10 +4900,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePngPortrait'
     logger.info('Printing PNG portrait file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4918,11 +4920,11 @@ class Printing(LogoCert):
     test_name = 'testPrintFileColorPngLandscape'
     logger.info('Printing Color PNG file in landscape.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG2'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG2'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4939,10 +4941,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileSmallPng'
     logger.info('Printing a small PNG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4959,11 +4961,11 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePngWithLetters'
     logger.info('Printing PNG file with letters.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
-    cjt.AddPageOrientationOption(self.landscape)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG4'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddPageOrientationOption(self.landscape)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG4'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -4980,10 +4982,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePngColorTest'
     logger.info('Printing PNG Color Test file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG5'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG5'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -5000,10 +5002,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePngColorImageWithText'
     logger.info('Printing color images with text PNG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG6'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG6'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -5020,10 +5022,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFilePngCupsTest'
     logger.info('Printing Cups Test PNG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -5040,10 +5042,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileLargePng'
     logger.info('Printing large PNG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG9'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG9'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -5060,9 +5062,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFileSvgSimple'
     logger.info('Printing simple SVG file.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG2'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG2'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -5079,10 +5081,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileSvgWithImages'
     logger.info('Printing SVG file with images.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG1'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -5099,9 +5101,9 @@ class Printing(LogoCert):
     test_name = 'testPrintFileTiffRegLink'
     logger.info('Printing TIFF file of GCP registration link.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF1'], test_name, cjt)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF1'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
@@ -5118,10 +5120,10 @@ class Printing(LogoCert):
     test_name = 'testPrintFileTiffPhoto'
     logger.info('Printing TIFF file of photo.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddColorOption(self.color)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF2'], test_name, cjt)
+    self.cjt.AddColorOption(self.color)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF2'], test_name, self.cjt)
 
     try:
       self.assertTrue(output)
