@@ -60,7 +60,7 @@ from oauth2client.file import Storage
 from oauth2client.tools import run_flow
 from oauth2client.tools import argparser
 from _cpslib import GCPService
-from _ticket import CloudJobTicket
+from _ticket import CloudJobTicket, CjtConstants
 
 
 def _ParseArgs():
@@ -270,25 +270,9 @@ class LogoCert(unittest.TestCase):
     cls.pw = options.passwd
     cls.autorun = options.autorun
     cls.printer = options.printer
-	
-	# TODO Make these into enums
-    cls.monochrome = 'STANDARD_MONOCHROME'
-    cls.color = 'STANDARD_COLOR' if Constants.CAPS['COLOR'] else cls.monochrome
 
-    cls.landscape = 'LANDSCAPE'
-    cls.portrait = 'PORTRAIT'
-
-    cls.long_edge = 'LONG_EDGE'
-    cls.short_edge = 'SHORT_EDGE'
-
-    cls.no_fitting = 'NO_FITTING'
-    cls.fit = 'FIT_TO_PAGE'
-    cls.grow = 'GROW_TO_PAGE'
-    cls.shrink = 'SHRINK_TO_PAGE'
-    cls.fill = 'FILL_PAGE'
-
-    cls.A4_height_microns = 297000
-    cls.A4_width_microns = 210000
+    cls.monochrome = CjtConstants.MONOCHROME
+    cls.color = CjtConstants.COLOR if Constants.CAPS['COLOR'] else cls.monochrome
 
     time.sleep(2)
 
@@ -2718,7 +2702,7 @@ class ChromePrinting(LogoCert):
 
     printed = gcp.Submit(device.dev_id, 'http://www.google.com/cloudprint/learn/', test_name, cjt, is_url=True)
     try:
-      self.assertTrue(printed)
+      self.assertTrue(printed['success'])
     except AssertionError:
       notes = 'Error while printing from Chrome with color selected.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2848,7 +2832,7 @@ class ChromePrinting(LogoCert):
 
     printed = gcp.Submit(device.dev_id, Constants.GOOGLE, test_name, cjt, is_url=True)
     try:
-      self.assertTrue(printed)
+      self.assertTrue(printed['success'])
     except AssertionError:
       notes = 'Error printing with copies option using Chrome Print Dialog.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2946,7 +2930,7 @@ class ChromePrinting(LogoCert):
 
     printed = gcp.Submit(device.dev_id, Constants.GOOGLE_DOCS['GMAIL1'], test_name, cjt)
     try:
-      self.assertTrue(printed)
+      self.assertTrue(printed['success'])
     except AssertionError:
       notes = 'Error printing simple 1 page Gmail message from Chrome.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3419,14 +3403,19 @@ class JobState(LogoCert):
     """Verify printer recovers from an In-Progress job being deleted."""
     test_id = 'd270088d-0a95-416c-98ab-c703cadde1c3'
     test_name = 'testJobDeletionRecovery'
-    if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
+    return
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+
+    if output['success']:
       raw_input('Select enter once the first page prints out.')
-      if gcpmgr.DeleteJob('PDF1.7.pdf'):
+      delete_res = gcp.DeleteJob(output['job']['id'])
+      if delete_res['success']:
         # Since it's PDF file give the job time to finish printing.
         time.sleep(10)
-        output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'])
+        output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
         try:
-          self.assertTrue(output)
+          self.assertTrue(output['success'])
         except AssertionError:
           notes = 'Error printing job after deleting IN_PROGRESS job.'
           self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3451,21 +3440,28 @@ class JobState(LogoCert):
     test_id = '3e178014-b2b6-4ee0-b9b5-f2df24be10b0'
     test_name = 'testJobStateEmptyInputTray'
     print 'Empty the input tray of all paper.'
+    return
     raw_input('Select enter once input tray has been emptied.')
-    if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+
+    if output['success']:
       # give printer time to update our service.
       time.sleep(10)
-      job_state = gcpmgr.WaitJobStatusNotIn('PDF1.7.pdf', ['Queued', 'In progress'])
+      job = gcp.WaitJobStatusNotIn(output['job']['id'], device.dev_id, ['QUEUED', 'IN_PROGRESS'])
       try:
-        self.assertEqual(job_state, 'Error')
+        self.assertIsNotNone(job)
+        self.assertEqual(job['status'], 'ERROR')
       except AssertionError:
         notes = 'Print Job is not in Error state.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        job_state_msg = gcpmgr.GetJobDetailsStateMsg('PDF1.7.pdf')
+        job_state_msg = job['uiState']['cause']
         notes = 'Job State Error msg: %s' % job_state_msg
         try:
+          #TODO Do we really want to fail here if 'tray' is not in the msg?
           self.assertIn('tray', job_state_msg)
         except AssertionError:
           logger.error('The Job State error message did not contain tray')
@@ -3474,29 +3470,31 @@ class JobState(LogoCert):
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
-          print 'Now place paper back in the input tray.'
+          raw_input('Select enter after placing the papers back in the input tray.')
           print 'After placing the paper back, Job State should transition to in progress.'
-          job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
+          job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, 'IN_PROGRESS')
           try:
-            self.assertEqual(job_state, 'In progress')
+            self.assertIsNotNone(job)
+            self.assertEqual(job['status'], 'IN_PROGRESS')
           except AssertionError:
-            notes = 'Job is not in progress: %s' % job_state
+            notes = 'Job is not in progress: %s' % job['status']
             logger.error(notes)
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
             print 'Wait for the print job to finish.'
             raw_input('Select enter once the job completes printing...')
-            job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'Printed')
+            job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, 'DONE')
             try:
-              self.assertEqual(job_state, 'Printed')
+              self.assertIsNotNone(job)
+              self.assertEqual(job['status'], 'DONE')
             except AssertionError:
-              notes = 'Job is not in Printed state: %s' % job_state
+              notes = 'Job is not in Printed state: %s' % job['status']
               logger.error(notes)
               self.LogTest(test_id, test_name, 'Failed', notes)
               raise
             else:
-              notes = 'Job state: %s' % job_state
+              notes = 'Job state: %s' % job['status']
               self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Error printing PDF file.'
@@ -3513,7 +3511,10 @@ class JobState(LogoCert):
       return
     print 'Remove ink cartridge or toner from the printer.'
     raw_input('Select enter once the toner is removed.')
-    if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+    if output['success']:
       # give printer time to update our service.
       time.sleep(10)
       job_state = gcpmgr.WaitJobStatusNotIn('PDF1.7.pdf', ['Queued', 'In progress'])
@@ -3639,9 +3640,13 @@ class JobState(LogoCert):
     print 'This test is designed to select media size that is not available.'
     print 'The printer should prompt the user to enter the requested size.'
     print 'Load input tray with letter sized paper.'
+    return
     raw_input('Select enter once paper tray loaded with letter sized paper.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'],
-                              size='A4')
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
+    #output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'], size='A4')
     print 'Attempting to print with A4 media size.'
     print 'Fail this test if printer does not warn user to load correct size'
     try:
@@ -3704,41 +3709,45 @@ class JobState(LogoCert):
     raw_input('Select enter once printer has fetched all jobs.')
     self.ManualPass(test_id, test_name)
 
-  def testDeleteJobFromMgtPage(self):
-    """Verify deleting job from Mgt Page is properly handled by printer."""
+  def testDeleteQueuedJob(self):
+    """Verify deleting a queued job is properly handled by printer."""
     test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
-    test_name = 'testDeleteJobFromMgtPage'
+    test_name = 'testDeleteQueuedJob'
+    #TODO remove this
+    return
+    # Print a large file (~10 MB) so the job will be in the 'Queued' state for a bit while the printer downloads it
+    doc_to_print = Constants.IMAGES['PNG9']
 
-    print 'Start with printer power off.'
-    raw_input('Select enter when printer is powered completely off.')
+    print 'Attempting to add a job to the queue.'
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, doc_to_print, test_name, cjt)
 
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'])
-    time.sleep(10)
-    job_state = gcpmgr.GetJobStatus('testpage.png')
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
-      notes = 'Error printing %s' % Constants.IMAGES['PNG7']
+      notes = 'Error printing %s' % doc_to_print
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
+
+    query_res = gcp.Jobs(printer_id=device.dev_id, owner=Constants.USER['EMAIL'], job_title=test_name)
+
     try:
-      self.assertEqual(job_state, 'Queued')
+      self.assertIsNotNone(job)
+      self.assertEqual(job['status'], 'QUEUED')
     except AssertionError:
       notes = 'Print job is not in queued state.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
     print 'Attempting to delete job in queued state.'
-    job_delete = gcpmgr.DeleteJob('testpage.png')
+    job_delete = gcp.DeleteJob(output['job']['id'])
     try:
-      self.assertTrue(job_delete)
+      self.assertTrue(job_delete['success'])
     except AssertionError:
       notes = 'Queued job not deleted.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      print 'Turn printer on.'
-      raw_input('Select enter once printer is fully powered on.')
       print 'Verify printer does not go into error state because of deleted job'
       self.ManualPass(test_id, test_name)
 
@@ -3913,7 +3922,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG12'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with copies = 2.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3931,12 +3940,12 @@ class Printing(LogoCert):
     logger.info('Setting duplex to long edge...')
 
 
-    self.cjt.AddDuplexOption(self.long_edge)
+    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing in duplex long edge.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3954,11 +3963,11 @@ class Printing(LogoCert):
     logger.info('Setting duplex to short edge...')
 
 
-    self.cjt.AddDuplexOption(self.short_edge)
+    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing in duplex short edge.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3980,7 +3989,7 @@ class Printing(LogoCert):
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing color PDF with color selected.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3996,12 +4005,12 @@ class Printing(LogoCert):
     raw_input('Load printer with A4 size paper. Select return when ready.')
 
 
-    self.cjt.AddSizeOption(self.A4_height_microns, self.A4_width_microns)
+    self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error selecting A4 media size.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4020,7 +4029,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing in reverse order.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4040,7 +4049,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with page range set to page 2 and 4-6.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4063,7 +4072,7 @@ class Printing(LogoCert):
       output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
 
       try:
-        self.assertTrue(output)
+        self.assertTrue(output['success'])
       except AssertionError:
         notes = 'Error printing with dpi set to %s' % dpi_option
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4076,12 +4085,12 @@ class Printing(LogoCert):
     logger.info('Setting print option to Fill Page...')
 
 
-    self.cjt.AddFitToPageOption(self.fill)
+    self.cjt.AddFitToPageOption(CjtConstants.FILL)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Fill Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4095,12 +4104,12 @@ class Printing(LogoCert):
     logger.info('Setting print option to Fit to Page...')
 
 
-    self.cjt.AddFitToPageOption(self.fit)
+    self.cjt.AddFitToPageOption(CjtConstants.FIT)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Fit to Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4114,12 +4123,12 @@ class Printing(LogoCert):
     logger.info('Setting print option to Grow to Page...')
 
 
-    self.cjt.AddFitToPageOption(self.grow)
+    self.cjt.AddFitToPageOption(CjtConstants.GROW)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Grow To Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4133,12 +4142,12 @@ class Printing(LogoCert):
     logger.info('Setting print option to Shrink to Page...')
 
 
-    self.cjt.AddFitToPageOption(self.shrink)
+    self.cjt.AddFitToPageOption(CjtConstants.SHRINK)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Shrink To Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4152,12 +4161,12 @@ class Printing(LogoCert):
     logger.info('Setting print option to No Fitting...')
 
 
-    self.cjt.AddFitToPageOption(self.no_fitting)
+    self.cjt.AddFitToPageOption(CjtConstants.NO_FIT)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with No Fitting option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4172,12 +4181,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.portrait)
+    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG14'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing JPG file in portrait orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4192,12 +4201,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing JPG file with landscape orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4216,7 +4225,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing black and white JPG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4231,12 +4240,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG2'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing color test JPG file with landscape orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4251,12 +4260,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG5'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing JPG photo in landscape orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4271,12 +4280,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing single object JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4291,12 +4300,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG8'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing progressive JPEG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4311,12 +4320,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG9'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing multi-image with text JPG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4335,7 +4344,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG10'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing complex JPG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4350,12 +4359,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.portrait)
+    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG11'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing multi-target JPG file in portrait.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4370,12 +4379,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG13'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing step chart JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4390,12 +4399,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4410,12 +4419,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG4'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large photo JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4435,7 +4444,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF4'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 1 page, black and white PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4455,7 +4464,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 1 page, color PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4475,7 +4484,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 3 page, color PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4495,7 +4504,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 20 page, color PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4514,7 +4523,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.2'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.2 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4533,7 +4542,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.3 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4552,7 +4561,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.4'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.4 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4571,7 +4580,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.5'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.5 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4590,7 +4599,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.6'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.6 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4609,7 +4618,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.7 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4625,12 +4634,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF2'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing color boarding ticket PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4649,7 +4658,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing letter margin test PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4668,7 +4677,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF6'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing margin test 2 PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4683,12 +4692,12 @@ class Printing(LogoCert):
     logger.info('Printing simple PDF file in landscape.')
 
 
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF8'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing simple PDF file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4708,7 +4717,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing CUPS print test PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4728,7 +4737,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF11'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Color Test PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4748,7 +4757,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF12'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing bar coded ticket PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4768,7 +4777,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF14'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing complex ticket that is PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4788,7 +4797,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF2'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing simple GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4808,7 +4817,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF4'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing small GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4828,7 +4837,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4847,7 +4856,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing black and white GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4866,7 +4875,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['HTML1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing HTML file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4886,7 +4895,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing A4 Test PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4906,7 +4915,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PNG portrait file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4922,12 +4931,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG2'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Color PNG in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4947,7 +4956,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing small PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4963,12 +4972,12 @@ class Printing(LogoCert):
 
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(self.landscape)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
 
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG4'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PNG file containing letters.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4988,7 +4997,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG5'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Color Test PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -5008,7 +5017,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG6'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing color images with text PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -5028,7 +5037,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Cups Test PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -5048,7 +5057,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG9'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -5067,7 +5076,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG2'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing simple SVG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -5087,7 +5096,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing SVG file with images.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -5106,7 +5115,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF1'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing TIFF file of GCP registration link.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -5126,7 +5135,7 @@ class Printing(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF2'], test_name, self.cjt)
 
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing TIFF file of photo.'
       self.LogTest(test_id, test_name, 'Failed', notes)

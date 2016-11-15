@@ -123,3 +123,39 @@ class CloudJobTicket(object):
 
     self.val['print']['page_range']= {'interval': page_ranges}
 
+
+
+class CjtConstants(object):
+  """A class that holds constants for used in a CJT"""
+
+  # Color scheme
+  MONOCHROME = 'STANDARD_MONOCHROME'
+  COLOR = 'STANDARD_COLOR'
+
+  # Page orientation
+  LANDSCAPE = 'LANDSCAPE'
+  PORTRAIT = 'PORTRAIT'
+
+  # Duplexing
+  LONG_EDGE = 'LONG_EDGE'
+  SHORT_EDGE = 'SHORT_EDGE'
+
+  # Page fit
+  NO_FIT = 'NO_FITTING'
+  FIT = 'FIT_TO_PAGE'
+  GROW = 'GROW_TO_PAGE'
+  SHRINK = 'SHRINK_TO_PAGE'
+  FILL = 'FILL_PAGE'
+
+  # A4 size in microns
+  A4_HEIGHT = 297000
+  A4_WIDTH = 210000
+
+  # Printer state
+  DRAFT = 'DRAFT'
+  HELD = 'HELD'
+  QUEUED = 'QUEUED'
+  IN_PROGRESS = 'IN_PROGRESS'
+  STOPPED = 'STOPPED'
+  DONE = 'DONE'
+  ABORTED = 'ABORTED'
