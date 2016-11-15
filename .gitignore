@@ -1,2 +1,5 @@
 <test_account/*
 .idea/*
+credentials.txt
+*.pyc
+_config.py

@@ -35,7 +35,7 @@ share (used by applications and interacts with GCP, not printers)
 unshare (used by applications and only interacts with GCP, not printers)
 
 
-This module is dependent on modules from the LogoCert pacakge.
+This module is dependent on modules from the LogoCert package.
 """
 
 from _common import Extract
@@ -44,6 +44,10 @@ from _jsonparser import JsonParser
 import _log
 from _transport import Transport
 
+from json import dumps
+from os.path import basename
+import requests
+import mimetypes
 
 class GCPService(object):
   """Send and receive network messages and communication."""
@@ -52,14 +56,14 @@ class GCPService(object):
     """Get a reference to a logger object."""
     self.auth_token = auth_token
     self.logger = _log.GetLogger('LogoCert')
-    self.jparser = JsonParser()
-    self.transport = Transport()
+    self.jparser = JsonParser(self.logger)
+    self.transport = Transport(self.logger)
 
   def FormatResponse(self, response):
     """Format a JSON reponse from the GCP Service into a dictionary.
 
     Args:
-      response: jason response from GCP Service.
+      response: json response from GCP Service.
     Returns:
       dictionary of keys and values found in response.
     """
@@ -83,6 +87,63 @@ class GCPService(object):
       return self.FormatResponse(res)
 
     return GCPQuery
+
+  # Not decorated with @InterfaceQuery since Submit() uses 'requests' instead of '_transport'
+  # 'requests' is chosen because it provides a simple one liner for HTTP Post with files
+  def Submit(self, printer_id, content, title, cjt=None, is_url=False ):
+    """Submit a print job to the printer
+
+        Args:
+          printer_id: string, target printer to print from.
+          content: string, url or absolute filepath of the item to print.
+          title: string, title of the print job.
+          cjt: CloudJobTicket, (Cloud Job Ticket) defines the options of the print job
+          is_url: boolean, flag to identify between url's and files
+        Returns:
+          string, url to be used by InterfaceQuery method.
+        Valid Job Status strings are: QUEUED, IN_PROGRESS, DONE, ERROR, SUBMITTED,
+        and HELD.
+        """
+
+    if cjt is None:
+      cjt = [{}]
+    else:
+      cjt = cjt.val
+
+    name = content
+
+    if not is_url:
+      name = basename(content)
+      with open(content, 'rb') as f:
+        content = f.read()
+
+    if title is None:
+      title = "LogoCert Testing: " + name
+
+    content_type = 'url' if is_url else mimetypes.guess_type(name)[0]
+
+    data = {"printerid": printer_id,
+            "title": title,
+            'contentType': content_type,
+            'ticket': dumps(cjt)}
+
+    files = {"content": (name,content) }
+
+    url = '%s/submit' % (Constants.GCP['MGT'])
+
+
+    r = requests.post(url, data = data, files = files , headers= {'Authorization': 'Bearer %s' % self.auth_token})
+
+    if r is None or requests.codes.ok != r.status_code:
+      return False
+
+    res = r.json()
+
+    is_success = res['success'] and 'Print job added.' in res['message']
+
+    return is_success
+
+
 
   @InterfaceQuery
   def Delete(self, printer_id):
@@ -115,7 +176,7 @@ class GCPService(object):
     """Get a list of print jobs which user has permission to view.
 
     Args:
-      printer_id: string, filer jobs sent to this printer.
+      printer_id: string, filter jobs sent to this printer.
       owner: string, filter jobs submitted by this owner.
       job_title: string, filter jobs whose title or tags contain this string.
       status: string, filter jobs that match this status.

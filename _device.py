@@ -24,7 +24,6 @@ import json
 
 from _common import Extract
 from _config import Constants
-from _cpslib import GCPService
 from _jsonparser import JsonParser
 from _privet import Privet
 from _transport import Transport
@@ -33,12 +32,13 @@ from _transport import Transport
 class Device(object):
   """The basic device object."""
 
-  def __init__(self, logger, auth_token, model=None, privet_port=None):
+  def __init__(self, logger, auth_token, gcp, model=None, privet_port=None):
     """Initialize a device object.
 
     Args:
       logger: initialized logger object.
-      auth_token: string, auth_token of authenicated user.
+      auth_token: string, auth_token of authenticated user.
+      gcp: initialized GCPService object
       model: string, unique model or name of device.
       privet_port: integer, tcp port devices uses for Privet protocol.
     """
@@ -56,6 +56,7 @@ class Device(object):
       self.port = Constants.PRINTER['PORT']
     self.dev_id = None
     self.name = Constants.PRINTER['NAME']
+    self.gcp = gcp
     self.status = None
     self.messages = {}
     self.details = {}

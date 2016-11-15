@@ -54,7 +54,7 @@ class Privet(object):
     """
     urls = {}
     urls['register'] = {}  # Register has multiple actions.
-    device_url = 'http://%s:%d' % (device_ip, device_port)
+    device_url = 'http://%s:%s' % (device_ip, device_port)
 
     for name in self.api_names:
       urls[name] = '%s/privet/%s' % (device_url, name)
