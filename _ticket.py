@@ -159,3 +159,4 @@ class CjtConstants(object):
   STOPPED = 'STOPPED'
   DONE = 'DONE'
   ABORTED = 'ABORTED'
+  ERROR = 'ERROR'

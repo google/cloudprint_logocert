@@ -3341,19 +3341,20 @@ class JobState(LogoCert):
     test_id = '345f2083-ec94-4548-9c01-ad7d8f1840ec'
     test_name = 'testOnePagePrintJobState'
     print 'Wait for this one page print job to finish.'
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['JPG6'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG6'], test_name, cjt)
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing one page JPG file.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      raw_input('Select enter once image has finished printing.')
-      # Now give the printer time to update our service.
-      time.sleep(10)
-      pages_printed = gcpmgr.GetPagesPrinted('GoogleGlass.jpg')
+      job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
       try:
+        self.assertEqual(job['status'], CjtConstants.DONE)
+        pages_printed = int(job['uiState']['progress'].split(':')[1])
         self.assertEqual(pages_printed, 1)
       except AssertionError:
         notes = 'Pages printed is not equal to 1.'
@@ -3368,28 +3369,33 @@ class JobState(LogoCert):
     test_id = '7bbf3e1f-c972-4414-ad7c-e6054aa7416f'
     test_name = 'testMultiPageJobState'
     print 'Wait until job starts printing 7 page PDF file...'
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7'])
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error while printing 7 page PDF file.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
       print 'When printer starts printing, Job State should transition to in progress.'
-      job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
+      job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.IN_PROGRESS)
       try:
-        self.assertEqual(job_state, 'In progress')
+        self.assertEqual(job['status'], CjtConstants.IN_PROGRESS)
       except AssertionError:
-        notes = 'Job is no "In progress" while job is still printing.'
+        notes = 'Job is not "In progress" while job is still printing.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         raw_input('Select enter once all 7 pages are printed...')
         # Give the printer time to update our service.
-        time.sleep(10)
-        pages_printed = gcpmgr.GetPagesPrinted('PDF1.7.pdf')
+        #time.sleep(10)
+        #pages_printed = gcpmgr.GetPagesPrinted('PDF1.7.pdf')
+        job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
         try:
+          self.assertEqual(job['status'], CjtConstants.DONE)
+          pages_printed = int(job['uiState']['progress'].split(':')[1])
           self.assertEqual(pages_printed, 7)
         except AssertionError:
           notes = 'Pages printed is not equal to 7.'
@@ -3403,7 +3409,7 @@ class JobState(LogoCert):
     """Verify printer recovers from an In-Progress job being deleted."""
     test_id = 'd270088d-0a95-416c-98ab-c703cadde1c3'
     test_name = 'testJobDeletionRecovery'
-    return
+
     cjt = CloudJobTicket(device.details['gcpVersion'])
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
 
@@ -3440,7 +3446,7 @@ class JobState(LogoCert):
     test_id = '3e178014-b2b6-4ee0-b9b5-f2df24be10b0'
     test_name = 'testJobStateEmptyInputTray'
     print 'Empty the input tray of all paper.'
-    return
+
     raw_input('Select enter once input tray has been emptied.')
 
     cjt = CloudJobTicket(device.details['gcpVersion'])
@@ -3448,11 +3454,9 @@ class JobState(LogoCert):
 
     if output['success']:
       # give printer time to update our service.
-      time.sleep(10)
-      job = gcp.WaitJobStatusNotIn(output['job']['id'], device.dev_id, ['QUEUED', 'IN_PROGRESS'])
+      job = gcp.WaitJobStatusNotIn(output['job']['id'], device.dev_id, [CjtConstants.QUEUED, CjtConstants.IN_PROGRESS])
       try:
-        self.assertIsNotNone(job)
-        self.assertEqual(job['status'], 'ERROR')
+        self.assertEqual(job['status'], CjtConstants.ERROR)
       except AssertionError:
         notes = 'Print Job is not in Error state.'
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3472,10 +3476,9 @@ class JobState(LogoCert):
         else:
           raw_input('Select enter after placing the papers back in the input tray.')
           print 'After placing the paper back, Job State should transition to in progress.'
-          job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, 'IN_PROGRESS')
+          job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.IN_PROGRESS)
           try:
-            self.assertIsNotNone(job)
-            self.assertEqual(job['status'], 'IN_PROGRESS')
+            self.assertEqual(job['status'], CjtConstants.IN_PROGRESS)
           except AssertionError:
             notes = 'Job is not in progress: %s' % job['status']
             logger.error(notes)
@@ -3484,10 +3487,9 @@ class JobState(LogoCert):
           else:
             print 'Wait for the print job to finish.'
             raw_input('Select enter once the job completes printing...')
-            job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, 'DONE')
+            job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
             try:
-              self.assertIsNotNone(job)
-              self.assertEqual(job['status'], 'DONE')
+              self.assertEqual(job['status'], CjtConstants.DONE)
             except AssertionError:
               notes = 'Job is not in Printed state: %s' % job['status']
               logger.error(notes)
@@ -3505,6 +3507,7 @@ class JobState(LogoCert):
     """Validate proper /control msg when toner or ink cartridge is missing."""
     test_id = '88ae0238-c866-41eb-b5c1-dea43b902335'
     test_name = 'testJobStateMissingToner'
+
     if not Constants.CAPS['TONER']:
       notes = 'printer does not contain toner ink.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
@@ -3517,15 +3520,16 @@ class JobState(LogoCert):
     if output['success']:
       # give printer time to update our service.
       time.sleep(10)
-      job_state = gcpmgr.WaitJobStatusNotIn('PDF1.7.pdf', ['Queued', 'In progress'])
+      job = gcp.WaitJobStatusNotIn(output['job']['id'], device.dev_id,
+                                   [CjtConstants.QUEUED, CjtConstants.IN_PROGRESS])
       try:
-        self.assertEqual(job_state, 'Error')
+        self.assertEqual(job['status'], CjtConstants.ERROR)
       except AssertionError:
         notes = 'Print Job is not in Error state.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        job_state_msg = gcpmgr.GetJobDetailsStateMsg('PDF1.7.pdf')
+        job_state_msg = job['uiState']['cause']
         notes = 'Job State Error msg: %s' % job_state_msg
         try:
           # Ensure the message at least has the string or more than 4 chars.
@@ -3539,27 +3543,27 @@ class JobState(LogoCert):
         else:
           print 'Now place toner or ink back in printer.'
           print 'After placing the toner back, Job State should transition to in progress.'
-          job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
+          job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.IN_PROGRESS)
           try:
-            self.assertEqual(job_state, 'In progress')
+            self.assertEqual(job['status'], CjtConstants.IN_PROGRESS)
           except AssertionError:
-            notes = 'Job is not in progress: %s' % job_state
+            notes = 'Job is not in progress: %s' % job['status']
             logger.error(notes)
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
             print 'Wait for the print job to finish.'
             raw_input('Select enter once the job completes printing...')
-            job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'Printed')
+            job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
             try:
-              self.assertEqual(job_state, 'Printed')
+              self.assertEqual(job['status'], CjtConstants.DONE)
             except AssertionError:
-              notes = 'Job is not in Printed state: %s' % job_state
+              notes = 'Job is not in Printed state: %s' % job['status']
               logger.error(notes)
               self.LogTest(test_id, test_name, 'Failed', notes)
               raise
             else:
-              notes = 'Job state: %s' % job_state
+              notes = 'Job state: %s' % job['status']
               self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Error printing PDF file.'
@@ -3571,41 +3575,45 @@ class JobState(LogoCert):
     test_id = '52f25929-6970-400f-93b1-e1542309f31f'
     test_name = 'testJobStateNetworkOutage'
     print 'Once the printer prints 1 page, disconnect printer from network.'
-    if chrome.PrintFile(self.printer, Constants.IMAGES['PDF1.7']):
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+
+    if output['success']:
+      job_id = output['job']['id']
       print 'Wait for one page to print.'
       raw_input('Select enter once network is disconnected.')
-      time.sleep(10)
-      job_state = gcpmgr.GetJobStatus('PDF1.7.pdf')
+      job = gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
       try:
-        self.assertEqual(job_state, 'In progress')
+        self.assertEqual(job['status'], CjtConstants.IN_PROGRESS)
       except AssertionError:
         notes = 'Print Job is not In progress.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         print 'Re-establish network connection to printer.'
-        print 'Once network is reconnected, Job state should transition to in progress.'
-        job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'In progress')
+        raw_input('Once network is reconnected, Job state should transition to in progress.')
+        job = gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
         try:
-          self.assertEqual(job_state, 'In progress')
+          self.assertEqual(job['status'], CjtConstants.IN_PROGRESS)
         except AssertionError:
-          notes = 'Job is not in progress: %s' % job_state
+          notes = 'Job is not in progress: %s' % job['status']
           logger.error(notes)
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
           print 'Wait for the print job to finish.'
           raw_input('Select enter once the job completes printing...')
-          job_state = gcpmgr.WaitForJobState('PDF1.7.pdf', 'Printed')
+          job = gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.DONE, timeout=30)
           try:
-            self.assertEqual(job_state, 'Printed')
+            self.assertEqual(job['status'], CjtConstants.DONE)
           except AssertionError:
-            notes = 'Job is not in Printed state: %s' % job_state
+            notes = 'Job is not in Printed state: %s' % job['status']
             logger.error(notes)
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
-            notes = 'Job state: %s' % job_state
+            notes = 'Job state: %s' % job['status']
             self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Error printing PDF file.'
@@ -3616,22 +3624,35 @@ class JobState(LogoCert):
     """Validate proper behavior of print job when paper is jammed."""
     test_id = '664a8841-14d0-483e-a91a-34722dfdb298'
     test_name = 'testJobStateWithPaperJam'
+
     print 'This test will validate job state when there is a paper jam.'
     print 'Place page inside print path to cause a paper jam.'
     raw_input('Select enter once printer reports paper jam.')
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'])
-    print 'Verify job is reported in error state.'
-    print 'Now clear the print path so the printer is no longer jammed.'
-    raw_input('Select enter once printer is clear of jam.')
-    print 'Verify print job prints after paper jam is cleared.'
+
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, cjt)
+
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing %s' % Constants.IMAGES['PDF9']
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      self.ManualPass(test_id, test_name)
+      print 'Verifying job is reported in error state.'
+      job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.ERROR, timeout=30)
+      try:
+        self.assertEqual(job['status'], CjtConstants.ERROR)
+      except AssertionError:
+        notes = 'Job is not in error state: %s' % job['status']
+        logger.error(notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        print 'Now clear the print path so the printer is no longer jammed.'
+        raw_input('Select enter once printer is clear of jam.')
+        print 'Verify print job prints after paper jam is cleared.'
+        self.ManualPass(test_id, test_name)
 
   def testJobStateIncorrectMediaSize(self):
     """Validate proper behavior when incorrect media size is selected."""
@@ -3640,17 +3661,18 @@ class JobState(LogoCert):
     print 'This test is designed to select media size that is not available.'
     print 'The printer should prompt the user to enter the requested size.'
     print 'Load input tray with letter sized paper.'
-    return
+
     raw_input('Select enter once paper tray loaded with letter sized paper.')
 
     cjt = CloudJobTicket(device.details['gcpVersion'])
     cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
+
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
-    #output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'], size='A4')
+
     print 'Attempting to print with A4 media size.'
     print 'Fail this test if printer does not warn user to load correct size'
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing %s' % Constants.IMAGES['PNG7']
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -3663,11 +3685,13 @@ class JobState(LogoCert):
     test_id = '50790aa4-f276-4c12-9a06-fc0fdf446d7e'
     test_name = 'testMultipleJobsPrint'
     print 'This tests that multiple jobs in print queue are printed.'
+    return
+    cjt = CloudJobTicket(device.details['gcpVersion'])
     for _ in xrange(3):
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'])
+      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
       time.sleep(5)
       try:
-        self.assertTrue(output)
+        self.assertTrue(output['success'])
       except AssertionError:
         notes = 'Error printing %s' % Constants.IMAGES['PNG7']
         self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -3686,18 +3710,20 @@ class JobState(LogoCert):
     print 'when it comes back online.'
     raw_input('Turn off printer. Select enter when printer is off.')
 
+    cjt = CloudJobTicket(device.details['gcpVersion'])
     for _ in xrange(3):
-      output = chrome.PrintFile(self.printer, Constants.IMAGES['PNG7'])
+      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
       time.sleep(10)
-      job_state = gcpmgr.GetJobStatus('testpage.png')
       try:
-        self.assertTrue(output)
+        self.assertTrue(output['success'])
       except AssertionError:
         notes = 'Error printing %s' % Constants.IMAGES['PNG7']
         self.LogTest(test_id, test_name, 'Blocked', notes)
         raise
+
+      job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.QUEUED, timeout=30)
       try:
-        self.assertEqual(job_state, 'Queued')
+        self.assertEqual(job['status'], CjtConstants.QUEUED)
       except AssertionError:
         notes = 'Print job is not in Queued state.'
         self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -3713,10 +3739,11 @@ class JobState(LogoCert):
     """Verify deleting a queued job is properly handled by printer."""
     test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
     test_name = 'testDeleteQueuedJob'
-    #TODO remove this
-    return
-    # Print a large file (~10 MB) so the job will be in the 'Queued' state for a bit while the printer downloads it
-    doc_to_print = Constants.IMAGES['PNG9']
+
+    print 'Start with printer power off.'
+    raw_input('Select enter when printer is powered completely off.')
+
+    doc_to_print = Constants.IMAGES['PNG7']
 
     print 'Attempting to add a job to the queue.'
     cjt = CloudJobTicket(device.details['gcpVersion'])
@@ -3729,11 +3756,10 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
-    query_res = gcp.Jobs(printer_id=device.dev_id, owner=Constants.USER['EMAIL'], job_title=test_name)
+    job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.QUEUED, timeout=30)
 
     try:
-      self.assertIsNotNone(job)
-      self.assertEqual(job['status'], 'QUEUED')
+      self.assertEqual(job['status'], CjtConstants.QUEUED)
     except AssertionError:
       notes = 'Print job is not in queued state.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -3748,6 +3774,8 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
+      print 'Turn printer on.'
+      raw_input('Select enter once printer is fully powered on.')
       print 'Verify printer does not go into error state because of deleted job'
       self.ManualPass(test_id, test_name)
 
@@ -3761,46 +3789,50 @@ class JobState(LogoCert):
     print 'Submitting a malformatted PDF file.'
 
     # First printing a malformatted PDF file. Not expected to print.
-    chrome.PrintFile(self.printer, Constants.IMAGES['PDF5'])
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    gcp.Submit(device.dev_id, Constants.IMAGES['PDF5'], test_name, cjt)
     time.sleep(10)
     # Now print a valid file.
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF9'])
-    time.sleep(100)
-    job_state = gcpmgr.WaitJobStatusNotIn('printtest.pdf', ['In progress'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name2, cjt)
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Job did not print after malformatted print job.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
-    try:
-      self.assertEqual(job_state, 'Printed')
-    except AssertionError:
-      notes = 'Print Job is not in Printed state.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
     else:
-      print 'Verify malformatted file did not put printer in error state.'
-      self.ManualPass(test_id, test_name)
-      print 'Verify print test page printed correctly.'
-      self.ManualPass(test_id2, test_name2)
+      job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=100)
+      try:
+        self.assertEqual(job['status'], CjtConstants.DONE)
+      except AssertionError:
+        notes = 'Print Job is not in Printed state.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        print 'Verify malformatted file did not put printer in error state.'
+        self.ManualPass(test_id, test_name)
+        print 'Verify print test page printed correctly.'
+        self.ManualPass(test_id2, test_name2)
 
   def testPagesPrinted(self):
     """Verify printer properly reports number of pages printed."""
     test_id = 'e078c865-738a-44a7-bf32-cff5c47d0857'
     test_name = 'testPagesPrinted'
 
-    output = chrome.PrintFile(self.printer, Constants.IMAGES['PDF10'])
-    raw_input('Select enter when the 3 page print job is completed.')
-    pages_printed = gcpmgr.GetPagesPrinted('rosemary.pdf')
+    cjt = CloudJobTicket(device.details['gcpVersion'])
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+    print 'Printing a 3 page PDF file'
     try:
-      self.assertTrue(output)
+      self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 3 page PDF file.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
+      job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
       try:
+        self.assertEqual(job['status'], CjtConstants.DONE)
+        pages_printed = int(job['uiState']['progress'].split(':')[1])
         self.assertEqual(pages_printed, 3)
       except AssertionError:
         notes = 'Printer reports pages printed not equal to 3.'
