@@ -921,7 +921,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('online', device.status)
+      self.assertIn('ONLINE', device.status)
     except AssertionError:
       notes = 'Device is not online. Status: %s' % device.status
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -935,13 +935,13 @@ class Printer(LogoCert):
     test_id = '145f1c07-0e9d-4a5e-ae17-ff31f62c94e3'
     test_name = 'testPrinterModel'
     try:
-      self.assertIn('Model', device.details)
+      self.assertIn('model', device.details)
     except AssertionError:
       notes = 'Model is missing from the printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], device.details['Model'])
+      self.assertIn(Constants.PRINTER['MODEL'], device.details['model'])
     except AssertionError:
       notes = 'Model incorrect, printer details: %s' % device.details['Model']
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -960,7 +960,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Model: %s' % device.details['Model']
+      notes = 'Model: %s' % device.details['model']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterManufacturer(self):
@@ -968,14 +968,14 @@ class Printer(LogoCert):
     test_id = '68134ba3-5a05-4a77-82ca-b06ae6195cd8'
     test_name = 'testPrinterManufacturer'
     try:
-      self.assertIn('Manufacturer', device.details)
+      self.assertIn('manufacturer', device.details)
     except AssertionError:
       notes = 'Manufacturer in not set in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
       self.assertIn(Constants.PRINTER['MANUFACTURER'],
-                    device.details['Manufacturer'])
+                    device.details['manufacturer'])
     except AssertionError:
       notes = 'Manufacturer is not in printer details. Found %s' % (
           device.details['Manufacturer'])
@@ -996,7 +996,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Manufacturer: %s' % device.details['Manufacturer']
+      notes = 'Manufacturer: %s' % device.details['manufacturer']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterSerialNumber(self):
@@ -1004,19 +1004,19 @@ class Printer(LogoCert):
     test_id = '3996db1d-93ea-4f4c-b70c-dfd9355d5e5d'
     test_name = 'testPrinterSerialNumber'
     try:
-      self.assertIn('Serial Number', device.details)
+      self.assertIn('uuid', device.details)
     except AssertionError:
       notes = 'Serial number not found in device details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.details['Serial Number']), 1)
+      self.assertGreaterEqual(len(device.details['uuid']), 1)
     except AssertionError:
       notes = 'Serial number does is not valid number.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Serial Number: %s' % device.details['Serial Number']
+      notes = 'Serial Number: %s' % device.details['uuid']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterGCPVersion(self):
@@ -1024,13 +1024,13 @@ class Printer(LogoCert):
     test_id = '7a8ec212-52d2-441d-8e18-383ac850f567'
     test_name = 'testPrinterGCPVersion'
     try:
-      self.assertIn('Google Cloud Print Version', device.details)
+      self.assertIn('gcpVersion', device.details)
     except AssertionError:
       notes = 'GCP Version not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertEqual('2.0', device.details['Google Cloud Print Version'])
+      self.assertEqual('2.0', device.details['gcpVersion'])
     except AssertionError:
       notes = 'Version 2.0 not found in GCP Version support. Found %s' % (
           device.details['Google Cloud Print Version'])
@@ -1050,7 +1050,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'GCP Version: %s' % device.details['Google Cloud Print Version']
+      notes = 'GCP Version: %s' % device.details['gcpVersion']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterFirmwareVersion(self):
@@ -1058,13 +1058,13 @@ class Printer(LogoCert):
     test_id = '96b2fc8d-708d-4be8-b439-7fec563c44d9'
     test_name = 'testPrinterFirmwareVersion'
     try:
-      self.assertIn('Firmware Version', device.details)
+      self.assertIn('firmware', device.details)
     except AssertionError:
       notes = 'Firmware version is missing in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.details['Firmware Version']), 1)
+      self.assertGreaterEqual(len(device.details['firmware']), 1)
     except AssertionError:
       notes = 'Firmware version is not correctly identified.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1082,7 +1082,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Firmware version: %s' % device.details['Firmware Version']
+      notes = 'Firmware version: %s' % device.details['firmware']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterType(self):
@@ -1090,13 +1090,13 @@ class Printer(LogoCert):
     test_id = 'f4fb09a4-527b-4fa7-8629-0171037db113'
     test_name = 'testPrinterType'
     try:
-      self.assertIn('Printer Type', device.details)
+      self.assertIn('type', device.details)
     except AssertionError:
       notes = 'Printer Type not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('Cloud Ready Printer', device.details['Printer Type'])
+      self.assertIn('GOOGLE', device.details['type'])
     except AssertionError:
       notes = 'Incorrect Printer Type in details. Found %s' % (
           device.details['PrinterType'])
@@ -1115,7 +1115,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer Type: %s' % device.details['Printer Type']
+      notes = 'Printer Type: %s' % device.details['type']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterFirmwareUpdateUrl(self):
@@ -1123,14 +1123,14 @@ class Printer(LogoCert):
     test_id = '27a06940-2f82-4550-8231-69615aa516c8'
     test_name = 'testPrinterFirmwareUpdateUrl'
     try:
-      self.assertIn('Firmware Update URL', device.details)
+      self.assertIn('updateUrl', device.details)
     except AssertionError:
       notes = 'Firmware update url not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
       self.assertGreaterEqual(len(
-          device.details['Firmware Update URL']), 10)
+          device.details['updateUrl']), 10)
     except AssertionError:
       notes = 'Firmware Update URL is not valid in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1149,7 +1149,7 @@ class Printer(LogoCert):
       raise
     else:
       notes = 'Firmware Update URL: %s' % (
-          device.details['Firmware Update URL'])
+          device.details['updateUrl'])
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterProxy(self):
@@ -1157,13 +1157,13 @@ class Printer(LogoCert):
     test_id = 'd01c84fd-6310-47f0-a464-60997a8e3d68'
     test_name = 'testPrinterProxy'
     try:
-      self.assertIn('Proxy', device.details)
+      self.assertIn('proxy', device.details)
     except AssertionError:
       notes = 'Proxy not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.details['Proxy']), 1)
+      self.assertGreaterEqual(len(device.details['proxy']), 1)
     except AssertionError:
       notes = 'Proxy is not valid value.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1181,7 +1181,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer Proxy: %s' % device.details['Proxy']
+      notes = 'Printer Proxy: %s' % device.details['proxy']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testSetupUrl(self):
@@ -1209,13 +1209,13 @@ class Printer(LogoCert):
     test_id = '5bc5d513-3a1f-441a-8acd-d007fe0e0e35'
     test_name = 'testPrinterID'
     try:
-      self.assertIn('Printer ID', device.details)
+      self.assertIsNotNone(device.dev_id)
     except AssertionError:
       notes = 'Printer ID not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.details['Printer ID']), 10)
+      self.assertGreaterEqual(len(device.dev_id), 10)
     except AssertionError:
       notes = 'Printer ID is not valid in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1233,7 +1233,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer ID: %s' % device.details['Printer ID']
+      notes = 'Printer ID: %s' % device.dev_id
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testLocalSettings(self):
@@ -1506,7 +1506,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
     else:
       try:
-        self.assertIsNot('page_orientation', device.cdd['caps'])
+        self.assertNotIn('page_orientation', device.cdd['caps'])
       except AssertionError:
         notes = 'page_orientation found in printer capabilities.'
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1520,7 +1520,7 @@ class Printer(LogoCert):
     test_id = '674b3b1a-282a-4e41-a4d2-046ce65e7403'
     test_name = 'testCapsMargins'
     try:
-      self.assertIsNot('margins', device.cdd['caps'])
+      self.assertNotIn('margins', device.cdd['caps'])
     except AssertionError:
       notes = 'margins found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1534,7 +1534,7 @@ class Printer(LogoCert):
     test_id = '86c99c63-1581-470f-b771-94e389a5fc32'
     test_name = 'testCapsFitToPage'
     try:
-      self.assertIsNot('fit_to_page', device.cdd['caps'])
+      self.assertNotIn('fit_to_page', device.cdd['caps'])
     except AssertionError:
       notes = 'fit_to_page found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1548,7 +1548,7 @@ class Printer(LogoCert):
     test_id = 'f80b2077-2ed2-4fc1-a2d6-2fa3b90e9c9f'
     test_name = 'testCapsPageRange'
     try:
-      self.assertIsNot('page_range', device.cdd['caps'])
+      self.assertNotIn('page_range', device.cdd['caps'])
     except AssertionError:
       notes = 'page_range found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1562,7 +1562,7 @@ class Printer(LogoCert):
     test_id = 'f24797e4-090c-42fd-98e7-f19ea3d39ebf'
     test_name = 'testCapsReverseOrder'
     try:
-      self.assertIsNot('reverse_order', device.cdd['caps'])
+      self.assertNotIn('reverse_order', device.cdd['caps'])
     except AssertionError:
       notes = 'reverse_order found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1613,8 +1613,7 @@ class Printer(LogoCert):
     test_id = '5a1ef1e7-26ba-458b-a72f-a5ebf26e437c'
     test_name = 'testCapsResolvedIssues'
     try:
-      if 'resolvedIssues' in device.cdd:
-        self.assertIn('resolvedIssues', device.cdd)
+      self.assertIn('resolvedIssues', device.cdd)
     except AssertionError:
       notes = 'resolvedIssues not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
