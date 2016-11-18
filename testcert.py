@@ -44,7 +44,6 @@ import unittest
 
 import _chrome
 import _chromedriver
-import selenium.webdriver.support.ui as ui
 from _config import Constants
 from _device import Device
 import _log
@@ -53,7 +52,6 @@ import _oauth2
 import _sheets
 from _transport import Transport
 
-import requests
 import httplib2
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.file import Storage
@@ -155,7 +153,7 @@ def setUpModule():
   # Wait to receive Privet printer advertisements. Timeout in 30 seconds
   # time.sleep(30)
   # TODO: This mainly helps in development, replace this with a simple time.sleep() for release
-  found = waitForPrivetDiscovery(options)
+  found = waitForPrivetDiscovery(options.printer)
 
   if not found:
     logger.info("No printers discovered under "+ options.printer)
@@ -186,15 +184,16 @@ def setUpModule():
   # pylint: enable=global-variable-undefined
 
 
-def waitForPrivetDiscovery(options):
+def waitForPrivetDiscovery(printer):
   t_end = time.time() + 30
 
   while time.time() < t_end:
     for v in mdns_browser.listener.discovered.values():
       if 'info' in v:
         if 'ty' in v['info'].properties:
-          if options.printer in v['info'].properties['ty']:
-            return True
+          if printer in v['info'].properties['ty']:
+            if v['found']:
+              return True
   # Timed out
   return False
 
@@ -212,7 +211,8 @@ def getTokens():
     if creds:
       Constants.AUTH['REFRESH'] = creds.refresh_token
       Constants.AUTH['ACCESS'] = creds.access_token
-      RefreshToken()
+      #TODO figure out how to get the refresh, currently no refresh toekn is returned from the flow
+	  RefreshToken()
     else:
       GetNewTokens()
 
@@ -1628,116 +1628,132 @@ class PreRegistration(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass()
-    data_dir = 'NotSignedIn'
-    cls.cd3 = _chromedriver.ChromeDriver(logger, data_dir, cls.loadtime)
-    cls.chrome3 = _chrome.Chrome(logger, cls.cd3)
-    cls.sleep_time = 120
+    cls.sleep_time = 60
 
   @classmethod
   def tearDownClass(cls):
     LogoCert.tearDownClass()
-    cls.cd3.CloseChrome()
+
 
   def testDeviceAdvertisePrivet(self):
     """Verify printer under test advertises itself using Privet."""
     test_id = '3382acca-15f7-46d1-9b43-2d36defa9443'
     test_name = 'testDeviceAdvertisePrivet'
-    position = chrome.FindDevice('printers', self.printer)
+
+    found = waitForPrivetDiscovery(device.name)
     try:
-      self.assertGreater(position, 0)
+      self.assertTrue(found)
     except AssertionError:
-      notes = 'device not found in new devices in chrome://devices'
+      notes = 'device is not found advertising in privet'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Found printer in chrome, new devices.'
+      notes = 'Found privet advertisement from device.'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testDeviceSleepingAdvertisePrivet(self):
     """Verify sleeping printer advertises itself using Privet."""
     test_id = 'fffb765b-bb62-4927-82d4-209928ef7d23'
     test_name = 'testDeviceSleepingAdvertisePrivet'
+
     print 'Put the printer in sleep mode.'
     raw_input('Select enter when printer is sleeping.')
-    print 'Waiting 1 minute...'
+    print 'Waiting ', self.sleep_time, 'seconds.'
     time.sleep(self.sleep_time)
-    position = chrome.FindDevice('printers', self.printer)
+    found = waitForPrivetDiscovery(device.name)
     try:
-      self.assertGreater(position, 0)
+      self.assertTrue(found)
     except AssertionError:
-      notes = 'device not found in new devices in chrome://devices'
+      notes = 'Device not found advertising in sleep mode'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Found printer in chrome://devices'
+      notes = 'Device is found advertising in sleep mode'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testDeviceOffNoAdvertisePrivet(self):
     """Verify powered off device does not advertise using Privet."""
     test_id = '35ce7a3d-3403-499e-9a60-4d17e1693178'
     test_name = 'testDeviceOffNoAdvertisePrivet'
+
     print 'Power off the test device.'
     raw_input('Select enter once device is off.')
-    print 'Waiting 1 minute for device state updates.'
+    print 'Waiting ', self.sleep_time,'seconds for device state updates.'
     time.sleep(self.sleep_time)
-    position = chrome.FindDevice('printers', self.printer)
+    print 'Listening for the printer\'s advertisements for 30 seconds'
+    found = waitForPrivetDiscovery(device.name)
     try:
-      self.assertEqual(position, 0)
+      self.assertFalse(found)
     except AssertionError:
-      notes = 'device found in new device list in chrome://devices'
+      notes = 'Device found advertising when powered off'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Powered off device not found in chrome://devices'
+      notes = 'Device no longer advertising when powered off'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
-  def testDeviceOffPowerOnAdvertisePrivet(self):
-    """Verify powered on device advertises itself using Privet."""
-    test_id = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
-    test_name = 'testDeviceOffPowerOnAdvertisePrivet'
-    print 'Start with device powered off.'
-    print 'Turn on device and wait for device to fully initialize.'
-    raw_input('Select enter once device is initialized.')
-    print 'Waiting 1 minute for device state updates.'
-    time.sleep(self.sleep_time)
-    position = chrome.FindDevice('printers', self.printer)
-    try:
-      self.assertGreater(position, 0)
-    except AssertionError:
-      notes = 'Device not found in chrome://devices'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      notes = 'Device found in chrome://devices'
-      self.LogTest(test_id, test_name, 'Passed', notes)
+      """Verify freshly powered on device advertises itself using Privet."""
+      test_id2 = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
+      test_name2 = 'testDeviceOffPowerOnAdvertisePrivet'
+      print 'Turn on device and wait for device to fully initialize.'
+      raw_input('Select enter once device is initialized.')
+      print 'Waiting ', self.sleep_time, 'seconds for device state updates.'
+      time.sleep(self.sleep_time)
+      print 'Listening for the printer\'s advertisements for up to 30 seconds'
+      found = waitForPrivetDiscovery(device.name)
+      try:
+        self.assertTrue(found)
+      except AssertionError:
+        notes = 'Device not found advertising when freshly powered on'
+        self.LogTest(test_id2, test_name2, 'Failed', notes)
+        raise
+      else:
+        notes = 'Device found advertising when freshly powered on'
+        self.LogTest(test_id2, test_name2, 'Passed', notes)
 
   def testDeviceRegistrationNotLoggedIn(self):
     """Test printer cannot be registered if user not logged in."""
     test_id = '984be779-3ca4-4bb7-a2e1-e1868f687905'
     test_name = 'testDeviceRegistrationNotLoggedIn'
-    result = self.chrome3.RegisterPrinter(self.printer)
+
+    success = device.Register('Select enter after confirming registration',
+                              use_token=False)
     try:
-      self.assertFalse(result)
+      self.assertFalse(success)
     except AssertionError:
-      notes = 'Able to register printer with user signed out.'
+      notes = 'Able to register printer without an auth token.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Not able to register printer with signed out Chrome.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
+      # Cancel the registration so the printer is not in an unknown state
+      success = device.CancelRegistration()
+      try:
+        self.assertTrue(success)
+      except AssertionError:
+        notes = 'Failed to cancel failed registration.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'Not able to register printer without a valid auth token.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testDeviceCancelRegistration(self):
     """Test printer cancellation prevents registration."""
     test_id = 'ce1c9c46-3164-4f07-aa41-241867a4a28b'
     test_name = 'testDeviceCancelRegistration'
     logger.info('Testing printer registration cancellation.')
+
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on printer panel.'
-    if chrome.RegisterPrinter(self.printer):
-      raw_input('Select enter when printer registration has been cancelled')
-      result = chrome.ConfirmPrinterRegistration(self.printer)
+
+    registration_success = device.Register('Select enter after CANCELLING the registration on the printer')
+    if not registration_success:
+      # Confirm the user's account has no registered printers
+      res = gcp.Search(device.model)
+
       try:
-        self.assertFalse(result)
+        # Assert that 'printers' list is empty
+        self.assertFalse(res['printers'])
       except AssertionError:
         notes = 'Unable to cancel registration request.'
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1746,7 +1762,7 @@ class PreRegistration(LogoCert):
         notes = 'Cancelled registration attempt from printer panel.'
         self.LogTest(test_id, test_name, 'Passed', notes)
     else:
-      notes = 'Error attempting registration process.'
+      notes = 'Error cancelling registration process.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
 
   def testLocalPrintGuestUserUnregisteredPrinter(self):
@@ -1754,6 +1770,7 @@ class PreRegistration(LogoCert):
     test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
     data_dir = 'guest_user'
+
     cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
     chrome3 = _chrome.Chrome(logger, cd3)
     chrome3.Print()

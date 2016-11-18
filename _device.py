@@ -97,17 +97,21 @@ class Device(object):
       if response['data']:
         self.logger.info('Data from response: %s', response['data'])
 
-  def Register(self):
+  def Register(self, msg, use_token=True):
     """Register device using Privet.
-
+    Args:
+      msg: string, the instruction for the user about the registration confirmation dialog on the printer
+      use_token: boolean, use auth_token if True
     Returns:
       boolean: True = device registered, False = device not registered.
     Note, devices a required user input to accept or deny a registration
     request, so manual intervention is required.
     """
     if self.StartPrivetRegister():
+      raw_input(msg)#"Select enter after accepting the registration on the printer"
       if self.GetPrivetClaimToken():
-        if self.ConfirmRegistration():
+        auth_token = self.auth_token if use_token else None
+        if self.ConfirmRegistration(auth_token):
           self.FinishPrivetRegister()
           return True
 
@@ -267,7 +271,7 @@ class Device(object):
     else:
       return False
 
-  def ConfirmRegistration(self):
+  def ConfirmRegistration(self, auth_token):
     """Register printer with GCP Service using claim token.
 
     Returns:
@@ -280,9 +284,9 @@ class Device(object):
       return False
     url = '%s/confirm?token=%s' % (Constants.GCP['MGT'], self.claim_token)
     response = self.transport.HTTPReq(url, data='', headers=self.headers,
-                                      auth_token=self.auth_token)
-    info = jparser.Read(response['data'])
-    if info['success']:
+                                      auth_token=auth_token)
+    info = self.jparser.Read(response['data'])
+    if 'success' in info and info['success']:
       return True
 
     return False
