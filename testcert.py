@@ -211,8 +211,8 @@ def getTokens():
     if creds:
       Constants.AUTH['REFRESH'] = creds.refresh_token
       Constants.AUTH['ACCESS'] = creds.access_token
-      #TODO figure out how to get the refresh, currently no refresh toekn is returned from the flow
-	  RefreshToken()
+      #TODO figure out how to get the refresh token, currently no refresh token is returned from the flow
+      #RefreshToken()
     else:
       GetNewTokens()
 
