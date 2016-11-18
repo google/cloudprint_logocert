@@ -197,6 +197,19 @@ def waitForPrivetDiscovery(printer):
   # Timed out
   return False
 
+def isPrivetIndicatingRegistered(printer):
+  t_end = time.time() + 30
+
+  while time.time() < t_end:
+    for v in mdns_browser.listener.discovered.values():
+      if 'info' in v:
+        if 'ty' in v['info'].properties:
+          if printer in v['info'].properties['ty']:
+            properties = v['info'].properties
+            return properties['id'] and 'online' in properties['cs'].lower()
+  # Timed out
+  return False
+
 
 def tearDownModule():
   return
@@ -3018,6 +3031,7 @@ class PostRegistration(LogoCert):
     """Verify printer details are provided to Cloud Print Service."""
     test_id = '6bcf8903-af2c-439c-9c8b-1dd829521905'
     test_name = 'testDeviceDetails'
+
     device.GetDeviceDetails()
     try:
       self.assertIsNotNone(device.name)
@@ -3035,28 +3049,30 @@ class PostRegistration(LogoCert):
     """Verify printer does not advertise itself once it is registered."""
     test_id = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
     test_name = 'testRegisteredDeviceNoPrivetAdvertise'
-    position = chrome.FindDevice('printers', self.printer)
+
+    is_registered = isPrivetIndicatingRegistered(self.printer)
     try:
-      self.assertEqual(position, 0)
+      self.assertTrue(is_registered)
     except AssertionError:
-      notes = 'Registered printer found in new devices on chrome://devices'
+      notes = 'Printer is advertising as an unregistered device'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer not found in new devices on chrome://devices'
+      notes = 'Printer is advertising as a registered device'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testRegisteredDevicePoweredOffShowsOffline(self):
     """Verify device shows offline that is powered off."""
     test_id = 'ba6b2c0c-10da-4910-bb6f-63c826087054'
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
+
     print 'Power off device.'
     raw_input('Select enter once the printer is completely off.')
     print'Waiting up to 10 minutes for printer status update.'
     for _ in xrange(20):
       device.GetDeviceDetails()
       try:
-        self.assertIn('offline', device.status)
+        self.assertIn('OFFLINE', device.status)
       except AssertionError:
         time.sleep(30)
       else:
@@ -3068,7 +3084,7 @@ class PostRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('offline', device.status)
+      self.assertIn('OFFLINE', device.status)
     except AssertionError:
       notes = 'Device is not offline. Status: %s' % device.status
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3077,27 +3093,29 @@ class PostRegistration(LogoCert):
       notes = 'Status: %s' % device.status
       self.LogTest(test_id, test_name, 'Passed', notes)
     finally:
-      print 'Power on the devie.'
+      print 'Power on the device.'
       raw_input('Select enter once the printer is completely initialized.')
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
+
     print 'Power off registered device.'
     print 'After device powers down, turn on device.'
     raw_input('Once device is fully initialized select enter.')
     print 'Waiting 1 minute for state updates.'
     time.sleep(60)
-    position = chrome.FindDevice('printers', self.printer)
+
+    is_registered = isPrivetIndicatingRegistered(self.printer)
     try:
-      self.assertEqual(position, 0)
+      self.assertTrue(is_registered)
     except AssertionError:
-      notes = 'Registered device found in new devices on chrome://devices'
+      notes = 'Printer is advertising as an unregistered device'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Registered device not found in new devices.'
+      notes = 'Printer is advertising as a registered device.'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
 
