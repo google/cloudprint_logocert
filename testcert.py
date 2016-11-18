@@ -1750,7 +1750,6 @@ class PreRegistration(LogoCert):
     if not registration_success:
       # Confirm the user's account has no registered printers
       res = gcp.Search(device.model)
-
       try:
         # Assert that 'printers' list is empty
         self.assertFalse(res['printers'])
@@ -1809,11 +1808,15 @@ class Registration(LogoCert):
     test_name2 = 'testDeviceRegistrationNoAccept'
     print 'Do not select accept/cancel registration from the printer U/I.'
     print 'Wait for the registration request to time out.'
-    if chrome.RegisterPrinter(self.printer):
+
+    success = device.StartPrivetRegister()
+    if success:
       raw_input('Select enter once the printer registration times out.')
-      result = chrome.ConfirmPrinterRegistration(self.printer)
+      time.sleep(5)
+      # Confirm the user's account has no registered printers
+      res = gcp.Search(device.model)
       try:
-        self.assertFalse(result)
+        self.assertFalse(res['printers'])
       except AssertionError:
         notes = 'Not able to cancel printer registration from printer UI.'
         self.LogTest(test_id2, test_name2, 'Failed', notes)
@@ -1821,63 +1824,68 @@ class Registration(LogoCert):
       else:
         notes = 'Cancelled printer registration from printer UI.'
         self.LogTest(test_id2, test_name2, 'Passed', notes)
+    else:
+      notes = 'Not able to initiate printer registration.'
+      self.LogTest(test_id2, test_name2, 'Failed', notes)
+      raise
 
-    data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(logger, cd2)
+    success = device.StartPrivetRegister(user=Constants.USER['EMAIL'])
     try:
-      chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
-      if chrome.RegisterPrinter(self.printer):
-        self.User2RegistrationAttempt(chrome2)
+      self.assertTrue(success)
+    except AssertionError:
+      notes = 'Not able to register user1.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      device.CancelRegistration(user=Constants.USER['EMAIL'])
+      raise
+    else:
+      try:
+        self.assertFalse(device.Register("User2 Registration attempt, please press enter",user=Constants.USER2['EMAIL']))
+      except AssertionError:
+        notes = 'Simultaneous registration succeeded.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
         print 'Now accept the registration request from %s.' % self.username
         raw_input('Select enter once the registration is accepted.');
-        print 'Waiting 1 minute to complete the registration.'
-        #  Allow time for registration to complete.
-        time.sleep(60)
-        result = chrome.ConfirmPrinterRegistration(self.printer)
+        time.sleep(5)
+        # Give time for the backend to process the
+        success = False
+        # Finish the registration process
+        if device.GetPrivetClaimToken():
+          if device.ConfirmRegistration(device.auth_token):
+            device.FinishPrivetRegister()
+            success = True
         try:
-          self.assertTrue(result)
+          self.assertTrue(success)
         except AssertionError:
-          notes = 'Not able to register printer using chrome://devices.'
+          notes = 'User1 failed to register.'
           self.LogTest(test_id, test_name, 'Failed', notes)
+          device.CancelRegistration()
           raise
         else:
-          notes = 'Registered printer using chrome://devices.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      cd2.CloseChrome()
+          print 'Waiting 1 minute to complete the registration.'
+          time.sleep(60)
+          res = gcp.Search(device.model)
+          try:
+            self.assertTrue(res['printers'])
+          except AssertionError:
+            notes = 'Not able to register printer under user.'
+            self.LogTest(test_id, test_name, 'Failed', notes)
+            raise
+          else:
+            notes = 'Registered printer'
+            self.LogTest(test_id, test_name, 'Passed', notes)
+
 
   def testDeviceAcceptRegistration(self):
     """Verify printer must accept registration requests on printer panel."""
     test_id = '6968e44b-3c2d-4b14-8fd5-06c94f1e8c41'
     test_name = 'testDeviceAcceptRegistration'
+
     print 'Validate if printer required user to accept registration request'
     print 'If printer does not have accept/cancel on printer panel,'
     print 'Fail this test.'
     self.ManualPass(test_id, test_name, print_test=False)
-
-  def User2RegistrationAttempt(self, chrome2):
-    """Verify multiple registration attempts are not allowed by device.
-    Args:
-      chrome2: Chrome object for 2nd user.
-    """
-    test_id = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
-    test_name = 'testMultipleRegistrationAttempt'
-    if chrome2.RegisterPrinter(self.printer):
-      registered = chrome2.ConfirmPrinterRegistration(self.printer)
-      try:
-        self.assertFalse(registered)
-      except AssertionError:
-        notes = 'A simultaneous registration request registered a printer!'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        notes = 'Simultaneous registration request was not successful.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
-    else:
-      notes = 'Error attempting to register printer by %s' % (
-          Constants.USER2['EMAIL'])
-      self.LogTest(test_id, test_name, 'Blocked', notes)
 
 
 class LocalDiscovery(LogoCert):

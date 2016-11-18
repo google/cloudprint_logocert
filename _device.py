@@ -97,7 +97,7 @@ class Device(object):
       if response['data']:
         self.logger.info('Data from response: %s', response['data'])
 
-  def Register(self, msg, use_token=True):
+  def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True):
     """Register device using Privet.
     Args:
       msg: string, the instruction for the user about the registration confirmation dialog on the printer
@@ -107,9 +107,9 @@ class Device(object):
     Note, devices a required user input to accept or deny a registration
     request, so manual intervention is required.
     """
-    if self.StartPrivetRegister():
+    if self.StartPrivetRegister(user=user):
       raw_input(msg)#"Select enter after accepting the registration on the printer"
-      if self.GetPrivetClaimToken():
+      if self.GetPrivetClaimToken(user=user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
           self.FinishPrivetRegister()
@@ -196,7 +196,7 @@ class Device(object):
                                       user=Constants.USER['EMAIL'])
     return response['code']
 
-  def StartPrivetRegister(self):
+  def StartPrivetRegister(self, user=Constants.USER['EMAIL']):
     """Start a device registration using the Privet protocol.
 
     Returns:
@@ -206,10 +206,10 @@ class Device(object):
     self.logger.debug('Registering device %s with Privet', self.ipv4)
     response = self.transport.HTTPReq(
         self.privet_url['register']['start'], data='',
-        headers=self.headers, user=Constants.USER['EMAIL'])
+        headers=self.headers, user=user)
     return self.transport.LogData(response)
 
-  def GetPrivetClaimToken(self):
+  def GetPrivetClaimToken(self, user=Constants.USER['EMAIL']):
     """Attempt to get a Privet Claim Token.
 
     Returns:
@@ -221,7 +221,7 @@ class Device(object):
     while counter < max_cycles:
       response = self.transport.HTTPReq(
           self.privet_url['register']['getClaimToken'], data='',
-          headers=self.headers, user=Constants.USER['EMAIL'])
+          headers=self.headers, user=user)
       self.transport.LogData(response)
       if 'token' in response['data']:
         self.claim_token = self.jparser.GetValue(response['data'], key='token')
