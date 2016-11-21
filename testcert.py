@@ -3916,8 +3916,14 @@ class JobState(LogoCert):
     test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
     test_name = 'testDeleteQueuedJob'
 
-    print 'Start with printer power off.'
-    raw_input('Select enter when printer is powered completely off.')
+    promptUserAction('Power off device.')
+    is_removed = waitForService(device.name, False, timeout=300)
+    try:
+      self.assertTrue(is_removed)
+    except AssertionError:
+      notes = 'Error receiving the shutdown signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
 
     doc_to_print = Constants.IMAGES['PNG7']
 
@@ -3950,8 +3956,14 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      print 'Turn printer on.'
-      raw_input('Select enter once printer is fully powered on.')
+      promptUserAction('Power on the printer')
+      is_added = waitForService(device.name, True, timeout=300)
+      try:
+        self.assertTrue(is_added)
+      except AssertionError:
+        notes = 'Error receiving the power-on signal from the printer.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
       print 'Verify printer does not go into error state because of deleted job'
       self.ManualPass(test_id, test_name)
 
@@ -4079,14 +4091,14 @@ class Unregister(LogoCert):
         notes = 'Registered printer was deleted.'
         self.LogTest(test_id, test_name, 'Passed', notes)
 
-    # Need to clear the cache of zeroconf, or else the stale printer details will be returned
+    # Need to clear the cache of zeroconf, or else stale printer details will be returned
     mdns_browser.clear_cache()
     promptUserAction('Power on device.')
     is_service_added = waitForService(device.name, True, timeout=300)
     try:
       self.assertTrue(is_service_added)
     except AssertionError:
-      notes = 'Error receiving the power on signal from the printer.'
+      notes = 'Error receiving the power-on signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -4100,25 +4112,6 @@ class Unregister(LogoCert):
       else:
         notes = 'Deleted device found advertising as unregistered device.'
         self.LogTest(test_id2, test_name2, 'Passed', notes)
-
-
-class PostUnregister(LogoCert):
-  """Tests to be run after a device has been deleted from registration."""
-
-  def testUnregisteredDevicePrivetAdvertise(self):
-    """Verify an unregistered device advertises itself using Privet."""
-    test_id = '015c45ee-ba09-47b0-ab2d-53453410de4d'
-    test_name = 'testUnregisteredDevicePrivetAdvertise'
-    position = chrome.FindDevice('printers', self.printer)
-    try:
-      self.assertGreater(position, 0)
-    except AssertionError:
-      notes = 'Unregistered printer not found in new devices in Chrome Devices.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      notes = 'Found unregistered printer in chrome, new devices.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
 
 
 class Printing(LogoCert):
@@ -4264,11 +4257,46 @@ class Printing(LogoCert):
     else:
       self.ManualPass(test_id, test_name)
 
-  def testPrintPdfPageRangePage(self):
+  def testPrintPdfPageRangePage2(self):
     test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
-    test_name = 'testPrintPdfPageRangePage'
-    logger.info('Setting page range to page 2 and 4-6...')
+    test_name = 'testPrintPdfPageRangePage2'
+    logger.info('Setting page range to page 2 only')
 
+    self.cjt.AddPageRangeOption(2, end = 2)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
+
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing with page range set to page 2 only.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.ManualPass(test_id, test_name)
+
+  def testPrintPdfPageRangePage4To6(self):
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
+    test_name = 'testPrintPdfPageRangePage4To6'
+    logger.info('Setting page range to 4-6...')
+
+    self.cjt.AddPageRangeOption(4, end = 6)
+
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
+
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing with page range set to page 4-6.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.ManualPass(test_id, test_name)
+
+  def testPrintPdfPageRangePage2And4to6(self):
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
+    test_name = 'testPrintPdfPageRangePage2And4to6'
+    logger.info('Setting page range to page 2 and 4-6...')
 
     self.cjt.AddPageRangeOption(2, end = 2)
     self.cjt.AddPageRangeOption(4, end = 6)
@@ -5388,5 +5416,4 @@ if __name__ == '__main__':
   suite.addTest(unittest.makeSuite(Printing))
   suite.addTest(unittest.makeSuite(RunAfter24Hours))
   suite.addTest(unittest.makeSuite(Unregister))
-  suite.addTest(unittest.makeSuite(PostUnregister))
   runner.run(suite)
