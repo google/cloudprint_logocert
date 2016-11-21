@@ -21,7 +21,9 @@ It depends on the Python package zeroconf.
 from zeroconf import InterfaceChoice
 from zeroconf import ServiceBrowser
 from zeroconf import Zeroconf
-
+from zeroconf import DNSCache
+import time
+from Queue import Queue
 
 class MDnsService(object):
   """A MDNS Service.
@@ -40,6 +42,12 @@ class MDnsService(object):
     self.logger = logger
     self.discovered = {}
 
+    # Queues of tuples - (device name, timestamp of addition/removal) 
+    # Helps keep track of ther services that have been added or removed
+    # Useful for signalling printer's on/off status
+    self.added_q = Queue()
+    self.removed_q = Queue()
+
   # pylint: disable=unused-argument
   def add_service(self, zeroconf, service_type, name):
     self.logger.info('Service added: "%s" (type is %s)', name, service_type)
@@ -53,10 +61,13 @@ class MDnsService(object):
       self.logger.debug('%s service info: %s', name, info)
     else:
       self.logger.debug('Service has no info.')
+    self.added_q.put((name, time.time()))
+
 
   def remove_service(self, zeroconf, service_type, name):
     self.discovered[name]['found'] = False
     self.logger.info('Service removed: %s', name)
+    self.removed_q.put((name, time.time()))
   # pylint: enable=unused-argument
 
 
@@ -105,3 +116,15 @@ class MDnsListener(object):
     """Remove all listeners."""
     self.zeroconf.close()
     self.logger.info('All listeners have been stopped.')
+
+  def clear_cache(self):
+    """Remove all cached entries"""
+    self.zeroconf.cache = DNSCache()
+
+  def get_added_q(self):
+    """Return a queue of added services"""
+    return self.listener.added_q
+
+  def get_removed_q(self):
+    """Return a queue of removed services"""
+    return self.listener.removed_q

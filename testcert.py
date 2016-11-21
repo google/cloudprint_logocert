@@ -194,21 +194,63 @@ def waitForPrivetDiscovery(printer):
           if printer in v['info'].properties['ty']:
             if v['found']:
               return True
+    time.sleep(1)
   # Timed out
   return False
 
-def isPrivetIndicatingRegistered(printer):
-  t_end = time.time() + 30
+
+def isPrinterRegistered(printer):
+  """Checks the printer's privet advertisements and see if it is advertising as registered or not
+
+      Args:
+        printer: string, printer name
+      Returns:
+        boolean, True = advertising as registered, False = advertising as unregistered, None = advertisement not found
+      """
+  for v in mdns_browser.listener.discovered.values():
+    if 'info' in v:
+      if 'ty' in v['info'].properties:
+        if printer in v['info'].properties['ty']:
+          properties = v['info'].properties
+          return properties['id'] and 'online' in properties['cs'].lower()
+  return None
+
+
+def waitForService(name, is_added, timeout=60):
+  """Wait for the mdns listener to add or remove a service
+
+    Args:
+      name: string, service name
+      is_added: boolean, True for service addition, False for service removal
+      timeout: integer, seconds to wait for the service update
+    Returns:
+      boolean, True = service observed, False = failure to detect service.
+    """
+  t_start = time.time()
+  t_end = t_start + timeout
 
   while time.time() < t_end:
-    for v in mdns_browser.listener.discovered.values():
-      if 'info' in v:
-        if 'ty' in v['info'].properties:
-          if printer in v['info'].properties['ty']:
-            properties = v['info'].properties
-            return properties['id'] and 'online' in properties['cs'].lower()
-  # Timed out
+    queue = mdns_browser.get_added_q() if is_added else mdns_browser.get_removed_q()
+    while not queue.empty():
+      service = queue.get()
+      if name in service[0]:
+        if t_start < service[1]:
+          return True
+    time.sleep(1)
   return False
+
+
+def promptUserAction(msg):
+  """Display text in green and beep - cross-platform
+
+    Args:
+      msg: string, the msg to prompt the user.
+  """
+  print '\n\n'
+  print '\033[92m ------------------------------------------- \033[0m'
+  print '\033[92m [ACTION] ', msg, '\033[0m'
+  print '\033[92m ------------------------------------------- \033[0m'
+  print "\a" #Beep
 
 
 def tearDownModule():
@@ -1689,10 +1731,15 @@ class PreRegistration(LogoCert):
     test_id = '35ce7a3d-3403-499e-9a60-4d17e1693178'
     test_name = 'testDeviceOffNoAdvertisePrivet'
 
-    print 'Power off the test device.'
-    raw_input('Select enter once device is off.')
-    print 'Waiting ', self.sleep_time,'seconds for device state updates.'
-    time.sleep(self.sleep_time)
+    promptUserAction('Power off device.')
+    is_removed = waitForService(device.name, False, timeout=300)
+    try:
+      self.assertTrue(is_removed)
+    except AssertionError:
+      notes = 'Error receiving the shutdown signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
     print 'Listening for the printer\'s advertisements for 30 seconds'
     found = waitForPrivetDiscovery(device.name)
     try:
@@ -1708,10 +1755,16 @@ class PreRegistration(LogoCert):
       """Verify freshly powered on device advertises itself using Privet."""
       test_id2 = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
       test_name2 = 'testDeviceOffPowerOnAdvertisePrivet'
-      print 'Turn on device and wait for device to fully initialize.'
-      raw_input('Select enter once device is initialized.')
-      print 'Waiting ', self.sleep_time, 'seconds for device state updates.'
-      time.sleep(self.sleep_time)
+      mdns_browser.clear_cache()
+      promptUserAction('Power on the printer')
+      is_added = waitForService(device.name, True, timeout=300)
+      try:
+        self.assertTrue(is_added)
+      except AssertionError:
+        notes = 'Error receiving the power-on signal from the printer.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+
       print 'Listening for the printer\'s advertisements for up to 30 seconds'
       found = waitForPrivetDiscovery(device.name)
       try:
@@ -3032,7 +3085,6 @@ class PostRegistration(LogoCert):
     test_id = '6bcf8903-af2c-439c-9c8b-1dd829521905'
     test_name = 'testDeviceDetails'
 
-    device.GetDeviceDetails()
     try:
       self.assertIsNotNone(device.name)
     except AssertionError:
@@ -3050,11 +3102,12 @@ class PostRegistration(LogoCert):
     test_id = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
     test_name = 'testRegisteredDeviceNoPrivetAdvertise'
 
-    is_registered = isPrivetIndicatingRegistered(self.printer)
+    is_registered = isPrinterRegistered(self.printer)
     try:
+      self.assertIsNotNone(is_registered)
       self.assertTrue(is_registered)
     except AssertionError:
-      notes = 'Printer is advertising as an unregistered device'
+      notes = 'Printer advertisement not found or is advertising as an unregistered device'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -3066,57 +3119,84 @@ class PostRegistration(LogoCert):
     test_id = 'ba6b2c0c-10da-4910-bb6f-63c826087054'
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
 
-    print 'Power off device.'
-    raw_input('Select enter once the printer is completely off.')
-    print'Waiting up to 10 minutes for printer status update.'
-    for _ in xrange(20):
-      device.GetDeviceDetails()
-      try:
-        self.assertIn('OFFLINE', device.status)
-      except AssertionError:
-        time.sleep(30)
-      else:
-        break
+    promptUserAction('Power off device.')
+    is_removed = waitForService(device.name, False, timeout=300)
     try:
-      self.assertIsNotNone(device.status)
+      self.assertTrue(is_removed)
     except AssertionError:
-      notes = 'Device has no status.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    try:
-      self.assertIn('OFFLINE', device.status)
-    except AssertionError:
-      notes = 'Device is not offline. Status: %s' % device.status
+      notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Status: %s' % device.status
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      print 'Power on the device.'
-      raw_input('Select enter once the printer is completely initialized.')
+      print'Waiting up to 10 minutes for printer status update.'
+      for _ in xrange(20):
+        device.GetDeviceDetails()
+        try:
+          self.assertIn('OFFLINE', device.status)
+        except AssertionError:
+          time.sleep(30)
+        else:
+          break
+      try:
+        self.assertIsNotNone(device.status)
+      except AssertionError:
+        notes = 'Device has no status.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      try:
+        self.assertIn('OFFLINE', device.status)
+      except AssertionError:
+        notes = 'Device is not offline. Status: %s' % device.status
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'Status: %s' % device.status
+        self.LogTest(test_id, test_name, 'Passed', notes)
+      finally:
+        promptUserAction('Power on the device.')
+        is_added = waitForService(device.name, True, timeout=300)
+        try:
+          self.assertTrue(is_added)
+        except AssertionError:
+          notes = 'Error receiving the power-on signal from the printer.'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
 
-    print 'Power off registered device.'
-    print 'After device powers down, turn on device.'
-    raw_input('Once device is fully initialized select enter.')
-    print 'Waiting 1 minute for state updates.'
-    time.sleep(60)
-
-    is_registered = isPrivetIndicatingRegistered(self.printer)
+    promptUserAction('Power off registered device.')
+    is_removed = waitForService(device.name, False, timeout=300)
     try:
-      self.assertTrue(is_registered)
+      self.assertTrue(is_removed)
     except AssertionError:
-      notes = 'Printer is advertising as an unregistered device'
+      notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer is advertising as a registered device.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
+      # Need to clear the cache of zeroconf, or else the stale printer details will be returned
+      mdns_browser.clear_cache()
+      promptUserAction('Power on registered device')
+      is_added = waitForService(device.name, True, timeout=300)
+      try:
+        self.assertTrue(is_added)
+      except AssertionError:
+        notes = 'Error receiving the power-on signal from the printer.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        is_registered = isPrinterRegistered(self.printer)
+        try:
+          self.assertTrue(is_registered)
+        except AssertionError:
+          notes = 'Printer is advertising as an unregistered device'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Printer is advertising as a registered device.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
 
 
 class PrinterState(LogoCert):
@@ -3766,7 +3846,7 @@ class JobState(LogoCert):
     test_id = '50790aa4-f276-4c12-9a06-fc0fdf446d7e'
     test_name = 'testMultipleJobsPrint'
     print 'This tests that multiple jobs in print queue are printed.'
-    return
+
     cjt = CloudJobTicket(device.details['gcpVersion'])
     for _ in xrange(3):
       output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
@@ -3789,10 +3869,18 @@ class JobState(LogoCert):
 
     print 'This tests that an offline printer will print all jobs'
     print 'when it comes back online.'
-    raw_input('Turn off printer. Select enter when printer is off.')
+    promptUserAction('Turn off the printer.')
+    is_removed = waitForService(device.name, False, timeout=300)
+    try:
+      self.assertTrue(is_removed)
+    except AssertionError:
+      notes = 'Error receiving the shutdown signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
 
     cjt = CloudJobTicket(device.details['gcpVersion'])
     for _ in xrange(3):
+      print 'Submitting job#',_,' to the print queue.'
       output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
       time.sleep(10)
       try:
@@ -3810,11 +3898,18 @@ class JobState(LogoCert):
         self.LogTest(test_id, test_name, 'Blocked', notes)
         raise
 
-    print 'Now power on printer.'
-    raw_input('Select enter once printer is on and operational.')
-    print 'Verify that all 3 print jobs are printed.'
-    raw_input('Select enter once printer has fetched all jobs.')
-    self.ManualPass(test_id, test_name)
+    promptUserAction('Power on the printer')
+    is_added = waitForService(device.name, True, timeout=300)
+    try:
+      self.assertTrue(is_added)
+    except AssertionError:
+      notes = 'Error receiving the power-on signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      print 'Verify that all 3 print jobs are printed.'
+      raw_input('Select enter once printer has fetched all jobs.')
+      self.ManualPass(test_id, test_name)
 
   def testDeleteQueuedJob(self):
     """Verify deleting a queued job is properly handled by printer."""
@@ -3953,39 +4048,58 @@ class RunAfter24Hours(LogoCert):
 class Unregister(LogoCert):
   """Test removing device from registered status."""
 
+  @classmethod
+  def setUpClass(cls):
+    LogoCert.GetDeviceDetails()
+
   def testUnregisterDevice(self):
-    """Delete printer using the Cloud Print Management page."""
+    """Unregister printer."""
     test_id = 'bd9cdf91-431a-4534-a747-55ef8cbd8391'
     test_name = 'testUnregisterDevice'
     test_id2 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
     test_name2 = 'testOffDeviceIsDeleted'
-    print 'Power down registered device.'
-    raw_input('Select return once device is completely powered down.')
-    result = gcpmgr.DeletePrinter(self.printer)
+
+    promptUserAction('Power down registered device.')
+    is_service_removed = waitForService(device.name, False, timeout=300)
     try:
-      self.assertTrue(result)
+      self.assertTrue(is_service_removed)
     except AssertionError:
-      notes = 'Error while deleting registered printer.'
+      notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Registered printer was deleted.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    print 'Power on device.'
-    raw_input('Once device has completely initialized, select enter.')
-    # Need to wait 5 minutes for device to start advertising itself.
-    print 'Waiting 1 minute for state updates.'
-    time.sleep(60)
-    position = chrome.FindDevice('printers', self.printer)
+      success = device.UnRegister(device.auth_token)
+      try:
+        self.assertTrue(success)
+      except AssertionError:
+        notes = 'Error while deleting registered printer.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'Registered printer was deleted.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+
+    # Need to clear the cache of zeroconf, or else the stale printer details will be returned
+    mdns_browser.clear_cache()
+    promptUserAction('Power on device.')
+    is_service_added = waitForService(device.name, True, timeout=300)
     try:
-      self.assertGreater(position, 0)
+      self.assertTrue(is_service_added)
     except AssertionError:
-      notes = 'Deleted device not found in new devices on chrome://devices'
-      self.LogTest(test_id2, test_name2, 'Failed', notes)
+      notes = 'Error receiving the power on signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Deleted device found in new devices on chrome://devices'
-      self.LogTest(test_id2, test_name2, 'Passed', notes)
+      is_registered = isPrinterRegistered(device.name)
+      try:
+        self.assertFalse(is_registered)
+      except AssertionError:
+        notes = 'Deleted device not found advertising or found adveritising as registered'
+        self.LogTest(test_id2, test_name2, 'Failed', notes)
+        raise
+      else:
+        notes = 'Deleted device found advertising as unregistered device.'
+        self.LogTest(test_id2, test_name2, 'Passed', notes)
 
 
 class PostUnregister(LogoCert):

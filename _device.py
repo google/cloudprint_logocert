@@ -319,9 +319,9 @@ class Device(object):
     Returns:
       boolean: True = success, False = errors.
     """
-    if self.id:
-      delete_url = '%s/delete?printerid=%s' % (Constants.AUTH['URL']['GCP'],
-                                               self.id)
+    if self.dev_id:
+      delete_url = '%s/delete?printerid=%s' % (Constants.GCP['MGT'],
+                                               self.dev_id)
       response = self.transport.HTTPReq(delete_url, auth_token=auth_token,
                                         data='')
     else:
@@ -331,7 +331,7 @@ class Device(object):
     result = self.jparser.Validate(response['data'])
     if result:
       self.logger.debug('Successfully deleted printer from service.')
-      self.id = None
+      self.dev_id = None
       return True
     else:
       self.logger.error('Unable to delete printer from service.')
