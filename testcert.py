@@ -1974,16 +1974,23 @@ class LocalDiscovery(LogoCert):
     notes = None
     notes2 = None
     printer_found = False
-    failed = False
 
-    if not gcpmgr.ToggleAdvancedOption(self.printer, 'local_discovery',
-                                       toggle=False):
-      notes = 'Error toggling Local Discovery.'
+    setting = {'pending': {'local_discovery': False}}
+    res = gcp.Update(device.dev_id, setting=setting)
+
+    if not res['success']:
+      notes = 'Error turning off Local Discovery.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-      return
+      raise
     # Give printer time to update.
-    print 'Waiting 60 seconds for printer to accept changes.'
-    time.sleep(60)
+    print 'Waiting up to 120 seconds for printer to accept changes.'
+    success = waitForService(device.name, False, timeout=120)
+
+    if not success:
+      notes = 'Printer did not update accordingly within the allotted time.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+
     for v in mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
@@ -1992,23 +1999,32 @@ class LocalDiscovery(LogoCert):
             self.assertFalse(v['found'])
           except AssertionError:
             notes = 'Local Discovery not disabled.'
-            failed = True
+            self.LogTest(test_id, test_name, 'Blocked', notes)
             raise
           else:
             notes = 'Local Discovery successfully disabled.'
           break
     if not printer_found:
       notes = 'No printer announcement seen.'
-      failed = True
-    if not gcpmgr.ToggleAdvancedOption(self.printer, 'local_discovery'):
-      # Local Printing is automatically turned off when Local Discovery is.
-      notes = 'Error toggling Local Discovery.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-      return
+      raise
 
-    gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing')
-    print 'Waiting 60 seconds for printer to accept changes.'
-    time.sleep(60)
+    setting = {'pending': {'local_discovery': True}}
+    res = gcp.Update(device.dev_id, setting=setting)
+    if not res['success']:
+      notes2 = 'Error turning on Local Discovery.'
+      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      raise
+
+    # Give printer time to update.
+    print 'Waiting up to 120 seconds for printer to accept changes.'
+    success = waitForService(device.name, True, timeout=120)
+
+    if not success:
+      notes2 = 'Printer did not update accordingly within the alloted time.'
+      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      raise
+
     for v in mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
@@ -2017,20 +2033,18 @@ class LocalDiscovery(LogoCert):
             self.assertTrue(v['found'])
           except AssertionError:
             notes2 = 'Local Discovery not enabled.'
-            failed = True
+            self.LogTest(test_id, test_name, 'Blocked', notes2)
             raise
           else:
             notes2 = 'Local Discovery successfully enabled.'
           break
     if not printer_found:
       notes2 = 'No printer announcement seen.'
-      failed = True
+      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      raise
 
     notes = notes + '\n' + notes2
-    if failed:
-      self.LogTest(test_id, test_name, 'Failed', notes)
-    else:
-      self.LogTest(test_id, test_name, 'Passed', notes)
+    self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterOnAdvertiseLocally(self):
     """Verify printer advertises self using Privet when turned on."""
@@ -2038,12 +2052,16 @@ class LocalDiscovery(LogoCert):
     test_name = 'testPrinterOnAdvertiseLocally'
     printer_found = False
     failed = False
+
     print 'This test should begin with the printer turned off.'
-    raw_input('Select enter once printer is powered off.')
-    print 'Turn printer on.'
-    raw_input('Select enter once printer is powered on and fully operational.')
-    print 'Waiting 10 seconds for printer to broadcast using mDNS.'
-    time.sleep(10)  # Give printer time to send privet broadcast.
+    promptUserAction('Power off the printer, wait 5 seconds, then power on the printer')
+    is_added = waitForService(device.name, True, timeout=300)
+    try:
+      self.assertTrue(is_added)
+    except AssertionError:
+      notes = 'Error receiving the power-on signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
 
     for v in mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
@@ -2072,28 +2090,35 @@ class LocalDiscovery(LogoCert):
     test_name = 'testPrinterOffSendGoodbyePacket'
     failed = False
     printer_found = False
+
     print 'This test must start with the printer on and operational.'
-    raw_input('Power off printer, Select enter when printer completely off.')
-    time.sleep(10)
+    promptUserAction('Power off device.')
+    is_removed = waitForService(device.name, False, timeout=300)
+    try:
+      self.assertTrue(is_removed)
+    except AssertionError:
+      notes = 'Error receiving the shutdown signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
     for v in mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
           printer_found = True
           try:
             self.assertFalse(v['found'])
+            break
           except AssertionError:
-            notes = 'Printer did not send goodbye packet when powered off.'
             failed = True
-            raise
-          else:
-            notes = 'Printer sent goodbye packet when powered off.'
     if not printer_found:
-      notes = 'Printer did not send goodbye packet when powered off.'
       failed = True
 
     if failed:
+      notes = 'Printer did not send goodbye packet when powered off.'
       self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
+      notes = 'Printer sent goodbye packet when powered off.'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterIdleNoBroadcastPrivet(self):
@@ -2102,6 +2127,7 @@ class LocalDiscovery(LogoCert):
     test_name = 'testPrinterIdleNoBroadcastPrivet'
     printer_found = False
     print 'Ensure printer stays is on and remains in idle state.'
+
     # Remove any broadcast entries from dictionary.
     for (k, v) in mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
@@ -2133,19 +2159,21 @@ class LocalDiscovery(LogoCert):
     test_id = '9a2fde45-ea02-4cdd-90ab-af752cbdd394'
     test_name = 'testUpdateLocalSettings'
     # Get the current xmpp timeout value.
+
     orig = device.cdd['local_settings']['current']['xmpp_timeout_value']
     new = orig + 600
-    local_settings = '{ "pending": { "xmpp_timeout_value": %d } }' % new
-    if not gcpmgr.UpdatePrinterWithUpdateAPI(device.details['Printer ID'],
-                                             'local_settings', local_settings):
+    setting = {'pending': {'xmpp_timeout_value': new}}
+    res = gcp.Update(device.dev_id, setting=setting)
+
+    if not res['success']:
       notes = 'Error sending Update of local settings.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-      return
+      raise
 
     #  Give the printer time to accept and confirm the pending settings.
     time.sleep(30)
     # Refresh the values of the device.
-    device.GetDeviceCDD(device.details['Printer ID'])
+    device.GetDeviceCDD(device.dev_id)
     timeout = device.cdd['local_settings']['current']['xmpp_timeout_value']
     try:
       self.assertEqual(timeout, new)
@@ -2157,9 +2185,14 @@ class LocalDiscovery(LogoCert):
       notes = 'Successfully set new xmpp_timeout_value in local settings.'
       self.LogTest(test_id, test_name, 'Passed', notes)
     finally:
-      local_settings = '{ "pending": { "xmpp_timeout_value": %d } }' % orig
-      gcpmgr.UpdatePrinterWithUpdateAPI(device.details['Printer ID'],
-                                        'local_settings', local_settings)
+      setting = {'pending': {'xmpp_timeout_value': orig}}
+      res = gcp.Update(device.dev_id, setting=setting)
+      try:
+        self.assertTrue(res['success'])
+      except AssertionError:
+        notes = 'Error sending Update of local settings.'
+        self.LogTest(test_id, test_name, 'Blocked', notes)
+        raise
 
 
 class LocalPrinting(LogoCert):
