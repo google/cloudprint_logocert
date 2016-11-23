@@ -33,7 +33,7 @@ therefore watch the output of the script while it's running.
 test_id corresponds to an internal database used by Google, so don't change
 those IDs. These IDs are used when submitting test results to our database.
 """
-__version__ = '1.13'
+__version__ = '1.14'
 
 import optparse
 import re
@@ -3617,8 +3617,21 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      self.ManualPass(test_id, test_name)
-
+      raw_input('Verify printer status, then press enter')
+      print 'Now load printer with A4 size paper.'
+      raw_input('After placing the correct paper size, select enter')
+      print 'Printer should continue printing and should complete the print job.'
+      job_state = gcpmgr.WaitForJobState('testpage.png', 'Printed')
+      try:
+        self.assertEqual(job_state, 'Printed')
+      except AssertionError:
+        notes = 'Job is not in Printed state: %s' % job_state
+        logger.error(notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        self.ManualPass(test_id, test_name)
+      
   def testMultipleJobsPrint(self):
     """Verify multiple jobs in queue are all printed."""
     test_id = '50790aa4-f276-4c12-9a06-fc0fdf446d7e'
