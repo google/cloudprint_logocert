@@ -246,12 +246,19 @@ def promptUserAction(msg):
     Args:
       msg: string, the msg to prompt the user.
   """
-  print '\n\n'
-  print '\033[92m ------------------------------------------- \033[0m'
-  print '\033[92m [ACTION] ', msg, '\033[0m'
-  print '\033[92m ------------------------------------------- \033[0m'
+  print '\n \033[92m [ACTION] ', msg, '\033[0m'
   print "\a" #Beep
 
+def promptAndWaitForUserAction(msg):
+  """Display text in green and beep - cross-platform, then wait for user to press enter before continuing
+
+      Args:
+        msg: string, the msg to prompt the user.
+      Returns:
+        string, user input string
+  """
+  promptUserAction(msg)
+  return raw_input()
 
 def tearDownModule():
   return
@@ -299,7 +306,8 @@ def GetNewTokens():
                               login_hint= Constants.USER['EMAIL'],
                               redirect_uri= Constants.AUTH['REDIRECT'],
                               scope = Constants.AUTH['SCOPE'],
-                              user_agent = Constants.AUTH['USER_AGENT'])
+                              user_agent = Constants.AUTH['USER_AGENT'],
+                              approval_prompt = 'force')
 
   http = httplib2.Http()
   flags = argparser.parse_args(args=[])
@@ -310,12 +318,20 @@ def GetNewTokens():
   if creds:
     Constants.AUTH['REFRESH'] = creds.refresh_token
     Constants.AUTH['ACCESS'] = creds.access_token
+    RefreshToken()
   else:
     logger.error('Error getting authorization code.')
 
 
 class LogoCert(unittest.TestCase):
   """Base Class to drive Logo Certification tests."""
+
+  def shortDescription(self):
+    '''Overriding the docstring printout function'''
+    doc = self._testMethodDoc
+    msg =  doc and doc.split("\n")[0].strip() or None
+    return '\n \033[94m'+msg+'\033[0m \n\n'
+
 
   @classmethod
   def setUpClass(cls):
@@ -351,12 +367,11 @@ class LogoCert(unittest.TestCase):
       time.sleep(5)
       return True
     print 'Did the test produce the expected result?'
-    result = raw_input('Enter "y" or "n"\n')
+    result = promptAndWaitForUserAction('Enter "y" or "n"')
     try:
-      self.assertEqual(result, 'y')
+      self.assertEqual(result.lower(), 'y')
     except AssertionError:
-      print 'Additional notes for test failure: \n'
-      notes = raw_input('Hit return when finished\n')
+      notes = promptAndWaitForUserAction('Type in additional notes for test failure, hit return when finished')
       self.LogTest(test_id, test_name, 'Failed', notes)
       return False
     else:
@@ -375,7 +390,7 @@ class LogoCert(unittest.TestCase):
     logger.info('test_id: %s: %s', test_id, result)
     logger.info('%s: %s', test_id, test_name)
     if notes:
-      logger.info('%s: %s', test_id, notes)
+      logger.info('%s: Notes: %s', test_id, notes)
     else:
       notes = ''
     if Constants.TEST['SPREADSHEET']:
@@ -862,7 +877,8 @@ class Privet(LogoCert):
     else:
       try:
         print 'Accept the registration request on the device.'
-        raw_input('Select enter once registration accepted.')
+        promptAndWaitForUserAction('Select enter once registration accepted.')
+        time.sleep(10)
         try:
           self.assertTrue(device.GetPrivetClaimToken())
         except AssertionError:
@@ -899,7 +915,8 @@ class Privet(LogoCert):
       try:
         print 'Accept the registration request on the device.'
         print 'Note: some printers may not show a registration request.'
-        raw_input('Select enter once registration is accepted.')
+        promptAndWaitForUserAction('Select enter once registration is accepted.')
+        time.sleep(10)
         try:
           self.assertTrue(device.GetPrivetClaimToken())
         except AssertionError:
@@ -1712,7 +1729,7 @@ class PreRegistration(LogoCert):
     test_name = 'testDeviceSleepingAdvertisePrivet'
 
     print 'Put the printer in sleep mode.'
-    raw_input('Select enter when printer is sleeping.')
+    promptAndWaitForUserAction('Select enter when printer is sleeping.')
     print 'Waiting ', self.sleep_time, 'seconds.'
     time.sleep(self.sleep_time)
     found = waitForPrivetDiscovery(device.name)
@@ -1731,7 +1748,7 @@ class PreRegistration(LogoCert):
     test_id = '35ce7a3d-3403-499e-9a60-4d17e1693178'
     test_name = 'testDeviceOffNoAdvertisePrivet'
 
-    promptUserAction('Power off device.')
+    promptUserAction('Turn off the printer')
     is_removed = waitForService(device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
@@ -1877,7 +1894,7 @@ class Registration(LogoCert):
 
     success = device.StartPrivetRegister()
     if success:
-      raw_input('Select enter once the printer registration times out.')
+      promptAndWaitForUserAction('Select enter once the printer registration times out.')
       time.sleep(5)
       # Confirm the user's account has no registered printers
       res = gcp.Search(device.model)
@@ -1912,7 +1929,7 @@ class Registration(LogoCert):
         raise
       else:
         print 'Now accept the registration request from %s.' % self.username
-        raw_input('Select enter once the registration is accepted.');
+        promptAndWaitForUserAction('Select enter once the registration is accepted.');
         time.sleep(5)
         # Give time for the backend to process the
         success = False
@@ -2054,7 +2071,7 @@ class LocalDiscovery(LogoCert):
     failed = False
 
     print 'This test should begin with the printer turned off.'
-    promptUserAction('Power off the printer, wait 5 seconds, then power on the printer')
+    promptUserAction('Turn off the printer, wait around 5 seconds, then power on the printer')
     is_added = waitForService(device.name, True, timeout=300)
     try:
       self.assertTrue(is_added)
@@ -2092,7 +2109,7 @@ class LocalDiscovery(LogoCert):
     printer_found = False
 
     print 'This test must start with the printer on and operational.'
-    promptUserAction('Power off device.')
+    promptUserAction('Turn off the printer')
     is_removed = waitForService(device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
@@ -2126,7 +2143,7 @@ class LocalDiscovery(LogoCert):
     test_id = '703a55d2-7291-4637-b257-dc885fdb5abd'
     test_name = 'testPrinterIdleNoBroadcastPrivet'
     printer_found = False
-    print 'Ensure printer stays is on and remains in idle state.'
+    print 'Ensure printer stays on and remains in idle state.'
 
     # Remove any broadcast entries from dictionary.
     for (k, v) in mdns_browser.listener.discovered.items():
@@ -3152,7 +3169,7 @@ class PostRegistration(LogoCert):
     test_id = 'ba6b2c0c-10da-4910-bb6f-63c826087054'
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
 
-    promptUserAction('Power off device.')
+    promptUserAction('Turn off the printer')
     is_removed = waitForService(device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
@@ -3186,7 +3203,7 @@ class PostRegistration(LogoCert):
         notes = 'Status: %s' % device.status
         self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
-        promptUserAction('Power on the device.')
+        promptUserAction('Power on the printer')
         is_added = waitForService(device.name, True, timeout=300)
         try:
           self.assertTrue(is_added)
@@ -3200,7 +3217,7 @@ class PostRegistration(LogoCert):
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
 
-    promptUserAction('Power off registered device.')
+    promptUserAction('Turn off the printer')
     is_removed = waitForService(device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
@@ -3211,7 +3228,7 @@ class PostRegistration(LogoCert):
     else:
       # Need to clear the cache of zeroconf, or else the stale printer details will be returned
       mdns_browser.clear_cache()
-      promptUserAction('Power on registered device')
+      promptUserAction('Power on the printer')
       is_added = waitForService(device.name, True, timeout=300)
       try:
         self.assertTrue(is_added)
@@ -3309,11 +3326,11 @@ class PrinterState(LogoCert):
     test_name = 'testLostNetworkConnection'
 
     print 'Test printer handles connection status when reconnecting to network.'
-    raw_input('Select enter once printer loses network connection.')
+    promptAndWaitForUserAction('Select enter once printer loses network connection.')
     print 'Waiting 60 seconds.'
     time.sleep(60)
     print 'Now reconnect printer to the network.'
-    raw_input('Select enter once printer has network connection.')
+    promptAndWaitForUserAction('Select enter once printer has network connection.')
     print 'Waiting 60 seconds.'
     time.sleep(60)
     device.GetDeviceDetails()
@@ -3337,7 +3354,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     print 'Open the paper tray to the printer.'
-    raw_input('Select enter once the paper tray is open.')
+    promptAndWaitForUserAction('Select enter once the paper tray is open.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3354,7 +3371,7 @@ class PrinterState(LogoCert):
     test_id2 = '5041f9a4-0b58-451a-906f-dec2375d93a4'
     test_name2 = 'testClosedPaperTray'
     print 'Now close the paper tray.'
-    raw_input('Select enter once the paper tray is closed.')
+    promptAndWaitForUserAction('Select enter once the paper tray is closed.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3377,7 +3394,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     print 'Remove all media from the paper tray.'
-    raw_input('Select enter once all media is removed.')
+    promptAndWaitForUserAction('Select enter once all media is removed.')
     time.sleep(10)
     device.GetDeviceDetails()
     if not self.VerifyUiStateMessage(test_id, test_name, ['input/tray'],suffixes=('is empty')):
@@ -3386,7 +3403,7 @@ class PrinterState(LogoCert):
     test_id2 = '64e592be-d6c4-424e-9e69-021c92b09953'
     test_name2 = 'testMediaInTray'
     print 'Place media in all paper trays.'
-    raw_input('Select enter once you have placed paper in paper tray.')
+    promptAndWaitForUserAction('Select enter once you have placed paper in paper tray.')
     time.sleep(10)
     device.GetDeviceDetails()
     if not self.VerifyUiStateHealthy(test_id2, test_name2):
@@ -3402,7 +3419,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return True
     print 'Remove the (or one) toner cartridge from the printer.'
-    raw_input('Select enter once the toner cartridge is removed.')
+    promptAndWaitForUserAction('Select enter once the toner cartridge is removed.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3418,7 +3435,7 @@ class PrinterState(LogoCert):
     test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name2 = 'testExhaustTonerCartridge'
     print 'Insert an empty toner cartridge in printer.'
-    raw_input('Select enter once an empty toner cartridge is in printer.')
+    promptAndWaitForUserAction('Select enter once an empty toner cartridge is in printer.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3434,7 +3451,7 @@ class PrinterState(LogoCert):
     test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name3 = 'testReplaceMissingToner'
     print 'Verify that the error is fixed by replacing the original toner cartridge.'
-    raw_input('Select enter once toner is replaced in printer.')
+    promptAndWaitForUserAction('Select enter once toner is replaced in printer.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3457,7 +3474,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     print 'Open a cover on your printer.'
-    raw_input('Select enter once the cover has been opened.')
+    promptAndWaitForUserAction('Select enter once the cover has been opened.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3473,7 +3490,7 @@ class PrinterState(LogoCert):
     test_id2 = 'a26b7d34-15b4-4819-84a5-4b8e5bc3a30e'
     test_name2 = 'testCoverClosed'
     print 'Now close the printer cover.'
-    raw_input('Select enter once the printer cover is closed.')
+    promptAndWaitForUserAction('Select enter once the printer cover is closed.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3492,7 +3509,7 @@ class PrinterState(LogoCert):
     test_name = 'testPaperJam'
 
     print 'Cause the printer to become jammed with paper.'
-    raw_input('Select enter once the printer has become jammed.')
+    promptAndWaitForUserAction('Select enter once the printer has become jammed.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3508,7 +3525,7 @@ class PrinterState(LogoCert):
     test_id2 = 'ff7e0f11-4955-4510-8a5c-91f809f6b263'
     test_name2 = 'testRemovePaperJam'
     print 'Now clear the paper jam.'
-    raw_input('Select enter once the paper jam is clear from printer.')
+    promptAndWaitForUserAction('Select enter once the paper jam is clear from printer.')
     time.sleep(10)
     device.GetDeviceDetails()
     try:
@@ -3582,7 +3599,7 @@ class JobState(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        raw_input('Select enter once all 7 pages are printed...')
+        promptAndWaitForUserAction('Select enter once all 7 pages are printed...')
         # Give the printer time to update our service.
         #time.sleep(10)
         #pages_printed = gcpmgr.GetPagesPrinted('PDF1.7.pdf')
@@ -3608,7 +3625,7 @@ class JobState(LogoCert):
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
 
     if output['success']:
-      raw_input('Select enter once the first page prints out.')
+      promptAndWaitForUserAction('Select enter once the first page prints out.')
       delete_res = gcp.DeleteJob(output['job']['id'])
       if delete_res['success']:
         # Since it's PDF file give the job time to finish printing.
@@ -3641,7 +3658,7 @@ class JobState(LogoCert):
     test_name = 'testJobStateEmptyInputTray'
     print 'Empty the input tray of all paper.'
 
-    raw_input('Select enter once input tray has been emptied.')
+    promptAndWaitForUserAction('Select enter once input tray has been emptied.')
 
     cjt = CloudJobTicket(device.details['gcpVersion'])
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
@@ -3668,7 +3685,7 @@ class JobState(LogoCert):
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
-          raw_input('Select enter after placing the papers back in the input tray.')
+          promptAndWaitForUserAction('Select enter after placing the papers back in the input tray.')
           print 'After placing the paper back, Job State should transition to in progress.'
           job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.IN_PROGRESS)
           try:
@@ -3680,7 +3697,7 @@ class JobState(LogoCert):
             raise
           else:
             print 'Wait for the print job to finish.'
-            raw_input('Select enter once the job completes printing...')
+            promptAndWaitForUserAction('Select enter once the job completes printing...')
             job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
             try:
               self.assertEqual(job['status'], CjtConstants.DONE)
@@ -3707,7 +3724,7 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     print 'Remove ink cartridge or toner from the printer.'
-    raw_input('Select enter once the toner is removed.')
+    promptAndWaitForUserAction('Select enter once the toner is removed.')
 
     cjt = CloudJobTicket(device.details['gcpVersion'])
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
@@ -3747,7 +3764,7 @@ class JobState(LogoCert):
             raise
           else:
             print 'Wait for the print job to finish.'
-            raw_input('Select enter once the job completes printing...')
+            promptAndWaitForUserAction('Select enter once the job completes printing...')
             job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
             try:
               self.assertEqual(job['status'], CjtConstants.DONE)
@@ -3776,7 +3793,7 @@ class JobState(LogoCert):
     if output['success']:
       job_id = output['job']['id']
       print 'Wait for one page to print.'
-      raw_input('Select enter once network is disconnected.')
+      promptAndWaitForUserAction('Select enter once network is disconnected.')
       job = gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
       try:
         self.assertEqual(job['status'], CjtConstants.IN_PROGRESS)
@@ -3786,7 +3803,8 @@ class JobState(LogoCert):
         raise
       else:
         print 'Re-establish network connection to printer.'
-        raw_input('Once network is reconnected, Job state should transition to in progress.')
+        promptAndWaitForUserAction('Select enter once network is reconnected')
+        print 'Once network is reconnected, Job state should transition to in progress.'
         job = gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
         try:
           self.assertEqual(job['status'], CjtConstants.IN_PROGRESS)
@@ -3797,7 +3815,7 @@ class JobState(LogoCert):
           raise
         else:
           print 'Wait for the print job to finish.'
-          raw_input('Select enter once the job completes printing...')
+          promptAndWaitForUserAction('Select enter once the job completes printing...')
           job = gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.DONE, timeout=30)
           try:
             self.assertEqual(job['status'], CjtConstants.DONE)
@@ -3821,7 +3839,7 @@ class JobState(LogoCert):
 
     print 'This test will validate job state when there is a paper jam.'
     print 'Place page inside print path to cause a paper jam.'
-    raw_input('Select enter once printer reports paper jam.')
+    promptAndWaitForUserAction('Select enter once printer reports paper jam.')
 
     cjt = CloudJobTicket(device.details['gcpVersion'])
     output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, cjt)
@@ -3844,7 +3862,7 @@ class JobState(LogoCert):
         raise
       else:
         print 'Now clear the print path so the printer is no longer jammed.'
-        raw_input('Select enter once printer is clear of jam.')
+        promptAndWaitForUserAction('Select enter once printer is clear of jam.')
         print 'Verify print job prints after paper jam is cleared.'
         self.ManualPass(test_id, test_name)
 
@@ -3856,7 +3874,7 @@ class JobState(LogoCert):
     print 'The printer should prompt the user to enter the requested size.'
     print 'Load input tray with letter sized paper.'
 
-    raw_input('Select enter once paper tray loaded with letter sized paper.')
+    promptAndWaitForUserAction('Select enter once paper tray loaded with letter sized paper.')
 
     cjt = CloudJobTicket(device.details['gcpVersion'])
     cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
@@ -3902,7 +3920,7 @@ class JobState(LogoCert):
 
     print 'This tests that an offline printer will print all jobs'
     print 'when it comes back online.'
-    promptUserAction('Turn off the printer.')
+    promptUserAction('Turn off the printer')
     is_removed = waitForService(device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
@@ -3941,7 +3959,7 @@ class JobState(LogoCert):
       raise
     else:
       print 'Verify that all 3 print jobs are printed.'
-      raw_input('Select enter once printer has fetched all jobs.')
+      promptAndWaitForUserAction('Select enter once printer has fetched all jobs.')
       self.ManualPass(test_id, test_name)
 
   def testDeleteQueuedJob(self):
@@ -3949,7 +3967,7 @@ class JobState(LogoCert):
     test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
     test_name = 'testDeleteQueuedJob'
 
-    promptUserAction('Power off device.')
+    promptUserAction('Turn off the printer')
     is_removed = waitForService(device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
@@ -4080,7 +4098,7 @@ class RunAfter24Hours(LogoCert):
     test_name = 'testPrinterOnline'
     device.GetDeviceDetails()
     try:
-      self.assertIn('online', device.status)
+      self.assertIn('ONLINE', device.status)
     except AssertionError:
       notes = 'Printer is not online after 24 hours.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -4104,7 +4122,7 @@ class Unregister(LogoCert):
     test_id2 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
     test_name2 = 'testOffDeviceIsDeleted'
 
-    promptUserAction('Power down registered device.')
+    promptUserAction('Turn off the printer')
     is_service_removed = waitForService(device.name, False, timeout=300)
     try:
       self.assertTrue(is_service_removed)
@@ -4126,7 +4144,7 @@ class Unregister(LogoCert):
 
     # Need to clear the cache of zeroconf, or else stale printer details will be returned
     mdns_browser.clear_cache()
-    promptUserAction('Power on device.')
+    promptUserAction('Power on the printer')
     is_service_added = waitForService(device.name, True, timeout=300)
     try:
       self.assertTrue(is_service_added)
@@ -4255,8 +4273,7 @@ class Printing(LogoCert):
     test_name = 'testPrintMediaSizeSelect'
 
     logger.info('Testing the selection of A4 media size.')
-    raw_input('Load printer with A4 size paper. Select return when ready.')
-
+    promptAndWaitForUserAction('Load printer with A4 size paper. Select return when ready.')
 
     self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
 
@@ -4270,7 +4287,8 @@ class Printing(LogoCert):
       raise
     else:
       self.ManualPass(test_id, test_name)
-    raw_input('Load printer with letter size paper. Select return when ready.')
+    finally:
+      promptAndWaitForUserAction('Load printer with letter size paper. Select return when ready.')
 
   def testPrintPdfReverseOrder(self):
     test_id = '1c2610c9-4f16-42ca-9d4a-018f127c4b58'

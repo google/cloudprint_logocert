@@ -20,9 +20,6 @@ attributes of a device. Before the device attributes are fully populated,
 the methods GetDeviceDetails and GetDeviceCDD must be run.
 """
 
-import json
-
-from _common import Extract
 from _config import Constants
 from _jsonparser import JsonParser
 from _privet import Privet

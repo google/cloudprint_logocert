@@ -19,93 +19,12 @@ This provides some common functions and classes that are needed by multiple
 classes and modules in the Logo Certification Package.
 """
 
-import base64
 import json
 import math
-import mimetypes
 import os
 import time
-
-from _config import Constants
 import _log
 
-
-def Cancel():
-  """Allow for user input to cancel a pending operations.
-
-  Returns:
-    Boolean, True = cancel, False = do not cancel.
-  This function requires manual user input.
-  """
-  if raw_input('Press enter to continue or c to cancel: ').lower() == 'c':
-    return True
-  return False
-
-
-def Base64Encode(pathname):
-  """Convert a file to a base64 encoded file.
-
-  Args:
-    pathname: path name of file to base64 encode..
-  Returns:
-    string, name of base64 encoded file.
-  For more info, see:
-    http://en.wikipedia.org/wiki/Data_URI_scheme
-  """
-  b64_pathname = pathname + '.b64'
-  file_type = mimetypes.guess_type(pathname)[0] or 'application/octet-stream'
-  # We'll skip encoding if it's already been done.
-  if not os.path.exists(b64_pathname):
-    data = ReadFile(pathname)
-
-    # Convert binary data to base64 encoded data.
-    if data:
-      header = 'data:%s;base64,' % file_type
-      b64data = header + base64.b64encode(data)
-    else:
-      return None
-
-    if WriteFile(b64_pathname, b64data):
-      return b64_pathname
-    else:
-      return None
-  else:
-    return b64_pathname
-
-
-def EncodeMultiPart(fields=None, files=None, ftype='application/xml'):
-  """Encodes list of parameters and files for HTTP multipart format.
-
-  Args:
-    fields: list of tuples containing name and value of parameters.
-    files: list of tuples containing param name filename, and file contents.
-    ftype: string if file type different than application/xml.
-  Returns:
-    An encoded string to be sent as data for the HTTP post request.
-  """
-  lines = []
-  if fields:
-    for (key, value) in fields:
-      lines.append('--' + Constants.BOUNDARY)
-      lines.append('Content-Disposition: form-data; name="%s"' % key)
-      lines.append('')  # blank line
-      lines.append(value)
-  if files:
-    for (key, filename, value) in files:
-      lines.append('--' + Constants.BOUNDARY)
-      lines.append(
-          'Content-Disposition: form-data; name="%s"; filename="%s"'
-          % (key, filename))
-      lines.append('Content-Type: %s' % ftype)
-      lines.append('')  # blank line
-      # If any strings are unicode, encode them for utf-8.
-      for i, line in enumerate(lines):
-        if isinstance(line, unicode):
-          lines[i] = line.encode('utf-8')
-      lines.append(value)
-  lines.append('--' + Constants.BOUNDARY + '--')
-  lines.append('')  # blank line
-  return Constants.CRLF.join(lines)
 
 
 def Extract(dict_in, dict_out):
@@ -116,8 +35,6 @@ def Extract(dict_in, dict_out):
     dict_out: dictionary to be created.
   """
   if isinstance(dict_in, dict):
-    keys = dict_in.keys()
-    print keys
     for key, value in dict_in.iteritems():
       if isinstance(value, dict):
         Extract(value, dict_out)

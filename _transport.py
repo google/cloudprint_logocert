@@ -21,13 +21,10 @@ protocols like HTTP, mDNS, etc.
 This module is dependent on modules from the LogoCert package.
 """
 
-import mimetypes
-import os
 import socket  # In order to set a default timeout.
 import urllib
 import urllib2
 
-import _common
 from _config import Constants
 from _jsonparser import JsonParser
 
@@ -123,38 +120,6 @@ class Transport(object):
 
     return response
 
-  def SendFile(self, url, pathname, headers=None, content_type=None):
-    """Upload a file to a service.
-
-    Args:
-      url: string, url to send the file to.
-      pathname: string, pathname of file to send.
-      headers: key/value pairs of HTTP header.
-      content_type: mimetype of file.
-    Returns:
-      boolean: True = No errors, False = errors.
-    """
-    if not content_type:
-      content_type = mimetypes.guess_type(pathname)
-      if not content_type:
-        content_type = 'text/plain'
-
-    if not headers:
-      headers = {}
-
-    length = os.path.getsize(pathname)
-    data = _common.ReadFile(pathname)
-    request = urllib2.Request(url, data)
-    if headers:
-      for header in headers:
-        self.logger.debug('Using header: %s:%s', header, headers[header])
-        request.add_header(header, headers[header])
-    request.add_header('Cache-Control', 'no-cache')
-    request.add_header('Content-Length', '%d' % length)
-    request.add_header('Content-Type', content_type)
-    response = urllib2.urlopen(request).read().strip()
-    self.LogData(response)
-    return response
 
   def LogData(self, response):
     """Log all response headers and data.
