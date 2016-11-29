@@ -22,11 +22,18 @@ CloudJobTicket will provide methods to set the various fields of a job ticket:
 class CloudJobTicket(object):
   """Represents the print job specifications sent to the printer on job submission."""
 
-  def __init__(self, version):
-    """Get a reference to a logger object."""
+
+  def __init__(self, version, caps):
+    """Get a reference to a logger object.
+
+       Args:
+          version: string, gcp version
+    """
     self.val = {}
-    self.val['version'] = version
     self.val['print'] = {}
+    self.val['version'] = version
+
+    self.caps = caps
 
 
   def AddColorOption(self, color_type):
@@ -36,7 +43,19 @@ class CloudJobTicket(object):
       Args:
         color_type: string, STANDARD_COLOR or STANDARD_MONOCHROME
     """
-    self.val['print']['color'] = {'type': color_type}
+    color_option = {'type': color_type}
+
+    # set the vendor specific vendor id for the color type
+    for option in self.caps['color']['option']:
+      if color_type in option['type']:
+        color_option['vendor_id'] = option['vendor_id']
+        break
+
+    if 'vendor_id' not in color_option:
+      print 'Failed to find vendor id for ', color_type, ' in printer capabilities'
+      raise
+
+    self.val['print']['color'] = color_option
 
   def AddCopiesOption(self, num_copies):
     """
@@ -75,6 +94,23 @@ class CloudJobTicket(object):
     """
     self.val['print']['dpi'] = {'horizontal_dpi': horizontal_dpi,
                                 'vertical_dpi': vertical_dpi}
+
+  def AddMarginOption(self, type, top, right, bottom, left):
+    """
+      Specify the margins for the print job
+
+      Args:
+        type: string, type of margins
+        top, int, top margin in microns
+        right, int, right margin in microns
+        bottom, int, bottom margin in microns
+        left, int, left margin in microns
+    """
+    self.val['print']['margins'] = {'type': type,
+                                    'top_microns': top,
+                                    'right_microns': right,
+                                    'bottom_microns': bottom,
+                                    'left_microns': left}
 
   def AddSizeOption(self, height_microns, width_microns):
     """
@@ -126,7 +162,7 @@ class CloudJobTicket(object):
 
 
 class CjtConstants(object):
-  """A class that holds constants for used in a CJT"""
+  """A class that holds constants that are used in a CJT"""
 
   # Color scheme
   MONOCHROME = 'STANDARD_MONOCHROME'
@@ -160,3 +196,8 @@ class CjtConstants(object):
   DONE = 'DONE'
   ABORTED = 'ABORTED'
   ERROR = 'ERROR'
+
+  # Margins
+  BORDERLESS = 'BORDERLESS'
+  STANDARD = 'STANDARD'
+  CUSTOM = 'CUSTOM'

@@ -29,7 +29,7 @@ class MDnsService(object):
   """A MDNS Service.
 
   Note that in this case the methods must be named exactly as they are, as the
-  ServiceBrowser from zeroconf will require those method names from it's
+  ServiceBrowser from zeroconf will require those method names from its
   listener.
   """
 

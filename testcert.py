@@ -273,8 +273,7 @@ def getTokens():
     if creds:
       Constants.AUTH['REFRESH'] = creds.refresh_token
       Constants.AUTH['ACCESS'] = creds.access_token
-      #TODO figure out how to get the refresh token, currently no refresh token is returned from the flow
-      #RefreshToken()
+      RefreshToken()
     else:
       GetNewTokens()
 
@@ -1793,6 +1792,9 @@ class PreRegistration(LogoCert):
       else:
         notes = 'Device found advertising when freshly powered on'
         self.LogTest(test_id2, test_name2, 'Passed', notes)
+      finally:
+        # Get the new X-privet-token from the restart
+        device.GetPrivetInfo()
 
   def testDeviceRegistrationNotLoggedIn(self):
     """Test printer cannot be registered if user not logged in."""
@@ -1801,6 +1803,7 @@ class PreRegistration(LogoCert):
 
     success = device.Register('Select enter after confirming registration',
                               use_token=False)
+
     try:
       self.assertFalse(success)
     except AssertionError:
@@ -1852,7 +1855,8 @@ class PreRegistration(LogoCert):
     test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
     data_dir = 'guest_user'
-
+    # TODO find a way to replace or remove this last bit of webdriver code
+    return
     cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
     chrome3 = _chrome.Chrome(logger, cd3)
     chrome3.Print()
@@ -1964,7 +1968,7 @@ class Registration(LogoCert):
     """Verify printer must accept registration requests on printer panel."""
     test_id = '6968e44b-3c2d-4b14-8fd5-06c94f1e8c41'
     test_name = 'testDeviceAcceptRegistration'
-
+    #TODO Test cases don't run in order so this needs to be enforced to run after the test above
     print 'Validate if printer required user to accept registration request'
     print 'If printer does not have accept/cancel on printer panel,'
     print 'Fail this test.'
@@ -2068,7 +2072,6 @@ class LocalDiscovery(LogoCert):
     test_id = 'e979119e-5a35-4065-89cf-1c4ef795c5b9'
     test_name = 'testPrinterOnAdvertiseLocally'
     printer_found = False
-    failed = False
 
     print 'This test should begin with the printer turned off.'
     promptUserAction('Turn off the printer, wait around 5 seconds, then power on the printer')
@@ -2079,6 +2082,8 @@ class LocalDiscovery(LogoCert):
       notes = 'Error receiving the power-on signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    # Get the new X-privet-token from the restart
+    device.GetPrivetInfo()
 
     for v in mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
@@ -2088,16 +2093,14 @@ class LocalDiscovery(LogoCert):
             self.assertTrue(v['found'])
           except AssertionError:
             notes = 'Printer did not broadcast privet packet.'
-            failed = True
+            self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
             notes = 'Printer broadcast privet packet.'
     if not printer_found:
       notes = 'Printer did not make privet packet.'
-      failed = True
-
-    if failed:
       self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
     else:
       self.LogTest(test_id, test_name, 'Passed', notes)
 
@@ -2213,168 +2216,102 @@ class LocalDiscovery(LogoCert):
 
 
 class LocalPrinting(LogoCert):
-  """Tests of local printing functionality.
-
-  Note: when navigating to GMail threads sometimes ChromeDriver will hang, so
-  the workaround is to first navigate to about:blank.
-  """
+  """Tests of local printing functionality."""
+  def setUp(self):
+    # Create a fresh CJT for each test case
+    self.cjt = CloudJobTicket(device.details['gcpVersion'], device.cdd['caps'])
 
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
-  def testLocalPrintEnabled(self):
-    """Verify local print is available from Chrome Print Dialog."""
-    test_id = 'a47b904c-d7a2-4112-832b-59035d117404'
-    test_name = 'testLocalPrintEnabled'
-    chrome.Print()
-    found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
-    try:
-      self.assertTrue(found)
-    except AssertionError:
-      notes = 'Not able to find printer in Local Destinations.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      notes = 'Found printer in local destinations.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      chrome.ClosePrintDialog()
-
-  def testLocalPrintNotOwner(self):
-    """Verify local print available to non owner of printer."""
-    test_id = 'ea9b1e01-f792-4627-bf84-2db5db513da4'
-    test_name = 'testLocalPrintNotOwner'
-    data_dir = Constants.USER2['EMAIL'].split('@')[0]
-    cd2 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
-    chrome2 = _chrome.Chrome(logger, cd2)
-    chrome2.SignIn(Constants.USER2['EMAIL'], Constants.USER2['PW'])
-    chrome2.Print()
-    found = chrome2.SelectPrinterFromPrintDialog(self.printer, localprint=True)
-    try:
-      self.assertTrue(found)
-    except AssertionError:
-      notes = 'Not able to find printer in Local Destinations.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      notes = 'Found printer in local destinations.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      cd2.CloseChrome()
-
   def testLocalPrintGuestUser(self):
     """Verify local print available to guest user."""
     test_id = '8ba6f1ba-66cc-4d9e-aa3c-1d2e611ddb38'
     test_name = 'testLocalPrintGuestUser'
-    data_dir = 'guest_user'
-    cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
-    chrome3 = _chrome.Chrome(logger, cd3)
-    chrome3.Print()
-    found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
+
+    # New instance of device that is not authenticated - contains no auth-token
+    guest_device = Device(logger, None, None, privet_port=device.port)
+    guest_device.GetDeviceCDDLocally()
+
+    job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
-      self.assertTrue(found)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Not able to find printer in Local Destinations.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+      notes = 'Guest failed to print a page via local printing.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
     else:
-      notes = 'Found printer in Local Destinations.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      cd3.CloseChrome()
+      print 'Guest successfully printed a page via local printing.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
 
   def testLocalPrintingToggle(self):
     """Verify printer respects GCP Mgt page when local printing toggled."""
     test_id = '533d4ac6-5c1d-4c99-a91e-2bac7c31864f'
     test_name = 'testLocalPrintingToggle'
-    failed = False
-    if gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing',
-                                   toggle=False):
-      # Give the printer time to update.
-      print 'Waiting 60 seconds for printer to accept changes.'
-      time.sleep(60)
-      chrome.Print()
-      found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
-      try:
-        self.assertFalse(found)
-      except AssertionError:
-        notes = 'Found printer in Local Destinations when not enabled.'
-        failed = True
-        raise
-      else:
-        notes = 'Did not find printer in Local Destinations when not enabled.'
-      finally:
-        chrome.ClosePrintDialog()
-    else:
-      notes = 'Error toggling Local Printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+    notes = None
+    notes2 = None
 
-    if gcpmgr.ToggleAdvancedOption(self.printer, 'local_printing'):
-      print 'Waiting 60 seconds to allow printer to accept changes.'
-      time.sleep(60)
-      chrome.Print()
-      found = chrome.SelectPrinterFromPrintDialog(self.printer, localprint=True)
-      try:
-        self.assertTrue(found)
-      except AssertionError:
-        notes2 = 'Did not find printer in Local Destinations when enabled.'
-        failed = True
-        raise
-      else:
-        notes2 = 'Found printer in Local Destinations when enabled.'
-      finally:
-        chrome.ClosePrintDialog()
-      notes = notes + '\n' + notes2
-      if failed:
-        self.LogTest(test_id, test_name, 'Failed', notes)
-      else:
-        self.LogTest(test_id, test_name, 'Passed', notes)
-    else:
-      notes = 'Error toggling Local Printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+    setting = {'pending': {'printer/local_printing_enabled': False}}
+    res = gcp.Update(device.dev_id, setting=setting)
 
-  def testLocalPrintHeadersFooters(self):
-    """Verify printer respects headers and footers option in local print."""
-    test_id = '26cd8c36-3107-426b-9e49-2f1beea076f9'
-    test_name = 'testLocalPrintHeadersFooters'
-    # First navigate to a web page to print.
-    chromedriver.Get(chrome.devices)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
+    if not res['success']:
+      notes = 'Error turning off Local Printing.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+
+    # Give the printer time to update.
+    print 'Waiting 10 seconds for printer to accept pending changes.'
+    time.sleep(10)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNone(job_id)
     except AssertionError:
-      notes = 'Error printing without headers and footers.'
+      notes = 'Able to print via privet local printing when disabled.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+    else:
+      notes = 'Not able to print locally when disabled.'
 
-    printed = chrome.PrintFromPrintDialog(self.printer, headers=True,
-                                          localprint=True)
+    setting = {'pending': {'printer/local_printing_enabled': True}}
+    res = gcp.Update(device.dev_id, setting=setting)
+
+    if not res['success']:
+      notes2 = 'Error turning on Local Printing.'
+      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      raise
+
+    # Give the printer time to update.
+    print 'Waiting 10 seconds for printer to accept pending changes.'
+    time.sleep(10)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
 
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error printing with headers and footers in local printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      notes2 = 'Not able to print locally when enabled.'
+      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      raise
+    else:
+      notes2 = 'Able to print via privet local printing when not enabled.'
+      self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
 
-    print 'The 1st print job should not have headers and footers.'
-    print 'The 2nd print job should have headers and footers.'
-    print 'If headers and footers are incorrect, fail this test.'
-    self.ManualPass(test_id, test_name)
+
 
   def testLocalPrintTwoSided(self):
     """Verify printer respects two-sided option in local print."""
     test_id = 'e235f70d-2f81-4ea4-9d0d-b56db2174a57'
     test_name = 'testLocalPrintTwoSided'
+
     if not Constants.CAPS['DUPLEX']:
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
       return
-    # First navigate to a web page to print.
-    chromedriver.Get(Constants.GCP['LEARN'])
-    printed = chrome.PrintFromPrintDialog(self.printer, duplex=True,
-                                          localprint=True)
+
+    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error printing with duplex in local printing.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2382,50 +2319,28 @@ class LocalPrinting(LogoCert):
     print 'Verify print job is printed in duplex.'
     self.ManualPass(test_id, test_name)
 
-  def testLocalPrintBackground(self):
-    """Verify printer respects background-graphics in local print."""
-    test_id = '4ff48cf9-7329-4757-9f30-d5c30586c225'
-    test_name = 'testLocalPrintBackground'
-    # First navigate to a web page to print.
-    chromedriver.Get(Constants.GOOGLE)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error printing locally.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-
-    printed = chrome.PrintFromPrintDialog(self.printer, background=True,
-                                          localprint=True)
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error printing with background in local printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-
-    print 'The 1st print job should not use background images.'
-    print 'The 2nd print job should print with background images.'
-    print 'If the background options are not observed, fail this test.'
-    self.ManualPass(test_id, test_name)
 
   def testLocalPrintMargins(self):
     """Verify printer respects margins selected in local print."""
     test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0b8e'
     test_name = 'testLocalPrintMargins'
-    # Navigate to a page to print.
-    chromedriver.Get(chrome.version)
-    printed = chrome.PrintFromPrintDialog(self.printer, margin='None',
-                                          localprint=True)
+
+    if not Constants.CAPS['MARGIN']:
+      self.LogTest(test_id, test_name, 'Skipped', 'No Margin support')
+      return
+
+    self.cjt.AddMarginOption(CjtConstants.BORDERLESS, 0, 0, 0, 0)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with no margins.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
 
-    printed = chrome.PrintFromPrintDialog(self.printer, margin='Minimum',
-                                          localprint=True)
+    self.cjt.AddMarginOption(CjtConstants.STANDARD, 50, 50, 50, 50)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with minimum margins.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2440,6 +2355,7 @@ class LocalPrinting(LogoCert):
     test_id = 'fb522a69-2454-40ab-9453-270553664fea'
     test_name = 'testLocalPrintLayout'
 
+    # TODO: Can raster images be tested for orientation? Doesn't seem to work on brother hl l9310cdw
     # TODO: When the Chrome issue of local printing page layout is fixed, this
     #       code should be removed.
     if not Constants.CAPS['LAYOUT_ISSUE']:
@@ -2447,19 +2363,18 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.Get(chrome.devices)
-    printed = chrome.PrintFromPrintDialog(self.printer, layout='Portrait',
-                                          localprint=True)
+    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with portrait layout.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
 
-    printed = chrome.PrintFromPrintDialog(self.printer, layout='Landscape',
-                                          localprint=True)
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with landscape layout.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2473,11 +2388,11 @@ class LocalPrinting(LogoCert):
     """Verify printer respects page range in local print."""
     test_id = '1580f47d-4115-462d-b85e-bd4d5fd4d7e3'
     test_name = 'testLocalPrintPageRange'
-    chromedriver.Get(chrome.flags)
-    printed = chrome.PrintFromPrintDialog(self.printer, page_range='2-3',
-                                          localprint=True)
+
+    self.cjt.AddPageRangeOption(2,3)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with page range.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2490,16 +2405,16 @@ class LocalPrinting(LogoCert):
     """Verify printer respects copy option in local print."""
     test_id = 'c849ce7a-07e0-488e-b266-e002bdbde4d6'
     test_name = 'testLocalPrintCopies'
+
     if not Constants.CAPS['COPIES_LOCAL']:
       notes = 'Printer does not support copies option.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.Get(chrome.version)
-    printed = chrome.PrintFromPrintDialog(self.printer, copies=2,
-                                          localprint=True)
+    self.cjt.AddCopiesOption(2)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with copies option.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2512,16 +2427,16 @@ class LocalPrinting(LogoCert):
     """Verify printer respects color option in local print."""
     test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14684'
     test_name = 'testLocalPrintColorSelect'
+
     if not Constants.CAPS['COLOR']:
       notes = 'Printer does not support color printing.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    chromedriver.Get('http://www.google.com/cloudprint/learn/')
-    printed = chrome.PrintFromPrintDialog(self.printer, color=True,
-                                          localprint=True)
+    self.cjt.AddColorOption(CjtConstants.COLOR)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with color selected.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -2534,64 +2449,55 @@ class LocalPrinting(LogoCert):
     """Verify printer updates GCP MGT page when Local Printing."""
     test_id = '530c74f7-2764-405e-916b-21fc943ea1f8'
     test_name = 'testLocalPrintUpdateMgtPage'
-    filepath = 'file://' + Constants.IMAGES['GIF4']
+    if '/privet/printer/jobstate' not in device.privet_info['api']:
+      notes = 'Printer does not support the jobstate privet API.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
 
-    chromedriver.Get(filepath)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing %s' % filepath
+      notes = 'Error local printing %s' % Constants.IMAGES['PWG1']
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
       # Give the printer time to complete the job and update the status.
-      print 'Waiting 60 seconds for job to print and status to be updated.'
-      time.sleep(60)
-      job_state = gcpmgr.GetPrinterJobStatus(device.name, 'Google-Glass.gif')
+      promptAndWaitForUserAction('Select enter once the document id printed')
+      print 'Waiting 30 seconds for job to print and status to be updated.'
+      time.sleep(30)
+      job = device.JobState(job_id)
       try:
-        self.assertIsNotNone(job_state)
+        self.assertIsNotNone(job)
       except AssertionError:
-        notes = 'Printjob was not found on Mgt Page.'
+        notes = 'Failed to retrieve status of the print job via privet'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Printjob was found on Mgt Page.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
-
-  def testLocalPrintLongUrl(self):
-    """Verify printer can local print a long URL."""
-    test_id = '8b89286b-a5aa-4936-a7d8-e768962930d8'
-    test_name = 'testLocalPrintLongUrl'
-    url = ('http://www-10.lotus.com/ldd/portalwiki.nsf/dx/'
-           'Determining_the_best_IBM_Lotus_Web_Content_Management_delivery'
-           '_option_for_your_needs')
-
-    chromedriver.Get(url)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing long url.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Verify long URL printed correctly.'
-      self.ManualPass(test_id, test_name)
+        try:
+          self.assertIn('done', job['state'])
+        except AssertionError:
+          notes = 'Printjob was not updated as done.'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Printjob was updated as completed.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testLocalPrintHTML(self):
     """Verify printer can local print HTML file."""
     test_id = '8745d54b-045a-4378-a024-d331785ac62e'
     test_name = 'testLocalPrintHTML'
-    filepath = 'file://' + Constants.IMAGES['HTML1']
 
-    chromedriver.Get(filepath)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
+    if 'text/html' not in device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print Html support')
+      return
 
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['HTML1'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing %s' % filepath
+      notes = 'Error local printing %s' % Constants.IMAGES['HTML1']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -2603,15 +2509,17 @@ class LocalPrinting(LogoCert):
     """Verify a 1 page JPG file prints using Local Printing."""
     test_id = '01a0aa7e-80e3-4336-8183-0c5cbf8e9f19'
     test_name = 'testLocalPrintJPG'
-    filepath = 'file://' + Constants.IMAGES['JPG12']
 
-    chromedriver.Get(filepath)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
+    if 'image/jpeg' not in device.supported_types and \
+       'image/pjpeg' not in device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print Jpg support')
+      return
 
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['JPG12'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing %s' % filepath
+      notes = 'Error local printing %s' % Constants.IMAGES['JPG12']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -2623,15 +2531,16 @@ class LocalPrinting(LogoCert):
     """Verify a 1 page PNG file prints using Local Printing."""
     test_id = 'a4588515-2c18-4f57-80c6-9c23cb57f074'
     test_name = 'testLocalPrintPNG'
-    filepath = 'file://' + Constants.IMAGES['PNG6']
 
-    chromedriver.Get(filepath)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
+    if 'image/png' not in device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PNG support')
+      return
 
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PNG6'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing %s' % filepath
+      notes = 'Error local printing %s' % Constants.IMAGES['PNG6']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -2643,15 +2552,16 @@ class LocalPrinting(LogoCert):
     """Verify a 1 page GIF file prints using Local Printing."""
     test_id = '7b61815b-5719-4114-bdf7-8fce6e0d8dc5'
     test_name = 'testLocalPrintGIF'
-    filepath = 'file://' + Constants.IMAGES['GIF4']
 
-    chromedriver.Get(filepath)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
+    if 'image/gif' not in device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print Gif support')
+      return
 
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['GIF4'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing %s' % filepath
+      notes = 'Error local printing %s' % Constants.IMAGES['GIF4']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -2663,139 +2573,20 @@ class LocalPrinting(LogoCert):
     """Verify a 1 page PDF file prints using Local Printing."""
     test_id = '0a02c47a-32b0-47b4-af7a-810c002d282d'
     test_name = 'testLocalPrintPDF'
-    filepath = 'file://' + Constants.IMAGES['PDF9']
 
-    chromedriver.Get(filepath)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
+    if 'application/pdf' not in device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
+      return
 
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
-      self.assertTrue(printed)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing %s' % filepath
+      notes = 'Error local printing %s' % Constants.IMAGES['PDF9']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       print 'PDF file should be printed.'
-      print 'Fail this test if print out has errors or quality issues.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintGmail(self):
-    """Verify 1 Page Gmail prints using Local Printing."""
-    test_id = '20828e70-a724-4446-8932-84b7cf3adaf9'
-    test_name = 'testLocalPrintGmail'
-
-    chromedriver.Get('about:blank')
-    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL1'])
-    printed = chrome.PrintGoogleItem(self.printer, localprint=True)
-
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing of 1 page gmail message.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Gmail message should be printed correctly.'
-      print 'Fail this test if print out has errors or quality issues.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintGmailI18n(self):
-    """Verify Gmail with attachment prints using foreign characters."""
-    test_id = '5fa31002-b726-4a6a-b0d5-e21e3cc2ccf5'
-    test_name = 'testLocalPrintGmailI18n'
-
-    chromedriver.Get('about:blank')
-    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL2'])
-    printed = chrome.PrintGoogleItem(self.printer, localprint=True)
-
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing Gmail with foreign characters.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Gmail message with foreign characters should print correctly.'
-      print 'Fail this test if print out has errors or quality issues.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintGmailWithAttachment(self):
-    """Verify Gmail with image attachment prints using Local Print."""
-    test_id = '4a01ed35-2758-4ed3-ab5e-8af5dc658999'
-    test_name = 'testLocalPrintGmailWithAttachment'
-
-    chromedriver.Get('about:blank')
-    chromedriver.Get(Constants.GOOGLE_DOCS['GMAIL3'])
-    printed = chrome.PrintGoogleItem(self.printer, localprint=True)
-
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing Gmail with image attachment.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Gmail message with image attachment should print correctly.'
-      print 'Fail this test if print out has errors or quality issues.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintGoogleDoc(self):
-    """Verify Google Doc prints using Local Print."""
-    test_id = '07e05f71-9d4d-4760-93dd-471a87445261'
-    test_name = 'testLocalPrintGoogleDoc'
-
-    chromedriver.Get('about:blank')
-    chromedriver.Get(Constants.GOOGLE_DOCS['DOC1'])
-    printed = chrome.PrintGoogleItem(self.printer, localprint=True)
-
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing Google Document.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Google Doc should print correctly.'
-      print 'Fail this test if print out has errors or quality issues.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintGoogleSheet(self):
-    """Verify Google Spreadsheet prints using Local Print."""
-    test_id = '5cc856dc-4257-4d1e-89f3-71722a1a75a3'
-    test_name = 'testLocalPrintGoogleSheet'
-
-    chromedriver.Get('about:blank')
-    chromedriver.Get(Constants.GOOGLE_DOCS['SHEET1'])
-    printed = chrome.PrintGoogleItem(self.printer, localprint=True)
-
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing Google Spreadsheet.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Google Spreadsheet should print correctly.'
-      print 'Fail this test if print out has errors or quality issues.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintGoogleSlide(self):
-    """Verify Google Presentation prints using Local Print."""
-    test_id = 'e2603a90-e749-42ed-b8c3-971e7079a5bf'
-    test_name = 'testLocalPrintGoogleSlide'
-
-    chromedriver.Get('about:blank')
-    chromedriver.Get(Constants.GOOGLE_DOCS['PREZ1'])
-    printed = chrome.PrintGoogleItem(self.printer, localprint=True)
-
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing Google Presentation.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Google doc should print correctly.'
       print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
@@ -3144,7 +2935,7 @@ class PostRegistration(LogoCert):
       raise
     else:
       notes = 'Found printer details on GCP MGT page.'
-      device.GetDeviceCDD(device.details['Printer ID'])
+      device.GetDeviceCDD(device.dev_id)
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testRegisteredDeviceNoPrivetAdvertise(self):
@@ -3152,6 +2943,18 @@ class PostRegistration(LogoCert):
     test_id = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
     test_name = 'testRegisteredDeviceNoPrivetAdvertise'
 
+    promptUserAction('Turn off the printer, wait around 5 seconds, then power on the printer')
+    mdns_browser.clear_cache()
+    is_added = waitForService(device.name, True, timeout=300)
+    try:
+      self.assertTrue(is_added)
+    except AssertionError:
+      notes = 'Error receiving the power-on signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    # Get the new X-privet-token from the restart
+    device.GetPrivetInfo()
     is_registered = isPrinterRegistered(self.printer)
     try:
       self.assertIsNotNone(is_registered)
@@ -3211,6 +3014,8 @@ class PostRegistration(LogoCert):
           notes = 'Error receiving the power-on signal from the printer.'
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
+        # Get the new X-privet-token from the restart
+        device.GetPrivetInfo()
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
@@ -3237,6 +3042,8 @@ class PostRegistration(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
+        # Get the new X-privet-token from the restart
+        device.GetPrivetInfo()
         is_registered = isPrinterRegistered(self.printer)
         try:
           self.assertTrue(is_registered)
@@ -3541,6 +3348,9 @@ class PrinterState(LogoCert):
 
 class JobState(LogoCert):
   """Test that print jobs are reported correctly from the printer."""
+  def setUp(self):
+    # Create a fresh CJT for each test case
+    self.cjt = CloudJobTicket(device.details['gcpVersion'])
 
   @classmethod
   def setUpClass(cls):
@@ -3553,8 +3363,7 @@ class JobState(LogoCert):
     test_name = 'testOnePagePrintJobState'
     print 'Wait for this one page print job to finish.'
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG6'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG6'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3581,8 +3390,7 @@ class JobState(LogoCert):
     test_name = 'testMultiPageJobState'
     print 'Wait until job starts printing 7 page PDF file...'
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3621,8 +3429,7 @@ class JobState(LogoCert):
     test_id = 'd270088d-0a95-416c-98ab-c703cadde1c3'
     test_name = 'testJobDeletionRecovery'
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     if output['success']:
       promptAndWaitForUserAction('Select enter once the first page prints out.')
@@ -3630,7 +3437,7 @@ class JobState(LogoCert):
       if delete_res['success']:
         # Since it's PDF file give the job time to finish printing.
         time.sleep(10)
-        output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
+        output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
         try:
           self.assertTrue(output['success'])
         except AssertionError:
@@ -3660,8 +3467,7 @@ class JobState(LogoCert):
 
     promptAndWaitForUserAction('Select enter once input tray has been emptied.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     if output['success']:
       # give printer time to update our service.
@@ -3726,8 +3532,7 @@ class JobState(LogoCert):
     print 'Remove ink cartridge or toner from the printer.'
     promptAndWaitForUserAction('Select enter once the toner is removed.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
     if output['success']:
       # give printer time to update our service.
       time.sleep(10)
@@ -3787,8 +3592,7 @@ class JobState(LogoCert):
     test_name = 'testJobStateNetworkOutage'
     print 'Once the printer prints 1 page, disconnect printer from network.'
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     if output['success']:
       job_id = output['job']['id']
@@ -3841,8 +3645,7 @@ class JobState(LogoCert):
     print 'Place page inside print path to cause a paper jam.'
     promptAndWaitForUserAction('Select enter once printer reports paper jam.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, self.cjt)
 
     try:
       self.assertTrue(output['success'])
@@ -3876,10 +3679,9 @@ class JobState(LogoCert):
 
     promptAndWaitForUserAction('Select enter once paper tray loaded with letter sized paper.')
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
+    self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
 
     print 'Attempting to print with A4 media size.'
     print 'Fail this test if printer does not warn user to load correct size'
@@ -3898,9 +3700,8 @@ class JobState(LogoCert):
     test_name = 'testMultipleJobsPrint'
     print 'This tests that multiple jobs in print queue are printed.'
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
     for _ in xrange(3):
-      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
+      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
       time.sleep(5)
       try:
         self.assertTrue(output['success'])
@@ -3929,10 +3730,9 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
     for _ in xrange(3):
       print 'Submitting job#',_,' to the print queue.'
-      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, cjt)
+      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
       time.sleep(10)
       try:
         self.assertTrue(output['success'])
@@ -3958,6 +3758,8 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
+      # Get the new X-privet-token from the restart
+      device.GetPrivetInfo()
       print 'Verify that all 3 print jobs are printed.'
       promptAndWaitForUserAction('Select enter once printer has fetched all jobs.')
       self.ManualPass(test_id, test_name)
@@ -3979,8 +3781,7 @@ class JobState(LogoCert):
     doc_to_print = Constants.IMAGES['PNG7']
 
     print 'Attempting to add a job to the queue.'
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, doc_to_print, test_name, cjt)
+    output = gcp.Submit(device.dev_id, doc_to_print, test_name, self.cjt)
 
     try:
       self.assertTrue(output['success'])
@@ -4015,6 +3816,8 @@ class JobState(LogoCert):
         notes = 'Error receiving the power-on signal from the printer.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
+      # Get the new X-privet-token from the restart
+      device.GetPrivetInfo()
       print 'Verify printer does not go into error state because of deleted job'
       self.ManualPass(test_id, test_name)
 
@@ -4028,11 +3831,10 @@ class JobState(LogoCert):
     print 'Submitting a malformatted PDF file.'
 
     # First printing a malformatted PDF file. Not expected to print.
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    gcp.Submit(device.dev_id, Constants.IMAGES['PDF5'], test_name, cjt)
+    gcp.Submit(device.dev_id, Constants.IMAGES['PDF5'], test_name, self.cjt)
     time.sleep(10)
     # Now print a valid file.
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name2, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name2, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4058,8 +3860,7 @@ class JobState(LogoCert):
     test_id = 'e078c865-738a-44a7-bf32-cff5c47d0857'
     test_name = 'testPagesPrinted'
 
-    cjt = CloudJobTicket(device.details['gcpVersion'])
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, cjt)
+    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     print 'Printing a 3 page PDF file'
     try:
       self.assertTrue(output['success'])
@@ -4145,14 +3946,16 @@ class Unregister(LogoCert):
     # Need to clear the cache of zeroconf, or else stale printer details will be returned
     mdns_browser.clear_cache()
     promptUserAction('Power on the printer')
-    is_service_added = waitForService(device.name, True, timeout=300)
+    is_added = waitForService(device.name, True, timeout=300)
     try:
-      self.assertTrue(is_service_added)
+      self.assertTrue(is_added)
     except AssertionError:
       notes = 'Error receiving the power-on signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
+      # Get the new X-privet-token from the restart
+      device.GetPrivetInfo()
       is_registered = isPrinterRegistered(device.name)
       try:
         self.assertFalse(is_registered)

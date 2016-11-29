@@ -25,6 +25,12 @@ from _jsonparser import JsonParser
 from _privet import Privet
 from _transport import Transport
 
+from json import dumps
+from os.path import basename
+import requests
+import mimetypes
+import time
+
 
 class Device(object):
   """The basic device object."""
@@ -60,6 +66,7 @@ class Device(object):
     self.error_state = False
     self.warning_state = False
     self.cdd = {}
+    self.supported_types = None
     self.info = None
 
     self.url = 'http://%s:%s' % (self.ipv4, self.port)
@@ -105,7 +112,11 @@ class Device(object):
     request, so manual intervention is required.
     """
     if self.StartPrivetRegister(user=user):
-      raw_input(msg)#"Select enter after accepting the registration on the printer"
+	  # TODO make promptUserAction() from testcert.py a common expertable function instead
+      print '\n \033[92m [ACTION] ', msg, '\033[0m'
+      print "\a"  # Beep
+      raw_input()
+      time.sleep(5)
       if self.GetPrivetClaimToken(user=user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
@@ -115,8 +126,47 @@ class Device(object):
     return False
 
 
+  def GetDeviceCDDLocally(self):
+    """Get device cdd and populate device object with the details through privet.
+
+    Args:
+      device_id: string, Cloud Print device id.
+    Returns:
+      boolean: True = cdd details populated, False = cdd details not populated.
+    """
+    r = requests.get(self.privet_url['capabilities'], headers=self.headers)
+    if r is None:
+      return False
+    response = r.json()
+
+    if 'printer' in response:
+      self.cdd['caps'] = {}
+      for k in response['printer']:
+        self.cdd['caps'][k] = response['printer'][k]
+      self.supported_types = [type['content_type'] for type in self.cdd['caps']['supported_content_type']]
+      return True
+    else:
+      self.logger.error('Could not find printers in cdd.')
+    return False
+
+  def __parseDeviceDetails(self, printer):
+    """Parse through the printer device object and extract information
+
+        Args:
+          printer: dict, object containing printer device details."""
+    for k in printer:
+      if k == 'name':
+        self.name =printer[k]
+      elif k == 'connectionStatus':
+        self.status = printer[k]
+      elif k == 'id':
+        self.dev_id = printer[k]
+      else:
+        self.details[k] = printer[k]
+
+
   def GetDeviceDetails(self):
-    """Get the device details from our management page.
+    """Get the device details from our management page through the cloud.
 
     Returns:
       boolean: True = device populated, False = errors.
@@ -125,23 +175,16 @@ class Device(object):
     and device details.
     """
     response = self.gcp.Search(self.model)
-    for k in response['printers'][0]:
-      if k == 'name':
-        self.name = response['printers'][0][k]
-      elif k == 'connectionStatus':
-        self.status = response['printers'][0][k]
-      elif k == 'id':
-        self.dev_id = response['printers'][0][k]
-      else:
-        self.details[k] = response['printers'][0][k]
+    self.__parseDeviceDetails(response['printers'][0])
     if self.dev_id:
       if self.GetDeviceCDD(self.dev_id):
+        self.supported_types = [type['content_type'] for type in self.cdd['caps']['supported_content_type']]
         return True
 
     return False
 
   def GetDeviceCDD(self, device_id):
-    """Get device cdd and populate device object with the details.
+    """Get device cdd and populate device object with the details through the cloud.
 
     Args:
       device_id: string, Cloud Print device id.
@@ -149,35 +192,34 @@ class Device(object):
       boolean: True = cdd details populated, False = cdd details not populated.
     """
     info = self.gcp.Printer(device_id)
-    if self.ParseCDD(info):
+    if 'printers' in info:
+      self.__parseCDD(info['printers'][0])
       if self.cdd['uiState']['num_issues'] > 0:
         self.error_state = True
       else:
         self.error_state = False
       return True
+    else:
+      self.logger.error('Could not find printers in cdd.')
     return False
 
 
-  def ParseCDD(self, info):
+  def __parseCDD(self, printer):
     """Parse the CDD json string into a logical dictionary.
 
     Args:
-      info: formatted data from /printer interface.
+      printer: formatted data from /printer interface.
     Returns:
       boolean: True = CDD parsed, False = CDD not parsed.
     """
+    for k in printer:
+      if k == 'capabilities':
+        self.cdd['caps'] = {}
+      else:
+        self.cdd[k] = printer[k]
 
-    if 'printers' in info:
-      for k in info['printers'][0]:
-        if k == 'capabilities':
-          self.cdd['caps'] = {}
-        else:
-          self.cdd[k] = info['printers'][0][k]
-    else:
-      self.logger.error('Could not find printers in cdd.')
-      return False
-    for k in info['printers'][0]['capabilities']['printer']:
-      self.cdd['caps'][k] = info['printers'][0]['capabilities']['printer'][k]
+    for k in printer['capabilities']['printer']:
+      self.cdd['caps'][k] = printer['capabilities']['printer'][k]
     return True
 
   def CancelRegistration(self):
@@ -333,3 +375,118 @@ class Device(object):
     else:
       self.logger.error('Unable to delete printer from service.')
       return False
+
+  def LocalPrint(self, title, content, cjt):
+    """Submit a local print job to the printer
+
+        Args:
+          title: string, title of the print job
+          content: string, url or absolute filepath of the item to print.
+          cjt: CloudJobTicket, object that defines the options of the print job
+        Returns:
+          int, the job id of the local print job that succeeded, else None
+        """
+    job_id = self.CreateJob(cjt)
+    if job_id is None:
+      print 'Error initializing a local print job.'
+      return None
+
+    output = self.SubmitDoc(job_id, title, content)
+    if output is not None:
+      self.CancelJob(job_id)
+      print 'Error printing a local print job.'
+
+    return output
+
+  def CreateJob(self, cjt=None):
+    """First step required to submit a local print job
+
+        Args:
+          cjt: CloudJobTicket, object that defines the options of the print job
+        Returns:
+          string, the newly created job_id if successful, else None
+        """
+
+    if cjt is None:
+      cjt = {}
+    else:
+      cjt = cjt.val
+
+    url = self.privet_url['createjob']
+
+    r = requests.post(url, data=dumps(cjt), headers=self.headers)
+
+    if r is None or requests.codes.ok != r.status_code:
+      return None
+
+    res = r.json()
+
+    if 'job_id' not in res:
+      return None
+    return res['job_id']
+
+
+  def SubmitDoc(self, job_id, title, content):
+    """Second step for printing locally, submit a local print job to the printer
+
+        Args:
+          job_id: string, local job id that was returned by /createjob
+          title: string, title of the print job
+          content: string, url or absolute filepath of the item to print.
+        Returns:
+          int, the job id of the print job if successful, else None
+            """
+    name = basename(content)
+    with open(content, 'rb') as f:
+      content = f.read()
+
+    url = self.privet_url['submitdoc'] + '?job_id=%s&job_name=%s' % (job_id, title)
+
+    content_type = 'image/pwg-raster' if name.lower().endswith('.pwg') else mimetypes.guess_type(name)[0]
+
+    if content_type not in self.supported_types:
+      print 'This printer does not support the following content type: ', content_type
+      print 'List of supported types are: ', self.supported_types
+      return None
+
+    headers = self.headers  # Get X-Privet_Token
+    headers['Content-Type'] = content_type
+
+    r = requests.post(url, data=content, headers=headers)
+
+    if r is None:
+      return None
+
+    res = r.json()
+
+    return job_id if 'job_id' in res else None
+
+  def JobState(self, job_id):
+    """Optional Api that printers can implement to track job states
+
+        Args:
+          job_id: string, local job id
+
+        Returns:
+          dict, The response of the API call if succeeded, else None
+        """
+    url = self.privet_url['jobstate'] + '?job_id=%s' % job_id
+
+    r = requests.get(url, headers=self.headers)
+
+    if r is None or requests.codes.ok != r.status_code:
+      return None
+
+    return r.json()
+
+
+
+
+  def CancelJob(self, job_id):
+    #TODO Posting a mismatch job seems to cancel the created job, find a better way to do this
+    url = self.privet_url['submitdoc'] + '?job_id=%s' % (job_id)
+
+    headers = self.headers
+    headers['Content-Type'] = 'image/pwg-raster'
+
+    requests.post(url, data=Constants.IMAGES['PDF13'], headers=headers)
