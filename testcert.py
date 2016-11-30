@@ -1858,6 +1858,7 @@ class PreRegistration(LogoCert):
     else:
       notes = 'Error cancelling registration process.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
+      device.CancelRegistration()
 
   def testLocalPrintGuestUserUnregisteredPrinter(self):
     """Verify local print for unregistered printer is correct."""
@@ -4792,17 +4793,11 @@ class Printing(LogoCert):
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   suite = unittest.TestSuite()
-  suite.addTest(unittest.makeSuite(SystemUnderTest))
-  suite.addTest(unittest.makeSuite(Privet))
-  suite.addTest(unittest.makeSuite(PreRegistration))
-  suite.addTest(unittest.makeSuite(Registration))
-  suite.addTest(unittest.makeSuite(PostRegistration))
-  suite.addTest(unittest.makeSuite(LocalDiscovery))
-  suite.addTest(unittest.makeSuite(LocalPrinting))
-  suite.addTest(unittest.makeSuite(Printer))
-  suite.addTest(unittest.makeSuite(PrinterState))
-  suite.addTest(unittest.makeSuite(JobState))
-  suite.addTest(unittest.makeSuite(Printing))
-  suite.addTest(unittest.makeSuite(RunAfter24Hours))
-  suite.addTest(unittest.makeSuite(Unregister))
+
+  for testsuite in Constants.TEST['RUN']:
+    if testsuite.startswith('#'):
+      continue
+    print 'Adding %s to list of suites to run' % (testsuite)
+    suite.addTest(unittest.makeSuite(globals()[testsuite]))
+
   runner.run(suite)

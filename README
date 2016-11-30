@@ -9,17 +9,13 @@ List of modules and their purpose:
 
 --> testcert.py - the entry point and driver of the tests. All of the actual tests
 are located in this file.
---> _chrome.py - Routines and methods to execute jobs that are specific to Chrome.
-Printing jobs, uploading files, etc.
---> _chromedriver.py - Methods to support start and stopping ChromeDriver, and
-all of the various search methods that ChromeDriver supports, to search and
-interact with elements in web pages.
---> _cloudprintmgr.py - Methods to support interacting with Google Cloud Print
-properties like the management page.
 --> _common.py - some shared functions within the package.
 --> _config.py - configuration information. This needs to be updated for each
 specific device under test. This file needs to be edited by the user executing
-the test.
+the test
+--> _ticket.py - Provides the Cloud Job Ticket (CJT) object and methods to specify 
+various print options for both cloud printing and local printing
+--> _cpslib.py - Methods to access GCP API's
 --> _device.py - Methods to support populating the device attributes.
 --> _gdocs.py - Methods to interact with Google Docs and Google Drive.
 --> _jsonparser.py - Methods to parse and handle JSON formatted docs and strings.
@@ -39,41 +35,19 @@ are:
 4. Post-registration Tests
 5. Local Discovery Tests
 6. Local Print Tests
-7. Chrome Print Dialog Tests
-8. Printing Tests
-9. Printer Capabilities
-10. Printer State Tests
-11. Job State Tests
-12. Cloud Print Unregistration
-13. Post-unregistration Tests
+7. Printing Tests
+8. Printer Capabilities
+9. Printer State Tests
+10. Job State Tests
+11. Cloud Print Unregistration
+12. Post-unregistration Tests
 
 DEPENDENCIES:
 
-In order to execute the tests, ChromeDriver is required on the system used to
-execute the tests. ChromeDriver can be downloaded from:
-
-https://sites.google.com/a/chromium.org/chromedriver/
-
-Install ChromeDriver and ensure the binary is in the system path. Make sure you
-get at least version 2.2, which has a feature that allows access the Chrome
-Print Dialog. Earlier versions of ChromeDriver cannot access the print dialog.
-
-ChromeDriver 2.2 requires Chrome version 43 or higher. Install at least version
-43 on your system.
-
-OAuth2Client and google api client are also required, To install, use the commands:
+OAuth2Client and Google API client are required, To install, use the commands:
 
 sudo pip install --upgrade oauth2client
 sudo pip install --upgrade google-api-python-client
-
-
-Selenium is also required, as ChromeDriver has a dependency on Selenium. To
-install Selenium, use the commands:
-
-sudo pip install selenium
-
-or download Selenium from:
-http://docs.seleniumhq.org/download/
 
 The Python Zeroconf package is used to execute some of the mDNS tests. Install
 ZeroConf from the package located here:
@@ -154,6 +128,9 @@ printer supports local printing before the printer is registered).
     mail has about 10 different languages in it.
     GMAIL3: a 1 page gmail message with an embedded image.
 
+You may specify which tests to run/ignore via editing:
+- TEST['RUN'] --> Add a '#' prefix in front of a test name to exclude from test
+
 The documents and emails must belong to the USER account you set up below.
 USER2 does not need those documents or mail messages.
 
@@ -174,20 +151,19 @@ execute testcert.py:
 
 ./testcert.py
 
-Note that the first time Chrome signs in, you may need to sign in manually, as
-ChromeDriver cannot access the fields in chrome://chrome-signin field. Watch the
-command line prompt for instructions. During the tests, sometimes you'll be
-prompted to accept printer registration, and other times to ignore or cancel
+Note that the first time you run this script, you may need to enter your credentials
+and sign in manually, after clicking . During the tests, sometimes you'll be
+prompted to accept printer registration on the device, and other times to ignore or cancel
 registration requests. Pay attention to the testcert.py output as it will ask
-you to turn the printer on and off at various times during the test process.
+you to turn the printer on and off at various times during the test process. All prompt 
+actions are highlighted and create a beep sound when they appear.
 
-If you need to remove some of the test suites, edit testcert.py, and comment out
-the the suite.addTest lines of the suites you don't want to run. The following
+If you need to remove some of the test suites, edit _config.py (TEST['RUN']), 
+and add a '#' infront of suite names you don't want to run. The following
 suites require the printer to be registered:
 
 - LocalDiscovery
 - LocalPrinting
-- ChromePrinting
 - Printer
 - PrinterState
 - JobState
@@ -195,7 +171,7 @@ suites require the printer to be registered:
 - RunAfter24Hours
 - Unregister
 
-The order that the tests run in is not deterministic, but the suites will run
+The order that the test run in is not deterministic, but the suites will run
 in the order they are placed in.
 
 Once the test has run, results will be placed in a log file. Log files are
@@ -212,12 +188,5 @@ Here are some known conditions that might cause failures:
 1. If you have a large printer list, the automation may not find the printer, as
 it will only search for the printer under test on the first page.
 
-2. If a page gets updated after chromedriver finds an element, it may error with
-the message: "stale element reference". There is no way to prevent this type of
-error, so just be aware it may occur from time to time.
-
-3. When you finish running tests, if Chrome does not entirely close (like on
-OS X), then you may need to close Chrome completely before running the tests
-again.
 
 
