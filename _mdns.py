@@ -43,7 +43,7 @@ class MDnsService(object):
     self.discovered = {}
 
     # Queues of tuples - (device name, timestamp of addition/removal) 
-    # Helps keep track of ther services that have been added or removed
+    # Helps keep track of the services that have been added or removed
     # Useful for signalling printer's on/off status
     self.added_q = Queue()
     self.removed_q = Queue()

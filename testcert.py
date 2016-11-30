@@ -18,8 +18,7 @@ limitations under the License.
 The main runner for tests used by the Cloud Print Logo Certification tool.
 
 This suite of tests depends on the unittest runner to execute tests. It will log
-results and debug information into a log file. In order for these tests to
-execute properly, WebDriver (ChromeDriver) must be installed.
+results and debug information into a log file.
 
 Before executing this program, edit _config.py and put in the proper values for
 the printer being tested, and the test accounts that you are using. For the
@@ -42,8 +41,6 @@ import sys
 import time
 import unittest
 
-import _chrome
-import _chromedriver
 from _config import Constants
 from _device import Device
 import _log
@@ -114,21 +111,13 @@ def _ParseArgs():
                     dest='stdout')
 
   return parser.parse_args()
-# The setUpModule will run one time, before any of the tests are run. One main
-# Chrome session will be used to execute most of the tests. The global
+
+# The setUpModule will run one time, before any of the tests are run. The global
 # keyword must be used in order to give all of the test classes access to
 # these objects. This approach is used to eliminate the need for initializing
 # all of these objects for each and every test class.
-#
-# If Google Spreadsheets are used to hold the test results, then a separate
-# tab will be opened to display this spreadsheet.
-
-
 def setUpModule():
   # pylint: disable=global-variable-undefined
-  global chromedriver
-  global chrome
-  global gcpmgr
   global logger
   global mdns_browser
   global transport
@@ -138,7 +127,6 @@ def setUpModule():
 
   # Initialize globals and constants
   options, unused_args = _ParseArgs()
-  data_dir = options.email.split('@')[0]
   logger = _log.GetLogger('LogoCert', logdir=options.logdir,
                           loglevel=options.debug, stdout=options.stdout)
   os_type = '%s %s' % (platform.system(), platform.release())
@@ -153,7 +141,7 @@ def setUpModule():
   # Wait to receive Privet printer advertisements. Timeout in 30 seconds
   # time.sleep(30)
   # TODO: This mainly helps in development, replace this with a simple time.sleep() for release
-  found = waitForPrivetDiscovery(options.printer)
+  found = waitForPrivetDiscovery(options.printer, mdns_browser)
 
   if not found:
     logger.info("No printers discovered under "+ options.printer)
@@ -184,11 +172,11 @@ def setUpModule():
   # pylint: enable=global-variable-undefined
 
 
-def waitForPrivetDiscovery(printer):
+def waitForPrivetDiscovery(printer, browser):
   t_end = time.time() + 30
 
   while time.time() < t_end:
-    for v in mdns_browser.listener.discovered.values():
+    for v in browser.listener.discovered.values():
       if 'info' in v:
         if 'ty' in v['info'].properties:
           if printer in v['info'].properties['ty']:
@@ -233,9 +221,9 @@ def waitForService(name, is_added, timeout=60):
     queue = mdns_browser.get_added_q() if is_added else mdns_browser.get_removed_q()
     while not queue.empty():
       service = queue.get()
-      if name in service[0]:
-        if t_start < service[1]:
-          return True
+      if name in service[0] and t_start < service[1]:
+        # the target device is seen to be added/removed
+        return True
     time.sleep(1)
   return False
 
@@ -259,9 +247,6 @@ def promptAndWaitForUserAction(msg):
   """
   promptUserAction(msg)
   return raw_input()
-
-def tearDownModule():
-  return
 
 
 def getTokens():
@@ -396,8 +381,6 @@ class LogoCert(unittest.TestCase):
       row = [str(test_id), test_name, result, notes]
       sheet.AddRow(row)
 
-  def SignIn(self):
-    chrome.SignIn(self.username, self.pw)
 
   @classmethod
   def GetDeviceDetails(cls):
@@ -430,7 +413,6 @@ class SystemUnderTest(LogoCert):
     notes = 'Android: %s\n' % Constants.TESTENV['ANDROID']
     notes += 'Chrome: %s\n' % Constants.TESTENV['CHROME']
     notes += 'Tablet: %s\n' % Constants.TESTENV['TABLET']
-    notes += 'ChromeDriver: %s\n' % Constants.TESTENV['CHROMEDRIVER']
 
     self.LogTest(test_id, test_name, 'Skipped', notes)
 
@@ -1701,17 +1683,19 @@ class PreRegistration(LogoCert):
     LogoCert.setUpClass()
     cls.sleep_time = 60
 
-  @classmethod
-  def tearDownClass(cls):
-    LogoCert.tearDownClass()
-
 
   def testDeviceAdvertisePrivet(self):
     """Verify printer under test advertises itself using Privet."""
     test_id = '3382acca-15f7-46d1-9b43-2d36defa9443'
     test_name = 'testDeviceAdvertisePrivet'
 
-    found = waitForPrivetDiscovery(device.name)
+    print 'Listening for the printer\'s advertisements for up to 30 seconds'
+    # Using a new instance of MdDnsListener to start sniffing from a clean slate
+    # The Mdns browser only signal changes on addition and removal, not update
+    tmp_listener = _mdns.MDnsListener(logger)
+    tmp_listener.add_listener('privet')
+
+    found = waitForPrivetDiscovery(device.name, tmp_listener)
     try:
       self.assertTrue(found)
     except AssertionError:
@@ -1729,9 +1713,14 @@ class PreRegistration(LogoCert):
 
     print 'Put the printer in sleep mode.'
     promptAndWaitForUserAction('Select enter when printer is sleeping.')
-    print 'Waiting ', self.sleep_time, 'seconds.'
-    time.sleep(self.sleep_time)
-    found = waitForPrivetDiscovery(device.name)
+
+    print 'Listening for the printer\'s advertisements for up to 30 seconds'
+    # Using a new instance of MdDnsListener to start sniffing from a clean slate
+    # The Mdns browser only signal changes on addition and removal, not update
+    tmp_listener = _mdns.MDnsListener(logger)
+    tmp_listener.add_listener('privet')
+
+    found = waitForPrivetDiscovery(device.name, tmp_listener)
     try:
       self.assertTrue(found)
     except AssertionError:
@@ -1756,8 +1745,13 @@ class PreRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    print 'Listening for the printer\'s advertisements for 30 seconds'
-    found = waitForPrivetDiscovery(device.name)
+    print 'Listening for the printer\'s advertisements for up to 30 seconds'
+    # Using a new instance of MdDnsListener to start sniffing from a clean slate
+    # The Mdns browser only signal changes on addition and removal, not update
+    tmp_listener = _mdns.MDnsListener(logger)
+    tmp_listener.add_listener('privet')
+
+    found = waitForPrivetDiscovery(device.name, tmp_listener)
     try:
       self.assertFalse(found)
     except AssertionError:
@@ -1771,6 +1765,7 @@ class PreRegistration(LogoCert):
       """Verify freshly powered on device advertises itself using Privet."""
       test_id2 = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
       test_name2 = 'testDeviceOffPowerOnAdvertisePrivet'
+      # Clear global browser cache before turning on the device, or else the stale printer state will be returned
       mdns_browser.clear_cache()
       promptUserAction('Power on the printer')
       is_added = waitForService(device.name, True, timeout=300)
@@ -1782,7 +1777,12 @@ class PreRegistration(LogoCert):
         raise
 
       print 'Listening for the printer\'s advertisements for up to 30 seconds'
-      found = waitForPrivetDiscovery(device.name)
+      # Using a new instance of MdDnsListener to start sniffing from a clean slate
+      # The Mdns browser only signal changes on addition and removal, not update
+      tmp_listener = _mdns.MDnsListener(logger)
+      tmp_listener.add_listener('privet')
+
+      found = waitForPrivetDiscovery(device.name, tmp_listener)
       try:
         self.assertTrue(found)
       except AssertionError:
@@ -1854,36 +1854,30 @@ class PreRegistration(LogoCert):
     """Verify local print for unregistered printer is correct."""
     test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
-    data_dir = 'guest_user'
-    # TODO find a way to replace or remove this last bit of webdriver code
-    return
-    cd3 = _chromedriver.ChromeDriver(logger, data_dir, self.loadtime)
-    chrome3 = _chrome.Chrome(logger, cd3)
-    chrome3.Print()
-    found = chrome3.SelectPrinterFromPrintDialog(self.printer, localprint=True)
-    if found:
-      notes = 'Printer found in Local Destinations'
-    else:
-      notes = 'Printer not found in Local Destinations.'
+
+    # New instance of device that is not authenticated - contains no auth-token
+    guest_device = Device(logger, None, None, privet_port=device.port)
+    guest_device.GetDeviceCDDLocally()
+
+    cjt = CloudJobTicket(guest_device.privet_info['version'], guest_device.cdd['caps'])
+
+    job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], cjt)
     try:
-      if Constants.CAPS['LOCAL_PRINT']:
-        self.assertTrue(found)
-      else:
-        self.assertFalse(found)
+      self.assertIsNotNone(job_id)
     except AssertionError:
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+      notes = 'Guest failed to print a page via local printing on the unregistered printer.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
     else:
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      cd3.CloseChrome()
+      print 'Guest successfully printed a page via local printing on the unregistered printer.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
 
 
 class Registration(LogoCert):
   """Test device registration."""
 
   def testDeviceRegistration(self):
-    """Verify printer registration using Privet and Chrome.
+    """Verify printer registration using Privet
 
     This test function actually executes three tests, as it first will test that
     a device can still be registered if a user does not select accept/cancel
@@ -1982,11 +1976,6 @@ class LocalDiscovery(LogoCert):
   def setUpClass(cls):
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
-
-  @classmethod
-  def tearDownClass(cls):
-    LogoCert.tearDownClass()
-    # cls.browser.remove_listeners()  # Uncomment this if you notice inconsistencies. 
 
   def testLocalDiscoveryToggle(self):
     """Verify printer respects GCP Mgt page when local discovery toggled."""
@@ -2227,7 +2216,7 @@ class LocalPrinting(LogoCert):
     LogoCert.GetDeviceDetails()
 
   def testLocalPrintGuestUser(self):
-    """Verify local print available to guest user."""
+    """Verify local print on a registered printer is available to guest user."""
     test_id = '8ba6f1ba-66cc-4d9e-aa3c-1d2e611ddb38'
     test_name = 'testLocalPrintGuestUser'
 
@@ -2444,6 +2433,21 @@ class LocalPrinting(LogoCert):
       print 'Print job should be printed in color.'
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
+
+    test_id2 = '553fbcb6-0d98-45a4-a0d7-308297852135'
+    test_name2 = 'testLocalPrintMonochromeSelect'
+
+    self.cjt.AddColorOption(CjtConstants.MONOCHROME)
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with monochrome selected.'
+      self.LogTest(test_id2, test_name2, 'Blocked', notes)
+    else:
+      print 'Print job should be printed in monochrome.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id2, test_name2)
 
   def testLocalPrintUpdateMgtPage(self):
     """Verify printer updates GCP MGT page when Local Printing."""
@@ -3087,8 +3091,6 @@ class JobState(LogoCert):
       else:
         promptAndWaitForUserAction('Select enter once all 7 pages are printed...')
         # Give the printer time to update our service.
-        #time.sleep(10)
-        #pages_printed = gcpmgr.GetPagesPrinted('PDF1.7.pdf')
         job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE)
         try:
           self.assertEqual(job['status'], CjtConstants.DONE)
