@@ -26,6 +26,60 @@ import time
 import _log
 
 
+def GreenText(str):
+  """Display text in green - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[92m'+str+'\033[0m'
+
+def RedText(str):
+  """Display text in red - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[91m'+str+'\033[0m'
+
+def BlueText(str):
+  """Display text in blue - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[94m'+str+'\033[0m'
+
+def YellowText(str):
+  """Display text in yellow - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[93m' + str + '\033[0m'
+
+def PromptUserAction(msg):
+  """Display text in warning color and beep - cross-platform
+
+    Args:
+      msg: string, the msg to prompt the user.
+    Returns:
+      string, prompt string
+  """
+  print '\n', YellowText('[ACTION] '+msg)
+  print "\a" #Beep
+
+def PromptAndWaitForUserAction(msg):
+  """Display text in green and beep - cross-platform, then wait for user to press enter before continuing
+
+      Args:
+        msg: string, the msg to prompt the user.
+      Returns:
+        string, user input string
+  """
+  PromptUserAction(msg)
+  return raw_input()
+
 
 def Extract(dict_in, dict_out):
   """Extract all the keys and values from a nested dictionary.
@@ -45,136 +99,6 @@ def Extract(dict_in, dict_out):
         dict_out[key] = value
   else:
     type(dict_in)
-
-
-def Retry(attempts, delay=3, backoff=2, return_type='Boolean'):
-  """Retries a function or method until it returns True or attempts is reached.
-
-  Args:
-    attempts: integer, number of attempts to try.
-    delay: integer, the amount of time to wait between attempts.
-    backoff: integer, how much time to lengthen the delay between attempts.
-    return_type: string, type of return function has. Boolean or Value.
-  Returns:
-    return value of decorated function.
-  Raises:
-    ValueError: if the value passed in is not valid.
-  """
-  if backoff <= 1:
-    raise ValueError('backoff must be greater than 1')
-
-  attempts = math.floor(attempts)
-  if attempts < 0:
-    raise ValueError('tries must be 0 or greater')
-
-  if delay <= 0:
-    raise ValueError('delay must be greater than 0')
-
-  def DecoratedRetry(f):
-    """The decorated retry function."""
-    def FunctionRetry(*args, **kwargs):
-      """Retry function, accepting arguments from decorated function."""
-      mattempts, mdelay = attempts, delay  # Make them mutable.
-
-      rv = f(*args, **kwargs)
-      while mattempts > 0:
-        if return_type == 'Boolean':
-          if rv is True:
-            return rv
-        else:
-          if rv is not None:
-            return rv
-
-        mattempts -= 1
-        time.sleep(mdelay)
-        mdelay *= backoff
-
-        rv = f(*args, **kwargs)
-
-      return rv  # Ran out of attempts.
-
-    return FunctionRetry
-  return DecoratedRetry
-
-
-def ReadFile(pathname):
-  """Read contents of a file and return content.
-
-  Args:
-    pathname: string, pathname of the file.
-  Returns:
-    string, contents of the file.
-  """
-  logger = _log.GetLogger('LogoCert')
-  if os.path.isfile(pathname):
-    with open(pathname, 'rb') as f:
-      try:
-        s = f.read()
-        return s
-      except IOError as e:
-        logger.error('Error reading %s\n%s', pathname, e)
-        return None
-    return None
-  return None
-
-
-def WriteFile(file_name, data):
-  """Write contents of data to a file.
-
-  Args:
-    file_name: string, (path)name of file.
-    data: string, contents to write to file.
-  Returns:
-    boolean: True = success, False = errors.
-  """
-  logger = _log.GetLogger('LogoCert')
-  with open(file_name, 'wb') as f:
-    try:
-      f.write(data)
-    except IOError as e:
-      logger.error('Error writing %s\n%s', file_name, e)
-      return False
-
-  return True
-
-
-def ReadJsonFile(pathname):
-  """Return the contents of a Json file.
-
-  Args:
-    pathname: string, pathname of a file.
-  Returns:
-    string, contents of the file.
-  """
-  logger = _log.GetLogger('LogoCert')
-  if os.path.isfile(pathname):
-    try:
-      s = json.load(open(pathname))
-      return s
-    except IOError as e:
-      logger.error('Error reading %s\n%s', pathname, e)
-      return None
-    return None
-  return None
-
-
-def WriteJsonFile(file_name, data):
-  """Write contents of json object to a json formatted file.
-
-  Args:
-    file_name: string, (path)name of file.
-    data: string, contents to write to file.
-  Returns:
-    boolean: True = success, False = errors.
-  """
-  logger = _log.GetLogger('LogoCert')
-  try:
-    json.dump(data, open(file_name, 'wb'))
-  except IOError as e:
-    logger.error('Error writing %s\n%s', file_name, e)
-    return False
-
-  return True
 
 
 class Error(Exception):

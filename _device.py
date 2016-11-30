@@ -25,6 +25,7 @@ from _jsonparser import JsonParser
 from _privet import Privet
 from _transport import Transport
 
+from _common import PromptAndWaitForUserAction
 from json import dumps
 from os.path import basename
 import requests
@@ -112,9 +113,7 @@ class Device(object):
     request, so manual intervention is required.
     """
     if self.StartPrivetRegister(user=user):
-	  # TODO make promptUserAction() from testcert.py a common expertable function instead
-      print msg
-      raw_input()
+      PromptAndWaitForUserAction(msg)
       time.sleep(5)
       if self.GetPrivetClaimToken(user=user):
         auth_token = self.auth_token if use_token else None
@@ -245,7 +244,13 @@ class Device(object):
     response = self.transport.HTTPReq(
         self.privet_url['register']['start'], data='',
         headers=self.headers, user=user)
-    return self.transport.LogData(response)
+
+    if response is None:
+      return False
+
+    self.transport.LogData(response)
+
+    return response['code'] == 200
 
   def GetPrivetClaimToken(self, user=Constants.USER['EMAIL']):
     """Attempt to get a Privet Claim Token.
