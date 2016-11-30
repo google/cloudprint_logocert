@@ -67,7 +67,10 @@ class GoogleDataMgr(object):
     SHEETS = discovery.build('sheets', 'v4', http=self.creds.authorize(Http()))
     data = {'properties': {'title': name}}
     res = SHEETS.spreadsheets().create(body=data).execute()
-    self.logger.info('Created a new google spreadsheet.')
+    if res is not None and 'spreadsheetId' in res:
+      self.logger.info('Created a new google spreadsheet with sheets API.')
+    else:
+      self.logger.info('Failed to create a new google spreadhseet with sheets API')
 
 
   def GetSpreadSheetID(self, name):
@@ -121,7 +124,7 @@ class GoogleDataMgr(object):
     Returns:
       boolean: True = headers created, False = errors.
     """
-    cell_range = 'A1:D1'
+    cell_range = 'A1:H1'
     cellq = gdata.spreadsheets.client.CellQuery(range=cell_range,
                                                 return_empty='true')
     cells = self.client.GetCells(spreadsheet_id, worksheet_id, q=cellq)

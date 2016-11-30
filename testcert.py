@@ -40,6 +40,7 @@ import re
 import sys
 import time
 import unittest
+import os
 
 from _config import Constants
 from _device import Device
@@ -172,6 +173,20 @@ def setUpModule():
   # pylint: enable=global-variable-undefined
 
 
+def LogTestSuite(name):
+  """Log a test result.
+
+  Args:
+    name: string, name of the testsuite that is logging.
+  """
+  print '=============================================================================================================='
+  print '                                     Starting %s testSuite'% (name)
+  print '=============================================================================================================='
+  if Constants.TEST['SPREADSHEET']:
+    row = [name,'','','','','','','']
+    sheet.AddRow(row)
+
+
 def waitForPrivetDiscovery(printer, browser):
   t_end = time.time() + 30
 
@@ -226,28 +241,6 @@ def waitForService(name, is_added, timeout=60):
         return True
     time.sleep(1)
   return False
-
-
-def promptUserAction(msg):
-  """Display text in green and beep - cross-platform
-
-    Args:
-      msg: string, the msg to prompt the user.
-  """
-  print '\n \033[92m [ACTION] ', msg, '\033[0m'
-  print "\a" #Beep
-
-def promptAndWaitForUserAction(msg):
-  """Display text in green and beep - cross-platform, then wait for user to press enter before continuing
-
-      Args:
-        msg: string, the msg to prompt the user.
-      Returns:
-        string, user input string
-  """
-  promptUserAction(msg)
-  return raw_input()
-
 
 def getTokens():
   """Retrieve credentials."""
@@ -306,6 +299,58 @@ def GetNewTokens():
   else:
     logger.error('Error getting authorization code.')
 
+def GreenText(str):
+  """Display text in green - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[92m'+str+'\033[0m'
+
+def RedText(str):
+  """Display text in red - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[91m'+str+'\033[0m'
+
+def BlueText(str):
+  """Display text in blue - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[94m'+str+'\033[0m'
+
+def YellowText(str):
+  """Display text in yellow - cross-platform
+
+      Args:
+        str: string, the str to display, cannot be None.
+    """
+  return '\033[93m' + str + '\033[0m'
+
+def promptUserAction(msg):
+  """Display text in warning color and beep - cross-platform
+
+    Args:
+      msg: string, the msg to prompt the user.
+  """
+  print '\n', YellowText('[ACTION] '+msg)
+  print "\a" #Beep
+
+def promptAndWaitForUserAction(msg):
+  """Display text in green and beep - cross-platform, then wait for user to press enter before continuing
+
+      Args:
+        msg: string, the msg to prompt the user.
+      Returns:
+        string, user input string
+  """
+  promptUserAction(msg)
+  return raw_input()
+
 
 class LogoCert(unittest.TestCase):
   """Base Class to drive Logo Certification tests."""
@@ -314,7 +359,7 @@ class LogoCert(unittest.TestCase):
     '''Overriding the docstring printout function'''
     doc = self._testMethodDoc
     msg =  doc and doc.split("\n")[0].strip() or None
-    return '\n \033[94m'+msg+'\033[0m \n\n'
+    return BlueText('\n================'+msg+'================\n\n')
 
 
   @classmethod
@@ -362,6 +407,7 @@ class LogoCert(unittest.TestCase):
       self.LogTest(test_id, test_name, 'Passed')
       return True
 
+
   def LogTest(self, test_id, test_name, result, notes=None):
     """Log a test result.
 
@@ -371,14 +417,25 @@ class LogoCert(unittest.TestCase):
       result: string, ["Passed", "Failed", "Blocked", "Skipped", "Not Run"]
       notes: string, notes to include with the test result.
     """
-    logger.info('test_id: %s: %s', test_id, result)
-    logger.info('%s: %s', test_id, test_name)
+    failure = False if result.lower() in ['passed','skipped'] else True
+
+    console_result = RedText(result) if failure else GreenText(result)
+    console_test_name = RedText(test_name) if failure else GreenText(test_name)
+
+    logger.info('test_id: %s: %s', test_id, console_result)
+    logger.info('%s: %s', test_id, console_test_name)
     if notes:
-      logger.info('%s: Notes: %s', test_id, notes)
+      console_notes = RedText(notes) if failure else GreenText(notes)
+      logger.info('%s: Notes: %s', test_id, console_notes)
     else:
       notes = ''
     if Constants.TEST['SPREADSHEET']:
-      row = [str(test_id), test_name, result, notes]
+      row = [str(test_id), test_name, result, notes,'','','']
+      if failure:
+        # If failed, generate the commandline that the user could use to rerun this testcase
+        module = os.path.basename(sys.argv[0]).split('.')[0] # get module name - name of this python script
+        testsuite = sys._getframe(1).f_locals['self'].__class__.__name__ # get the class name of the caller
+        row.append('python -m unittest %s.%s.%s' %(module,testsuite,test_name))
       sheet.AddRow(row)
 
 
@@ -405,6 +462,10 @@ class LogoCert(unittest.TestCase):
 
 class SystemUnderTest(LogoCert):
   """Record details about the system under test and test environment."""
+
+  @classmethod
+  def setUpClass(cls):
+    LogTestSuite(cls.__name__)
 
   def testRecordTestEnv(self):
     """Record test environment details."""
@@ -462,6 +523,10 @@ class Privet(LogoCert):
 
   These tests should be run before a device is registered.
   """
+
+  @classmethod
+  def setUpClass(cls):
+    LogTestSuite(cls.__name__)
 
   def testPrivetInfoAPI(self):
     """Verify device responds to PrivetInfo API requests."""
@@ -846,7 +911,7 @@ class Privet(LogoCert):
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testDeviceRegistrationInvalidClaimToken(self):
-    """Verify a device will not register if the claim token in invalid."""
+    """Verify a device will not register if the claim token is invalid."""
     test_id = 'a48518b0-bc96-480b-a8f2-f26cbb42e1b8'
     test_name = 'testDeviceRegistrationInvalidClaimToken'
     try:
@@ -924,6 +989,7 @@ class Printer(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
@@ -1680,6 +1746,7 @@ class PreRegistration(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     cls.sleep_time = 60
 
@@ -1800,9 +1867,9 @@ class PreRegistration(LogoCert):
     """Test printer cannot be registered if user not logged in."""
     test_id = '984be779-3ca4-4bb7-a2e1-e1868f687905'
     test_name = 'testDeviceRegistrationNotLoggedIn'
-
-    success = device.Register('Select enter after confirming registration',
-                              use_token=False)
+    
+    prompt = promptUserAction('Select enter after confirming registration')
+    success = device.Register(prompt, use_token=False)
 
     try:
       self.assertFalse(success)
@@ -1832,7 +1899,8 @@ class PreRegistration(LogoCert):
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on printer panel.'
 
-    registration_success = device.Register('Select enter after CANCELLING the registration on the printer')
+    prompt = promptUserAction('Select enter after CANCELLING the registration on the printer')
+    registration_success = device.Register(prompt)
     if not registration_success:
       # Confirm the user's account has no registered printers
       res = gcp.Search(device.model)
@@ -1875,6 +1943,10 @@ class PreRegistration(LogoCert):
 
 class Registration(LogoCert):
   """Test device registration."""
+
+  @classmethod
+  def setUpClass(cls):
+    LogTestSuite(cls.__name__)
 
   def testDeviceRegistration(self):
     """Verify printer registration using Privet
@@ -1920,7 +1992,8 @@ class Registration(LogoCert):
       raise
     else:
       try:
-        self.assertFalse(device.Register("User2 Registration attempt, please press enter",user=Constants.USER2['EMAIL']))
+        prompt = promptUserAction('User2 Registration attempt, please press enter')
+        self.assertFalse(device.Register(prompt,user=Constants.USER2['EMAIL']))
       except AssertionError:
         notes = 'Simultaneous registration succeeded.'
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1974,6 +2047,7 @@ class LocalDiscovery(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
@@ -2212,6 +2286,7 @@ class LocalPrinting(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
@@ -2600,6 +2675,7 @@ class PostRegistration(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
@@ -2743,6 +2819,7 @@ class PrinterState(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
@@ -3036,6 +3113,7 @@ class JobState(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 
@@ -3568,6 +3646,7 @@ class RunAfter24Hours(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     logger.info('Sleeping for 1 day before running additional tests.')
     print 'Sleeping for 1 day before running additional tests.'
@@ -3594,6 +3673,7 @@ class Unregister(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.GetDeviceDetails()
 
   def testUnregisterDevice(self):
@@ -3657,6 +3737,7 @@ class Printing(LogoCert):
 
   @classmethod
   def setUpClass(cls):
+    LogTestSuite(cls.__name__)
     LogoCert.setUpClass()
     LogoCert.GetDeviceDetails()
 

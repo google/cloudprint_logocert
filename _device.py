@@ -113,8 +113,7 @@ class Device(object):
     """
     if self.StartPrivetRegister(user=user):
 	  # TODO make promptUserAction() from testcert.py a common expertable function instead
-      print '\n \033[92m [ACTION] ', msg, '\033[0m'
-      print "\a"  # Beep
+      print msg
       raw_input()
       time.sleep(5)
       if self.GetPrivetClaimToken(user=user):
@@ -388,11 +387,12 @@ class Device(object):
         """
     job_id = self.CreateJob(cjt)
     if job_id is None:
-      print 'Error initializing a local print job.'
+      print 'Error creating a local print job.'
       return None
 
     output = self.SubmitDoc(job_id, title, content)
-    if output is not None:
+    if output is None:
+      # Cancel the job creation to get back to a normal state
       self.CancelJob(job_id)
       print 'Error printing a local print job.'
 
