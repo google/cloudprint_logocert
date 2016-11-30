@@ -178,7 +178,14 @@ Once the test has run, results will be placed in a log file. Log files are
 created with a date-time stamp in the logname. All of the test results will be
 annotated with passed, skipped, blocked, or failed, and possibly some other
 debug information. And if TEST['SPREADSHEET'] = True, then the results will be
-placed in a spreadsheet for easy reading of the test results.
+placed in a Google spreadsheet for easy reading of the test results.
+
+For each test that are blocked or failed, a cmdline is provided in the Google
+spreadsheet for the individual test case to be run again only by itself. 
+They follow this format:
+    python -m unittest [moduleName].[testSuiteName].[testCaseName]
+Example:
+    python -m unittest testcert.Privet.testDeviceRegistrationInvalidClaimToken
 
 Known Issues
 
