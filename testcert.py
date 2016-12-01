@@ -1721,6 +1721,8 @@ class PreRegistration(LogoCert):
     else:
       notes = 'Found privet advertisement from device.'
       self.LogTest(test_id, test_name, 'Passed', notes)
+    finally:
+      tmp_listener.remove_listeners()
 
   def testDeviceSleepingAdvertisePrivet(self):
     """Verify sleeping printer advertises itself using Privet."""
@@ -1746,6 +1748,8 @@ class PreRegistration(LogoCert):
     else:
       notes = 'Device is found advertising in sleep mode'
       self.LogTest(test_id, test_name, 'Passed', notes)
+    finally:
+      tmp_listener.remove_listeners()
 
   def testDeviceOffNoAdvertisePrivet(self):
     """Verify powered off device does not advertise using Privet."""
@@ -1777,6 +1781,7 @@ class PreRegistration(LogoCert):
     else:
       notes = 'Device no longer advertising when powered off'
       self.LogTest(test_id, test_name, 'Passed', notes)
+      tmp_listener.remove_listeners()
 
       """Verify freshly powered on device advertises itself using Privet."""
       test_id2 = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
@@ -1811,6 +1816,7 @@ class PreRegistration(LogoCert):
       finally:
         # Get the new X-privet-token from the restart
         device.GetPrivetInfo()
+        tmp_listener.remove_listeners()
 
   def testDeviceRegistrationNotLoggedIn(self):
     """Test printer cannot be registered if user not logged in."""
@@ -1933,7 +1939,7 @@ class Registration(LogoCert):
       device.CancelRegistration(user=Constants.USER['EMAIL'])
       raise
     else:
-      success = device.Register('User2 Registration attempt, please press enter',user=Constants.USER2['EMAIL'])
+      success = device.Register('User2 Registration attempt, please press ENTER on the keyboard',user=Constants.USER2['EMAIL'])
       try:
         self.assertFalse(success)
       except AssertionError:
@@ -1941,7 +1947,7 @@ class Registration(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        print 'Now accept the registration request from %s.' % self.username
+        PromptUserAction('Now accept the registration request from %s.' % self.username)
         PromptAndWaitForUserAction('Press ENTER once the registration is accepted.');
         time.sleep(5)
         # Give time for the backend to process the
@@ -2079,7 +2085,16 @@ class LocalDiscovery(LogoCert):
     printer_found = False
 
     print 'This test should begin with the printer turned off.'
-    PromptUserAction('Turn off the printer, wait around 5 seconds, then power on the printer')
+    PromptUserAction('Turn off the printer')
+    is_removed = waitForService(device.name, False, timeout=300)
+    try:
+      self.assertTrue(is_removed)
+    except AssertionError:
+      notes = 'Error receiving the shutdown signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    PromptUserAction('Power on the printer')
     is_added = waitForService(device.name, True, timeout=300)
     try:
       self.assertTrue(is_added)
@@ -2146,21 +2161,33 @@ class LocalDiscovery(LogoCert):
       notes = 'Printer sent goodbye packet when powered off.'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
+    PromptUserAction('Power on the printer')
+    is_added = waitForService(device.name, True, timeout=300)
+    try:
+      self.assertTrue(is_added)
+    except AssertionError:
+      notes = 'Error receiving the power-on signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+
   def testPrinterIdleNoBroadcastPrivet(self):
     """Verify idle printer doesn't send mDNS broadcasts."""
     test_id = '703a55d2-7291-4637-b257-dc885fdb5abd'
     test_name = 'testPrinterIdleNoBroadcastPrivet'
     printer_found = False
     print 'Ensure printer stays on and remains in idle state.'
-
+    #TODO: this test is broken, mdns_browser updates discovered dict only when the printer is turned on or off
+    #TODO: Since the printer is already on, even if there was advertisements, discovered[k]['found'] would never get updated
+    #TODO: We need to delete key in ServiceBrowser --- del self.services[service_key]
     # Remove any broadcast entries from dictionary.
     for (k, v) in mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
           mdns_browser.listener.discovered[k]['found'] = None
     # Monitor the local network for privet broadcasts.
-    print 'Listening for network broadcasts for 5 minutes.'
-    time.sleep(300)
+    print 'Listening for network broadcasts for 1 minute.'
+    time.sleep(60)
     for (k, v) in mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
@@ -2195,6 +2222,7 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
+    print 'Waitng 30 seconds for printer to accept pending settings'
     #  Give the printer time to accept and confirm the pending settings.
     time.sleep(30)
     # Refresh the values of the device.
@@ -2359,7 +2387,7 @@ class LocalPrinting(LogoCert):
   def testLocalPrintLayout(self):
     """Verify printer respects layout settings in local print."""
     test_id = 'fb522a69-2454-40ab-9453-270553664fea'
-    test_name = 'testLocalPrintLayout'
+    test_name = 'testLocalPrintLayoutPortrait'
 
     # TODO: Can raster images be tested for orientation? Doesn't seem to work on brother hl l9310cdw
     # TODO: When the Chrome issue of local printing page layout is fixed, this
@@ -2377,18 +2405,24 @@ class LocalPrinting(LogoCert):
       notes = 'Error local printing with portrait layout.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
 
+    print 'The print job should be printed in portrait layout.'
+    print 'If the layout is not correct, fail this test.'
+    self.ManualPass(test_id, test_name)
+
+    test_id2 = '3be1b5e6-cc96-417c-a131-ef96b0576c21'
+    test_name2 = 'testLocalPrintLayoutLandscape'
+
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
+    job_id = device.LocalPrint(test_name2, Constants.IMAGES['PWG3'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with landscape layout.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id2, test_name2, 'Blocked', notes)
 
-    print 'The 1st print job should be printed in portrait layout.'
-    print 'The 2nd print job should be printed in landscape layout.'
+    print 'The print job should be printed in landscape layout.'
     print 'If the layout is not correct, fail this test.'
-    self.ManualPass(test_id, test_name)
+    self.ManualPass(test_id2, test_name2)
 
   def testLocalPrintPageRange(self):
     """Verify printer respects page range in local print."""
@@ -2426,7 +2460,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
     else:
       print 'The print job should have printed 2 copies.'
-      print 'If copies is not 2, fail this test.'
+      print 'If 2 copies are not printed, fail this test.'
       self.ManualPass(test_id, test_name)
 
   def testLocalPrintColorSelect(self):
@@ -2643,8 +2677,18 @@ class PostRegistration(LogoCert):
     test_id = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
     test_name = 'testRegisteredDeviceNoPrivetAdvertise'
 
-    PromptUserAction('Turn off the printer, wait around 5 seconds, then power on the printer')
+    PromptUserAction('Turn off the printer')
+    is_removed = waitForService(device.name, False, timeout=300)
+    try:
+      self.assertTrue(is_removed)
+    except AssertionError:
+      notes = 'Error receiving the shutdown signal from the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
     mdns_browser.clear_cache()
+
+    PromptUserAction('Power on the printer')
     is_added = waitForService(device.name, True, timeout=300)
     try:
       self.assertTrue(is_added)

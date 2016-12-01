@@ -427,6 +427,7 @@ class Device(object):
     res = r.json()
 
     if 'job_id' not in res:
+      print 'Error: ', res['error']
       return None
     return res['job_id']
 
