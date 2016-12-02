@@ -406,6 +406,7 @@ class Device(object):
       # Cancel the job creation to get back to a normal state
       self.CancelJob(job_id)
       print 'Error printing a local print job.'
+      print 'Printer may be in an unstable state if the job isn\'t cancelled correctly, may need to reboot printer'
 
     return output
 
