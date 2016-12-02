@@ -32,7 +32,7 @@ therefore watch the output of the script while it's running.
 test_id corresponds to an internal database used by Google, so don't change
 those IDs. These IDs are used when submitting test results to our database.
 """
-__version__ = '1.13'
+__version__ = '1.14'
 
 import optparse
 import platform
@@ -3434,7 +3434,7 @@ class JobState(LogoCert):
     print 'The printer should prompt the user to enter the requested size.'
     print 'Load input tray with letter sized paper.'
 
-    PromptAndWaitForUserAction('Press ENTER once paper tray loaded with letter sized paper.')
+    #TODO add back in : PromptAndWaitForUserAction('Press ENTER once paper tray loaded with letter sized paper.')
 
     self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
 
@@ -3449,8 +3449,19 @@ class JobState(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
     else:
-      self.ManualPass(test_id, test_name)
-
+      PromptAndWaitForUserAction('Verify printer status, then press ENTER')
+      print 'Now load printer with A4 size paper.'
+      PromptAndWaitForUserAction('After placing the correct paper size, press ENTER')
+      print 'Printer should continue printing and should complete the print job.'
+      try:
+        gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+      except AssertionError:
+        notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        self.ManualPass(test_id, test_name)
+      
   def testMultipleJobsPrint(self):
     """Verify multiple jobs in queue are all printed."""
     test_id = '50790aa4-f276-4c12-9a06-fc0fdf446d7e'
