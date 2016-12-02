@@ -32,7 +32,7 @@ therefore watch the output of the script while it's running.
 test_id corresponds to an internal database used by Google, so don't change
 those IDs. These IDs are used when submitting test results to our database.
 """
-__version__ = '1.14'
+__version__ = '2.0'
 
 import optparse
 import platform
@@ -199,7 +199,7 @@ def waitForPrivetDiscovery(printer, browser):
           if printer in v['info'].properties['ty']:
             if v['found']:
               return True
-    time.sleep(1) # Loop delay
+    time.sleep(Constants.SLEEP['POLL'])
   # Timed out
   return False
 
@@ -241,7 +241,7 @@ def waitForRegistrationStatus(name, is_wait_for_reg, timeout):
       # Responses from existing services are dropped there for we need to remove the service.
       # By removing the service, then waiting for the service to be added again, we get an updated value from the browser
       mdns_browser.remove_service_entry(device.name)
-      waitForService(device.name, True, timeout=end - time.time())
+      waitForService(device.name, True, timeout=end-time.time())
   # Time out
   return False
 
@@ -265,7 +265,7 @@ def waitForService(name, is_added, timeout=60):
       if name in service[0] and t_start < service[1]:
         # the target device is seen to be added/removed
         return True
-    time.sleep(1) # Loop delay
+    time.sleep(Constants.SLEEP['POLL'])
   return False
 
 def getTokens():
@@ -367,7 +367,7 @@ class LogoCert(unittest.TestCase):
       else:
         notes = 'Manually verify the test produced the expected result.'
       self.LogTest(test_id, test_name, 'Passed', notes)
-      time.sleep(5) # Autorun delay
+      time.sleep(Constants.SLEEP['AUTO_RUN'])
       return True
     print 'Did the test produce the expected result?'
     result = PromptAndWaitForUserAction('Enter "y" or "n"')
@@ -883,7 +883,7 @@ class Privet(LogoCert):
       try:
         print 'Accept the registration request on the device.'
         PromptAndWaitForUserAction('Press ENTER once registration accepted.')
-        time.sleep(5) # Registration delay
+        time.sleep(Constants.SLEEP['REGISTRATION'])
         try:
           self.assertTrue(device.GetPrivetClaimToken())
         except AssertionError:
@@ -920,7 +920,7 @@ class Privet(LogoCert):
         print 'Accept the registration request on the device.'
         print 'Note: some printers may not show a registration request.'
         PromptAndWaitForUserAction('Press ENTER once registration is accepted.')
-        time.sleep(5) # Registration delay
+        time.sleep(Constants.SLEEP['REGISTRATION'])
         try:
           self.assertTrue(device.GetPrivetClaimToken())
         except AssertionError:
@@ -1914,7 +1914,7 @@ class Registration(LogoCert):
     success = device.StartPrivetRegister()
     if success:
       PromptAndWaitForUserAction('Press ENTER once the printer registration times out.')
-      time.sleep(5) # Registration delay
+      time.sleep(Constants.SLEEP['REGISTRATION'])
       # Confirm the user's account has no registered printers
       res = gcp.Search(device.model)
       try:
@@ -1951,7 +1951,7 @@ class Registration(LogoCert):
       else:
         PromptUserAction('Now accept the registration request from %s.' % Constants.USER['EMAIL'])
         PromptAndWaitForUserAction('Press ENTER once the registration is accepted.');
-        time.sleep(5) # Registration delay
+        time.sleep(Constants.SLEEP['REGISTRATION'])
         # Give time for the backend to process the
         success = False
         # Finish the registration process
@@ -2229,30 +2229,36 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
-    print 'Waitng 30 seconds for printer to accept pending settings'
-    #  Give the printer time to accept and confirm the pending settings.
-    time.sleep(30) # GCP update delay
-    # Refresh the values of the device.
-    device.GetDeviceCDD(device.dev_id)
-    timeout = device.cdd['local_settings']['current']['xmpp_timeout_value']
+    print 'Waiting up to 30 seconds for printer to accept pending settings'
     try:
-      self.assertEqual(timeout, new)
+      success = gcp.WaitForUpdate(device.dev_id, 'xmpp_timeout_value', new)
+      self.assertTrue(success)
     except AssertionError:
-      notes = 'Error setting xmpp_timeout_value in local settings.'
+      notes = 'Failed to detect update before timing out.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Successfully set new xmpp_timeout_value in local settings.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      setting = {'pending': {'xmpp_timeout_value': orig}}
-      res = gcp.Update(device.dev_id, setting=setting)
+      # Refresh the values of the device.
+      device.GetDeviceCDD(device.dev_id)
+      timeout = device.cdd['local_settings']['current']['xmpp_timeout_value']
       try:
-        self.assertTrue(res['success'])
+        self.assertEqual(timeout, new)
       except AssertionError:
-        notes = 'Error sending Update of local settings.'
-        self.LogTest(test_id, test_name, 'Blocked', notes)
+        notes = 'Error setting xmpp_timeout_value in local settings.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
+      else:
+        notes = 'Successfully set new xmpp_timeout_value in local settings.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+      finally:
+        setting = {'pending': {'xmpp_timeout_value': orig}}
+        res = gcp.Update(device.dev_id, setting=setting)
+        try:
+          self.assertTrue(res['success'])
+        except AssertionError:
+          notes = 'Error sending Update of local settings.'
+          self.LogTest(test_id, test_name, 'Blocked', notes)
+          raise
 
 
 class LocalPrinting(LogoCert):
@@ -2293,6 +2299,7 @@ class LocalPrinting(LogoCert):
     notes = None
     notes2 = None
 
+    print 'Disabling local printing'
     setting = {'pending': {'printer/local_printing_enabled': False}}
     res = gcp.Update(device.dev_id, setting=setting)
 
@@ -2302,9 +2309,16 @@ class LocalPrinting(LogoCert):
       raise
 
     # Give the printer time to update.
-    print 'Waiting 10 seconds for printer to accept pending changes.'
-    time.sleep(10) # GCP update delay
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
+    print 'Waiting up to 30 seconds for printer to accept pending settings'
+    try:
+      success = gcp.WaitForUpdate(device.dev_id, 'printer/local_printing_enabled', False)
+      self.assertTrue(success)
+    except AssertionError:
+      notes = 'Failed to detect update before timing out.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNone(job_id)
     except AssertionError:
@@ -2314,6 +2328,7 @@ class LocalPrinting(LogoCert):
     else:
       notes = 'Not able to print locally when disabled.'
 
+    print 'Re-enabling local printing'
     setting = {'pending': {'printer/local_printing_enabled': True}}
     res = gcp.Update(device.dev_id, setting=setting)
 
@@ -2323,10 +2338,16 @@ class LocalPrinting(LogoCert):
       raise
 
     # Give the printer time to update.
-    print 'Waiting 10 seconds for printer to accept pending changes.'
-    time.sleep(10) # GCP update delay
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
+    print 'Waiting up to 30 seconds for printer to accept pending settings'
+    try:
+      success = gcp.WaitForUpdate(device.dev_id, 'printer/local_printing_enabled', True)
+      self.assertTrue(success)
+    except AssertionError:
+      notes = 'Failed to detect update before timing out.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
 
+    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2334,7 +2355,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes2)
       raise
     else:
-      notes2 = 'Able to print via privet local printing when not enabled.'
+      notes2 = 'Able to print via privet local printing when re-enabled.'
       self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
 
 
@@ -2732,14 +2753,12 @@ class PostRegistration(LogoCert):
       raise
     else:
       print'Waiting up to 10 minutes for printer status update.'
-      for _ in xrange(20):
+      end = time.time() + 600
+      while time.time() < end:
         device.GetDeviceDetails()
-        try:
-          self.assertIn('OFFLINE', device.status)
-        except AssertionError:
-          time.sleep(30)
-        else:
+        if 'OFFLINE' in device.status:
           break
+        time.sleep(10) # Not using Constant.SLEEP['POLL'] here since the status update actually takes a while
       try:
         self.assertIsNotNone(device.status)
       except AssertionError:
@@ -2912,7 +2931,7 @@ class PrinterState(LogoCert):
       return
     print 'Open the paper tray to the printer.'
     PromptAndWaitForUserAction('Press ENTER once the paper tray is open.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertTrue(device.error_state or device.warning_state)
@@ -2929,7 +2948,7 @@ class PrinterState(LogoCert):
     test_name2 = 'testClosedPaperTray'
     print 'Now close the paper tray.'
     PromptAndWaitForUserAction('Press ENTER once the paper tray is closed.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertFalse(device.error_state or device.warning_state)
@@ -2952,7 +2971,7 @@ class PrinterState(LogoCert):
       return
     print 'Remove all media from the paper tray.'
     PromptAndWaitForUserAction('Press ENTER once all media is removed.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     if not self.VerifyUiStateMessage(test_id, test_name, ['input/tray'],suffixes=('is empty')):
       raise
@@ -2961,7 +2980,7 @@ class PrinterState(LogoCert):
     test_name2 = 'testMediaInTray'
     print 'Place media in all paper trays.'
     PromptAndWaitForUserAction('Press ENTER once you have placed paper in paper tray.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     if not self.VerifyUiStateHealthy(test_id2, test_name2):
       raise
@@ -2977,7 +2996,7 @@ class PrinterState(LogoCert):
       return True
     print 'Remove the (or one) toner cartridge from the printer.'
     PromptAndWaitForUserAction('Press ENTER once the toner cartridge is removed.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertTrue(device.error_state)
@@ -2993,7 +3012,7 @@ class PrinterState(LogoCert):
     test_name2 = 'testExhaustTonerCartridge'
     print 'Insert an empty toner cartridge in printer.'
     PromptAndWaitForUserAction('Press ENTER once an empty toner cartridge is in printer.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertTrue(device.error_state)
@@ -3009,7 +3028,7 @@ class PrinterState(LogoCert):
     test_name3 = 'testReplaceMissingToner'
     print 'Verify that the error is fixed by replacing the original toner cartridge.'
     PromptAndWaitForUserAction('Press ENTER once toner is replaced in printer.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertFalse(device.error_state)
@@ -3032,7 +3051,7 @@ class PrinterState(LogoCert):
       return
     print 'Open a cover on your printer.'
     PromptAndWaitForUserAction('Press ENTER once the cover has been opened.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertTrue(device.error_state)
@@ -3048,7 +3067,7 @@ class PrinterState(LogoCert):
     test_name2 = 'testCoverClosed'
     print 'Now close the printer cover.'
     PromptAndWaitForUserAction('Press ENTER once the printer cover is closed.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertFalse(device.error_state)
@@ -3067,7 +3086,7 @@ class PrinterState(LogoCert):
 
     print 'Cause the printer to become jammed with paper.'
     PromptAndWaitForUserAction('Press ENTER once the printer has become jammed.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertTrue(device.error_state)
@@ -3083,7 +3102,7 @@ class PrinterState(LogoCert):
     test_name2 = 'testRemovePaperJam'
     print 'Now clear the paper jam.'
     PromptAndWaitForUserAction('Press ENTER once the paper jam is clear from printer.')
-    time.sleep(10) # Printer delay
+    time.sleep(Constants.SLEEP['PRINTER_STATE'])
     device.GetDeviceDetails()
     try:
       self.assertFalse(device.error_state)
@@ -3655,7 +3674,7 @@ class RunAfter24Hours(LogoCert):
     LogoCert.setUpClass()
     logger.info('Sleeping for 1 day before running additional tests.')
     print 'Sleeping for 1 day before running additional tests.'
-    time.sleep(86400)
+    time.sleep(Constants.SLEEP['ONE_DAY'])
 
   def testPrinterOnline(self):
     """validate printer has online status."""

@@ -69,6 +69,17 @@ class Constants(object):
 						     # set this to True
       }
 
+  # Sleep contains the various durations of time.sleep() in SECONDS that are used in this suite of scripts
+  SLEEP = {
+    'POLL' : 1,               # Used inside loops to space out polls to GCP/Privet API's
+    'REGISTRATION': 5,        # Printer dependent: used after user accepts or cancels registration request
+                              #                    on the printer
+    'PRINTER_STATE': 10,      # Printer dependent: used when printer state is altered physically
+                              #                    e.g. Paper tray open/close, ink catridge remove/replaced
+    'ONE_DAY': 86400,         # 24 hrs in seconds
+    'AUTO_RUN': 5             # Used if AUTOMODE is set to be true
+
+  }
   # Carriage return.
   CRLF = '\r\n'
 
@@ -81,19 +92,6 @@ class Constants(object):
 
   GOOGLE = 'https://www.google.com'
 
-  # The following are the Google IDs of various type of documents.
-  GOOGLE_DOCS = {
-      'DOC1': ('https://docs.google.com/document/d/<doc_id of 1 page doc>'),
-      'SHEET1': ('https://docs.google.com/spreadsheets/d/'
-                 '<doc id of 1 page spreadsheet'),
-      'PREZ1': ('https://docs.google.com/presentation/d/'
-                '<doc id of 1 page presentation (slide)'),
-      'GMAIL1': 'https://mail.google.com/mail/u/0/#inbox/<mail id 1 page>',
-      'GMAIL2': 'https://mail.google.com/mail/u/0/#inbox/'
-                'mail id with foreign characters',
-      'GMAIL3': 'https://mail.google.com/mail/u/0/#inbox/'
-                'mail id with an embedded image',
-      }
 
   image_dir = os.path.join(os.getcwd(), 'images')
   IMAGES = {
@@ -195,8 +193,6 @@ class Constants(object):
 
   TESTENV = {
       'ANDROID': '<Android Version>',
-      'CHROME': '<Chrome Version>',
-      'CHROMEDRIVER': '<Chromedriver version>',
       'PYTHON': '<Python Version>',
       'OS': '<OS Name>',
       'TABLET': '<Tablet Version>',

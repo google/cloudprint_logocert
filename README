@@ -112,21 +112,11 @@ or not: COLLATE, COLOR (False if monochrome printer), COPIES (True if copies
 are supported), DUPLEX, LAYOUT_ISSUE (Currently Chrome has a bug so that the
 printer must still provide page_orientation), LOCAL_PRINT (set to True if your
 printer supports local printing before the printer is registered).
-- GOOGLE_DOCS (note: your links will have your own ids in them):
-    DOC1: should be a one page Google Doc. The value should look like:
-    --> ('https://docs.google.com/document/d/'
-         '1HepfcAZ3DassmfM6mgoUzdbAf3KeinWerbLhyif7DGQ/edit'),
-    SHEET1: a 1 page Google Spreadsheet. Value should look like:
-    --> ('https://docs.google.com/spreadsheets/d/'
-         '19Kq-4B2x4vT2iveAZLBWGqtAmFA9FrZfG3sfPPqb7pg/edit#gid=0'),
-    PREZ1: a 1 page slide (presentation). The value should look like:
-    --> ('https://docs.google.com/presentation/d/'
-         '1-_tc7W1HLh-f7YJT6r1VZWDlHg_Q4O0gxBw9BEoVPM0/edit#slide=id.p'),
-    GMAIL1: a 1 page gmail message. The value should look like:
-    --> 'https://mail.google.com/mail/u/0/#inbox/14470e55054eec70',
-    GMAIL2: a 1 page gmail message containing non U.S. characters. Our test
-    mail has about 10 different languages in it.
-    GMAIL3: a 1 page gmail message with an embedded image.
+
+- SLEEP --> This script tries its best to avoid using sleep but in the case that 
+it is used, you can tweak the sleep times based on the categories. The printer 
+specific ones are REGISTRATION, and PRINTER_STATE, defaulted to 5 and 10 seconds
+respectively.
 
 You may specify which tests to run/ignore via editing:
 - TEST['RUN'] --> Add a '#' prefix in front of a test name to exclude from test
@@ -140,8 +130,7 @@ stored in a different location.
 IP address, MANUFACTURER, MODEL, PORT (integer, not string), SERIAL, and STATUS.
 - TEST --> If you don't want the test results to be written to a Google
 Spreadsheet, then change SPREADSHEET to False.
-- TESTENV --> add the versions used during testing, for Android, Chrome, the
-Chromebook, Firefox, IE, and tablet used.
+- TESTENV --> add the versions used during testing
 - USER --> add the client id, client secret of the test account from step 1.
 Also add the email address and password of this user. 
 - USER2 --> add the email address and password of the 2nd test account.

@@ -119,7 +119,7 @@ class Device(object):
         print msg
       else:
         PromptAndWaitForUserAction(msg)
-      time.sleep(5) # Registration delay
+      time.sleep(Constants.SLEEP['REGISTRATION'])
       if self.GetPrivetClaimToken(user=user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
@@ -236,7 +236,7 @@ class Device(object):
     response = self.transport.HTTPReq(cancel_url, data='',
                                       headers=self.headers,
                                       user=Constants.USER['EMAIL'])
-    time.sleep(5)  # Cancellation delay
+    time.sleep(Constants.SLEEP['REGISTRATION'])
     return response['code']
 
   def StartPrivetRegister(self, user=Constants.USER['EMAIL']):

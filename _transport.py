@@ -134,7 +134,7 @@ class Transport(object):
 
     info = self.jparser.Read(response['data'])
     if info['json']:
-      self.logger.debug(self.jparser.Print(info['json']))
+      self.logger.debug(info['json'])
       for k in info:
         self.logger.debug('Data item: %s\nData Value: %s', k, info[k])
     if response['headers']:
