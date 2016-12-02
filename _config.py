@@ -147,9 +147,9 @@ class Constants(object):
       'SVG2': os.path.join(image_dir, 'Example.svg'),
       'TIFF1': os.path.join(image_dir, 'gcpreglink.tif'),
       'TIFF2': os.path.join(image_dir, 'marbles.tif'),
-      'PWG1': os.path.join(image_dir, 'testpage.pwg'),
-      'PWG2': os.path.join(image_dir, 'rosemary.pwg'),
-      'PWG3': os.path.join(image_dir, 'dna_overview.pwg'),
+      'PWG1': os.path.join(image_dir, 'testpage-600-srgb8.pwg'), # Below are in pwg-raster format, 600 DPI, SRGB8
+      'PWG2': os.path.join(image_dir, 'rosemary-600-srgb8.pwg'),
+      'PWG3': os.path.join(image_dir, 'dna_overview-600-srgb8.pwg'),
       }
 
   LOGFILES = '/tmp/logocert/'
