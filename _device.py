@@ -102,19 +102,24 @@ class Device(object):
       if response['data']:
         self.logger.info('Data from response: %s', response['data'])
 
-  def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True):
+  def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True, no_wait=False):
     """Register device using Privet.
     Args:
       msg: string, the instruction for the user about the registration confirmation dialog on the printer
+      user: string, the user to register for
       use_token: boolean, use auth_token if True
+      no_wait: boolean, if True, do not wait
     Returns:
       boolean: True = device registered, False = device not registered.
     Note, devices a required user input to accept or deny a registration
     request, so manual intervention is required.
     """
     if self.StartPrivetRegister(user=user):
-      PromptAndWaitForUserAction(msg)
-      time.sleep(5)
+      if no_wait:
+        print msg
+      else:
+        PromptAndWaitForUserAction(msg)
+      time.sleep(5) # Registration delay
       if self.GetPrivetClaimToken(user=user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
@@ -231,6 +236,7 @@ class Device(object):
     response = self.transport.HTTPReq(cancel_url, data='',
                                       headers=self.headers,
                                       user=Constants.USER['EMAIL'])
+    time.sleep(5)  # Cancellation delay
     return response['code']
 
   def StartPrivetRegister(self, user=Constants.USER['EMAIL']):

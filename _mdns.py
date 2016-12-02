@@ -88,6 +88,7 @@ class MDnsListener(object):
     else:
       self.zeroconf = Zeroconf(InterfaceChoice.All)
     self.listener = MDnsService(logger)
+    self.sb = None
 
   def add_listener(self, proto):
     """Browse for announcements of a particular protocol.
@@ -108,9 +109,25 @@ class MDnsListener(object):
       self.logger.error('Error starting listener, %s protocol unkown', proto)
       return False
 
-    ServiceBrowser(self.zeroconf, protocols[proto], self.listener)
+    self.sb = ServiceBrowser(self.zeroconf, protocols[proto], self.listener)
     self.logger.info('Browsing for %s services...', proto)
     return True
+
+  def remove_service_entry(self, name):
+    """Remove a service entry from the ServiceBrowser
+
+        Args:
+          name: string, the service to remove.
+        Returns:
+          boolean, True = serice removed, False = service not found.
+        """
+    for service in self.sb.services:
+      if name.lower() in service.lower():
+        self.clear_cache()
+        self.logger.info('Service removed: '+service)
+        del(self.sb.services[service])
+        return True
+    return False
 
   def remove_listeners(self):
     """Remove all listeners."""
