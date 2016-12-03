@@ -37,7 +37,7 @@ unshare (used by applications and only interacts with GCP, not printers)
 
 This module is dependent on modules from the LogoCert package.
 """
-
+from _common import Sleep
 from _common import Extract
 from _config import Constants
 from _jsonparser import JsonParser
@@ -369,7 +369,7 @@ class GCPService(object):
         if job['status'] not in job_status_list:
           return job
 
-      time.sleep(Constants.SLEEP['POLL'])
+      Sleep('POLL')
 
     return None
 
@@ -395,7 +395,7 @@ class GCPService(object):
         if job['status'] == job_status:
           return job
 
-      time.sleep(Constants.SLEEP['POLL'])
+      Sleep('POLL')
 
     return None
 
@@ -424,6 +424,6 @@ class GCPService(object):
         cur_val = res['printer']['local_settings']['current'][key]
         if expected_value == cur_val:
           return True
-      time.sleep(Constants.SLEEP['POLL'])
+      Sleep('POLL')
     return False
 

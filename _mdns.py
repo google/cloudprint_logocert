@@ -114,7 +114,8 @@ class MDnsListener(object):
     return True
 
   def remove_service_entry(self, name):
-    """Remove a service entry from the ServiceBrowser
+    """Remove a service entry from the ServiceBrowser and self.listener.discovered
+       This allows the ServiceBrowser to pick up updated printer info via calling add_service
 
         Args:
           name: string, the service to remove.
@@ -123,9 +124,15 @@ class MDnsListener(object):
         """
     for service in self.sb.services:
       if name.lower() in service.lower():
+        # Prevent the next service add to fetch stale info
         self.clear_cache()
-        self.logger.info('Service removed: '+service)
+        # Delete from our own data storage
+        for key in self.listener.discovered:
+          if key.startswith(name):
+            self.listener.discovered[key]={}
+        # Delete from service browser so a service add can be triggered
         del(self.sb.services[service])
+        self.logger.info('Service removed: ' + service)
         return True
     return False
 

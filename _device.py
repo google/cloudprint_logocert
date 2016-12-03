@@ -25,12 +25,13 @@ from _jsonparser import JsonParser
 from _privet import Privet
 from _transport import Transport
 
+from _common import Sleep
 from _common import PromptAndWaitForUserAction
 from json import dumps
 from os.path import basename
 import requests
 import mimetypes
-import time
+
 
 
 class Device(object):
@@ -119,7 +120,7 @@ class Device(object):
         print msg
       else:
         PromptAndWaitForUserAction(msg)
-      time.sleep(Constants.SLEEP['REGISTRATION'])
+      Sleep('REGISTRATION')
       if self.GetPrivetClaimToken(user=user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
@@ -236,7 +237,7 @@ class Device(object):
     response = self.transport.HTTPReq(cancel_url, data='',
                                       headers=self.headers,
                                       user=Constants.USER['EMAIL'])
-    time.sleep(Constants.SLEEP['REGISTRATION'])
+    Sleep('REGISTRATION')
     return response['code']
 
   def StartPrivetRegister(self, user=Constants.USER['EMAIL']):
@@ -496,7 +497,7 @@ class Device(object):
 
 
   def CancelJob(self, job_id):
-    #TODO Posting a mismatch job seems to cancel the created job, find a better way to do this
+    #TODO: Posting a mismatch job seems to cancel the created job, find a better way to do this
     url = self.privet_url['submitdoc'] + '?job_id=%s' % (job_id)
 
     headers = self.headers

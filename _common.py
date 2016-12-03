@@ -24,7 +24,14 @@ import math
 import os
 import time
 import _log
+from _config import Constants
 
+
+def Sleep(wait_type):
+  sec = Constants.SLEEP[wait_type]
+  if 'POLL' not in wait_type:
+    print '[Configurable wait] %s: %s seconds' %(wait_type, sec)
+  time.sleep(sec)
 
 def GreenText(str):
   """Display text in green - cross-platform
