@@ -66,6 +66,15 @@ from _common import PromptAndWaitForUserAction
 from _common import PromptUserAction
 
 
+# Module level variables
+_logger = None
+_mdns_browser = None
+_transport = None
+_device = None
+_storage = None
+_gcp = None
+_sheet = None
+
 def _ParseArgs():
   """Parse command line options."""
 
@@ -125,54 +134,53 @@ def _ParseArgs():
 # these objects. This approach is used to eliminate the need for initializing
 # all of these objects for each and every test class.
 def setUpModule():
-  # pylint: disable=global-variable-undefined
-  global logger
-  global mdns_browser
-  global transport
-  global device
-  global storage
-  global gcp
+  global _logger
+  global _mdns_browser
+  global _transport
+  global _device
+  global _storage
+  global _gcp
 
   # Initialize globals and constants
   options, unused_args = _ParseArgs()
-  logger = _log.GetLogger('LogoCert', logdir=options.logdir,
+  _logger = _log.GetLogger('LogoCert', logdir=options.logdir,
                           loglevel=options.debug, stdout=options.stdout)
   os_type = '%s %s' % (platform.system(), platform.release())
   Constants.TESTENV['OS'] = os_type
   Constants.TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
-  storage = Storage(Constants.AUTH['CRED_FILE'])
+  _storage = Storage(Constants.AUTH['CRED_FILE'])
   # Retrieve access + refresh tokens
   getTokens()
-  mdns_browser = _mdns.MDnsListener(logger, options.if_addr)
-  mdns_browser.add_listener('privet')
+  _mdns_browser = _mdns.MDnsListener(_logger, options.if_addr)
+  _mdns_browser.add_listener('privet')
 
   # Wait to receive Privet printer advertisements. Timeout in 30 seconds
-  found = waitForPrivetDiscovery(options.printer, mdns_browser)
+  found = waitForPrivetDiscovery(options.printer, _mdns_browser)
 
   if not found:
-    logger.info("No printers discovered under "+ options.printer)
+    _logger.info("No printers discovered under "+ options.printer)
     sys.exit()
 
   privet_port = None
 
-  for v in mdns_browser.listener.discovered.values():
-    logger.debug('Found printer in Privet advertisements.')
+  for v in _mdns_browser.listener.discovered.values():
+    _logger.debug('Found printer in Privet advertisements.')
     if 'ty' in v['info'].properties:
       if options.printer in v['info'].properties['ty']:
         pinfo = str(v['info']).split(',')
         for item in pinfo:
           if 'port' in item:
             privet_port = int(item.split('=')[1])
-            logger.debug('Privet advertises port: %d', privet_port)
+            _logger.debug('Privet advertises port: %d', privet_port)
 
-  gcp = GCPService(Constants.AUTH["ACCESS"])
-  device = Device(logger, Constants.AUTH["ACCESS"], gcp, privet_port=privet_port)
-  transport = Transport(logger)
+  _gcp = GCPService(Constants.AUTH["ACCESS"])
+  _device = Device(_logger, Constants.AUTH["ACCESS"], _gcp, privet_port=privet_port)
+  _transport = Transport(_logger)
 
   if Constants.TEST['SPREADSHEET']:
-    global sheet
-    sheet = _sheets.SheetMgr(logger, storage.get(), Constants)
-    sheet.MakeHeaders()
+    global _sheet
+    _sheet = _sheets.SheetMgr(_logger, _storage.get(), Constants)
+    _sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
 
 
@@ -187,7 +195,7 @@ def LogTestSuite(name):
   print '=============================================================================================================='
   if Constants.TEST['SPREADSHEET']:
     row = [name,'','','','','','','']
-    sheet.AddRow(row)
+    _sheet.AddRow(row)
 
 
 def waitForPrivetDiscovery(printer, browser):
@@ -213,7 +221,7 @@ def isPrinterRegistered(printer):
       Returns:
         boolean, True = advertising as registered, False = advertising as unregistered, None = advertisement not found
       """
-  for v in mdns_browser.listener.discovered.values():
+  for v in _mdns_browser.listener.discovered.values():
     if 'info' in v:
       if 'ty' in v['info'].properties:
         if printer in v['info'].properties['ty']:
@@ -241,8 +249,8 @@ def waitForRegistrationStatus(name, is_wait_for_reg, timeout):
       # doesn't get picked up by the browser even though the browser continuously pings the device.
       # Responses from existing services are dropped there for we need to remove the service.
       # By removing the service, then waiting for the service to be added again, we get an updated value from the browser
-      mdns_browser.remove_service_entry(device.name)
-      waitForService(device.name, True, timeout=end-time.time())
+      _mdns_browser.remove_service_entry(_device.name)
+      waitForService(_device.name, True, timeout=end-time.time())
   # Time out
   return False
 
@@ -260,7 +268,7 @@ def waitForService(name, is_added, timeout=60):
   t_end = t_start + timeout
 
   while time.time() < t_end:
-    queue = mdns_browser.get_added_q() if is_added else mdns_browser.get_removed_q()
+    queue = _mdns_browser.get_added_q() if is_added else _mdns_browser.get_removed_q()
     while not queue.empty():
       service = queue.get()
       if name in service[0] and t_start < service[1]:
@@ -274,7 +282,7 @@ def getTokens():
   if 'REFRESH' in Constants.AUTH:
     RefreshToken()
   else:
-    creds = storage.get()
+    creds = _storage.get()
     if creds:
       Constants.AUTH['REFRESH'] = creds.refresh_token
       Constants.AUTH['ACCESS'] = creds.access_token
@@ -289,10 +297,10 @@ def RefreshToken():
   # If there is an error in the response, it means the current access token
   # has not yet expired.
   if 'access_token' in response:
-    logger.info('Got new access token.')
+    _logger.info('Got new access token.')
     Constants.AUTH['ACCESS'] = response['access_token']
   else:
-    logger.info('Using current access token.')
+    _logger.info('Using current access token.')
 
 
 def GetNewTokens():
@@ -317,14 +325,14 @@ def GetNewTokens():
   flags = argparser.parse_args(args=[])
 
   # retrieves creds and stores it into storage
-  creds = run_flow(flow, storage, flags=flags,http=http)
+  creds = run_flow(flow, _storage, flags=flags,http=http)
 
   if creds:
     Constants.AUTH['REFRESH'] = creds.refresh_token
     Constants.AUTH['ACCESS'] = creds.access_token
     RefreshToken()
   else:
-    logger.error('Error getting authorization code.')
+    _logger.error('Error getting authorization code.')
 
 
 class LogoCert(unittest.TestCase):
@@ -399,11 +407,11 @@ class LogoCert(unittest.TestCase):
     console_result = RedText(result) if failure else GreenText(result)
     console_test_name = RedText(test_name) if failure else GreenText(test_name)
 
-    logger.info('test_id: %s: %s', test_id, console_result)
-    logger.info('%s: %s', test_id, console_test_name)
+    _logger.info('test_id: %s: %s', test_id, console_result)
+    _logger.info('%s: %s', test_id, console_test_name)
     if notes:
       console_notes = RedText(notes) if failure else GreenText(notes)
-      logger.info('%s: Notes: %s', test_id, console_notes)
+      _logger.info('%s: Notes: %s', test_id, console_notes)
     else:
       notes = ''
     if Constants.TEST['SPREADSHEET']:
@@ -413,28 +421,28 @@ class LogoCert(unittest.TestCase):
         module = os.path.basename(sys.argv[0]).split('.')[0] # get module name - name of this python script
         testsuite = sys._getframe(1).f_locals['self'].__class__.__name__ # get the class name of the caller
         row.append('python -m unittest %s.%s.%s' %(module,testsuite,test_name))
-      sheet.AddRow(row)
+      _sheet.AddRow(row)
 
 
   @classmethod
   def GetDeviceDetails(cls):
-    device.GetDeviceDetails()
-    if not device.name:
-      logger.error('Error finding device in GCP MGT page.')
-      logger.error('Check printer model in _config file.')
+    _device.GetDeviceDetails()
+    if not _device.name:
+      _logger.error('Error finding device in GCP MGT page.')
+      _logger.error('Check printer model in _config file.')
       raise unittest.SkipTest('Could not find device on GCP MGT page.')
     else:
-      logger.debug('Printer name: %s', device.name)
-      logger.debug('Printer status: %s', device.status)
-      for k in device.details:
-        logger.debug(k)
-        logger.debug(device.details[k])
-        logger.debug('===============================')
-      device.GetDeviceCDD(device.dev_id)
-      for k in device.cdd:
-        logger.debug(k)
-        logger.debug(device.cdd[k])
-        logger.debug('===============================')
+      _logger.debug('Printer name: %s', _device.name)
+      _logger.debug('Printer status: %s', _device.status)
+      for k in _device.details:
+        _logger.debug(k)
+        _logger.debug(_device.details[k])
+        _logger.debug('===============================')
+      _device.GetDeviceCDD(_device.dev_id)
+      for k in _device.cdd:
+        _logger.debug(k)
+        _logger.debug(_device.cdd[k])
+        _logger.debug('===============================')
 
 
 class SystemUnderTest(LogoCert):
@@ -503,13 +511,13 @@ class Privet(LogoCert):
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
     try:
-      self.assertIn('x-privet-token', device.privet_info)
+      self.assertIn('x-privet-token', _device.privet_info)
     except AssertionError:
       notes = 'No x-privet-token found. Error in privet info API.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'X-Privet-Token: %s' % device.privet_info['x-privet-token']
+      notes = 'X-Privet-Token: %s' % _device.privet_info['x-privet-token']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIManufacturer(self):
@@ -519,13 +527,13 @@ class Privet(LogoCert):
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
     try:
-      self.assertIn('manufacturer', device.privet_info)
+      self.assertIn('manufacturer', _device.privet_info)
     except AssertionError:
       notes = 'manufacturer not found in privet info.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Manufacturer: %s' % device.privet_info['manufacturer']
+      notes = 'Manufacturer: %s' % _device.privet_info['manufacturer']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIModel(self):
@@ -535,13 +543,13 @@ class Privet(LogoCert):
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
     try:
-      self.assertIn('model', device.privet_info)
+      self.assertIn('model', _device.privet_info)
     except AssertionError:
       notes = 'model not found in privet info.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Model: %s' % device.privet_info['model']
+      notes = 'Model: %s' % _device.privet_info['model']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIFirmware(self):
@@ -551,13 +559,13 @@ class Privet(LogoCert):
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
     try:
-      self.assertIn('firmware', device.privet_info)
+      self.assertIn('firmware', _device.privet_info)
     except AssertionError:
       notes = 'firmware not found in privet info.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Firmware: %s' % device.privet_info['firmware']
+      notes = 'Firmware: %s' % _device.privet_info['firmware']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIUpdateUrl(self):
@@ -567,13 +575,13 @@ class Privet(LogoCert):
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
     try:
-      self.assertIn('update_url', device.privet_info)
+      self.assertIn('update_url', _device.privet_info)
     except AssertionError:
       notes = 'update_url not found in privet info.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'update_url: %s' % device.privet_info['update_url']
+      notes = 'update_url: %s' % _device.privet_info['update_url']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIVersion(self):
@@ -584,21 +592,21 @@ class Privet(LogoCert):
     # info API, so all of the needed information should already be set.
     valid_versions = ['1.0', '1.1', '1.5', '2.0']
     try:
-      self.assertIn('version', device.privet_info)
+      self.assertIn('version', _device.privet_info)
     except AssertionError:
       notes = 'version not found in privet info.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertIn(device.privet_info['version'], valid_versions)
+        self.assertIn(_device.privet_info['version'], valid_versions)
       except AssertionError:
         notes = 'Incorrect GCP Version in privetinfo: %s' % (
-            device.privet_info['version'])
+            _device.privet_info['version'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Version: %s' % device.privet_info['version']
+        notes = 'Version: %s' % _device.privet_info['version']
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoDeviceState(self):
@@ -607,21 +615,21 @@ class Privet(LogoCert):
     test_name = 'testPrivetInfoDeviceState'
     valid_states = ['idle', 'processing', 'stopped']
     try:
-      self.assertIn('device_state', device.privet_info)
+      self.assertIn('device_state', _device.privet_info)
     except AssertionError:
       notes = 'device_state not found in privet info.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertIn(device.privet_info['device_state'], valid_states)
+        self.assertIn(_device.privet_info['device_state'], valid_states)
       except AssertionError:
         notes = 'Incorrect device_state in privet info: %s' % (
-            device.privet_info['device_state'])
+            _device.privet_info['device_state'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Device state: %s' % device.privet_info['device_state']
+        notes = 'Device state: %s' % _device.privet_info['device_state']
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoConnectionState(self):
@@ -630,21 +638,21 @@ class Privet(LogoCert):
     test_name = 'testPrivetInfoConnectionState'
     valid_states = ['online', 'offline', 'connecting', 'not-configured']
     try:
-      self.assertIn('connection_state', device.privet_info)
+      self.assertIn('connection_state', _device.privet_info)
     except AssertionError:
       notes = 'connection_state not found in privet info.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertIn(device.privet_info['connection_state'], valid_states)
+        self.assertIn(_device.privet_info['connection_state'], valid_states)
       except AssertionError:
         notes = 'Incorrect connection_state in privet info: %s' % (
-            device.privet_info['connection_state'])
+            _device.privet_info['connection_state'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Connection state: %s' % device.privet_info['connection_state']
+        notes = 'Connection state: %s' % _device.privet_info['connection_state']
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetAccessTokenAPI(self):
@@ -653,11 +661,11 @@ class Privet(LogoCert):
     test_name = 'testPrivetAccessTokenAPI'
     api = 'accesstoken'
     return_code = [200, 404]
-    response = transport.HTTPReq(device.privet_url[api], headers=device.headers)
+    response = _transport.HTTPReq(_device.privet_url[api], headers=_device.headers)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
-      notes = 'No response received from %s' % device.privet_url[api]
+      notes = 'No response received from %s' % _device.privet_url[api]
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -668,7 +676,7 @@ class Privet(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = '%s returned response code %d' % (device.privet_url[api],
+        notes = '%s returned response code %d' % (_device.privet_url[api],
                                                   response['code'])
         self.LogTest(test_id, test_name, 'Passed', notes)
 
@@ -681,11 +689,11 @@ class Privet(LogoCert):
       return_code = 200
     else:
       return_code = 404
-    response = transport.HTTPReq(device.privet_url[api], headers=device.headers)
+    response = _transport.HTTPReq(_device.privet_url[api], headers=_device.headers)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
-      notes = 'No response received from %s' % device.privet_url[api]
+      notes = 'No response received from %s' % _device.privet_url[api]
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -696,7 +704,7 @@ class Privet(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = '%s returned code %d' % (device.privet_url[api],
+        notes = '%s returned code %d' % (_device.privet_url[api],
                                          response['code'])
         self.LogTest(test_id, test_name, 'Passed', notes)
 
@@ -706,11 +714,11 @@ class Privet(LogoCert):
     test_name = 'testPrivetPrinterAPI'
     api = 'printer'
     return_code = [200, 404]
-    response = transport.HTTPReq(device.privet_url[api], headers=device.headers)
+    response = _transport.HTTPReq(_device.privet_url[api], headers=_device.headers)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
-      notes = 'No response received from %s' % device.privet_url[api]
+      notes = 'No response received from %s' % _device.privet_url[api]
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -721,7 +729,7 @@ class Privet(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = '%s returned code %d' % (device.privet_url[api],
+        notes = '%s returned code %d' % (_device.privet_url[api],
                                          response['code'])
         self.LogTest(test_id, test_name, 'Passed', notes)
 
@@ -729,8 +737,8 @@ class Privet(LogoCert):
     """Verify device returns 404 return code for unknown url requests."""
     test_id = 'caf2f4e7-df0d-4093-8303-73eff5ab9024'
     test_name = 'testPrivetUnknownURL'
-    response = transport.HTTPReq(device.privet_url['INVALID'],
-                                 headers=device.headers)
+    response = _transport.HTTPReq(_device.privet_url['INVALID'],
+                                 headers=_device.headers)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
@@ -753,7 +761,7 @@ class Privet(LogoCert):
     test_id = '48f09590-03b1-4068-a902-c21290026247'
     test_name = 'testPrivetRegisterAPI'
 
-    success = device.StartPrivetRegister()
+    success = _device.StartPrivetRegister()
     try:
       self.assertTrue(success)
     except AssertionError:
@@ -764,15 +772,15 @@ class Privet(LogoCert):
       notes = 'Privet registration API working correctly'
       self.LogTest(test_id, test_name, 'Passed', notes)
       # Cancel the registration so the printer is not in an unknown state
-      device.CancelRegistration()
+      _device.CancelRegistration()
 
   def testPrivetRegistrationInvalidParam(self):
     """Verify device return error if invalid registration param given."""
     test_id = 'fec798b2-ed5f-44ac-8752-e44fd47462e2'
     test_name = 'testPrivetRegistrationInvalidParam'
-    response = transport.HTTPReq(
-        device.privet_url['register']['invalid'], data='',
-        headers=device.headers, user=Constants.USER['EMAIL'])
+    response = _transport.HTTPReq(
+        _device.privet_url['register']['invalid'], data='',
+        headers=_device.headers, user=Constants.USER['EMAIL'])
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
@@ -800,14 +808,14 @@ class Privet(LogoCert):
             response['code'], response['data'])
           self.LogTest(test_id, test_name, 'Passed', notes)
         finally:
-          device.CancelRegistration()
+          _device.CancelRegistration()
 
   def testPrivetInfoAPIEmptyToken(self):
     """Verify device returns code 200 if Privet Token is empty."""
     test_id = '9cce6158-7b68-42b3-94b2-9bacadac07c9'
     test_name = 'testPrivetInfoAPIEmptyToken'
-    response = transport.HTTPReq(device.privet_url['info'],
-                                 headers=device.privet.headers_empty)
+    response = _transport.HTTPReq(_device.privet_url['info'],
+                                 headers=_device.privet.headers_empty)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
@@ -829,8 +837,8 @@ class Privet(LogoCert):
     """Verify device returns code 200 if Privet Token is invalid."""
     test_id = 'f568feee-4693-4643-a61a-73a705288808'
     test_name = 'testPrivetInfoAPIInvalidToken'
-    response = transport.HTTPReq(device.privet_url['info'],
-                                 headers=device.privet.headers_invalid)
+    response = _transport.HTTPReq(_device.privet_url['info'],
+                                 headers=_device.privet.headers_invalid)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
@@ -852,8 +860,8 @@ class Privet(LogoCert):
     """Verify device returns code 400 if Privet Token is missing."""
     test_id = '271a2089-be2e-4237-b0c1-e64f4e636c35'
     test_name = 'testPrivetInfoAPIMissingToken'
-    response = transport.HTTPReq(device.privet_url['info'],
-                                 headers=device.privet.headers_missing)
+    response = _transport.HTTPReq(_device.privet_url['info'],
+                                 headers=_device.privet.headers_missing)
     try:
       self.assertIsNotNone(response['code'])
     except AssertionError:
@@ -876,7 +884,7 @@ class Privet(LogoCert):
     test_id = 'a48518b0-bc96-480b-a8f2-f26cbb42e1b8'
     test_name = 'testDeviceRegistrationInvalidClaimToken'
     try:
-      self.assertTrue(device.StartPrivetRegister())
+      self.assertTrue(_device.StartPrivetRegister())
     except AssertionError:
       notes = 'Error starting privet registration.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -887,16 +895,16 @@ class Privet(LogoCert):
         PromptAndWaitForUserAction('Press ENTER once registration accepted.')
         Sleep('REGISTRATION')
         try:
-          self.assertTrue(device.GetPrivetClaimToken())
+          self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
           notes = 'Error getting claim token.'
           self.LogTest(test_id, test_name, 'Blocked', notes)
           raise
         else:
-          device.automated_claim_url = (
+          _device.automated_claim_url = (
               'https://www.google.com/cloudprint/confirm?token=INVALID')
           try:
-            self.assertFalse(device.SendClaimToken(Constants.AUTH['ACCESS']))
+            self.assertFalse(_device.SendClaimToken(Constants.AUTH['ACCESS']))
           except AssertionError:
             notes = 'Device accepted invalid claim token.'
             self.LogTest(test_id, test_name, 'Failed', notes)
@@ -905,14 +913,14 @@ class Privet(LogoCert):
             notes = 'Device did not accept invalid claim token.'
             self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
-        device.CancelRegistration()
+        _device.CancelRegistration()
 
   def testDeviceRegistrationInvalidUserAuthToken(self):
     """Verify a device will not register if the user auth token is invalid."""
     test_id = 'da3d4ce4-5b81-4bb4-a487-7c8e92b552c6'
     test_name = 'testDeviceRegistrationInvalidUserAuthToken'
     try:
-      self.assertTrue(device.StartPrivetRegister())
+      self.assertTrue(_device.StartPrivetRegister())
     except AssertionError:
       notes = 'Error starting privet registration.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -924,14 +932,14 @@ class Privet(LogoCert):
         PromptAndWaitForUserAction('Press ENTER once registration is accepted.')
         Sleep('REGISTRATION')
         try:
-          self.assertTrue(device.GetPrivetClaimToken())
+          self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
           notes = 'Error getting claim token.'
           self.LogTest(test_id, test_name, 'Blocked', notes)
           raise
         else:
           try:
-            self.assertFalse(device.SendClaimToken('INVALID_USER_AUTH_TOKEN'))
+            self.assertFalse(_device.SendClaimToken('INVALID_USER_AUTH_TOKEN'))
           except AssertionError:
             notes = 'Claim token accepted with invalid User Auth Token.'
             self.LogTest(test_id, test_name, 'Failed', notes)
@@ -940,7 +948,7 @@ class Privet(LogoCert):
             notes = 'Claim token not accepted with invalid user auth token.'
             self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
-        device.CancelRegistration()
+        _device.CancelRegistration()
 
 
 class Printer(LogoCert):
@@ -956,35 +964,35 @@ class Printer(LogoCert):
     test_id = '79f45999-b9e7-4f95-8992-79c06eaa1b76'
     test_name = 'testPrinterName'
     try:
-      self.assertIsNotNone(device.name)
+      self.assertIsNotNone(_device.name)
     except AssertionError:
       notes = 'No printer name found.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      logger.info('Printer name found in details.')
+      _logger.info('Printer name found in details.')
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], device.name)
+      self.assertIn(Constants.PRINTER['MODEL'], _device.name)
     except AssertionError:
-      notes = 'Model not in name. Found %s' % device.name
+      notes = 'Model not in name. Found %s' % _device.name
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('name', device.cdd)
+      self.assertIn('name', _device.cdd)
     except AssertionError:
       notes = 'Printer CDD missing printer name.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      logger.info('Printer name found in CDD.')
+      _logger.info('Printer name found in CDD.')
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], device.cdd['name'])
+      self.assertIn(Constants.PRINTER['MODEL'], _device.cdd['name'])
     except AssertionError:
-      notes = 'Model not in name. Found %s in CDD' % device.cdd['name']
+      notes = 'Model not in name. Found %s in CDD' % _device.cdd['name']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer name: %s' % device.name
+      notes = 'Printer name: %s' % _device.name
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterStatus(self):
@@ -992,19 +1000,19 @@ class Printer(LogoCert):
     test_id = 'f04dfb47-5745-498b-b366-c79d37536904'
     test_name = 'testPrinterStatus'
     try:
-      self.assertIsNotNone(device.status)
+      self.assertIsNotNone(_device.status)
     except AssertionError:
       notes = 'Device has no status.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('ONLINE', device.status)
+      self.assertIn('ONLINE', _device.status)
     except AssertionError:
-      notes = 'Device is not online. Status: %s' % device.status
+      notes = 'Device is not online. Status: %s' % _device.status
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Status: %s' % device.status
+      notes = 'Status: %s' % _device.status
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterModel(self):
@@ -1012,32 +1020,32 @@ class Printer(LogoCert):
     test_id = '145f1c07-0e9d-4a5e-ae17-ff31f62c94e3'
     test_name = 'testPrinterModel'
     try:
-      self.assertIn('model', device.details)
+      self.assertIn('model', _device.details)
     except AssertionError:
       notes = 'Model is missing from the printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], device.details['model'])
+      self.assertIn(Constants.PRINTER['MODEL'], _device.details['model'])
     except AssertionError:
-      notes = 'Model incorrect, printer details: %s' % device.details['Model']
+      notes = 'Model incorrect, printer details: %s' % _device.details['Model']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('model', device.cdd)
+      self.assertIn('model', _device.cdd)
     except AssertionError:
       notes = 'Model is missing from the printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], device.cdd['model'])
+      self.assertIn(Constants.PRINTER['MODEL'], _device.cdd['model'])
     except AssertionError:
       notes = 'Printer model has unexpected value. Found %s' % (
-          device.cdd['model'])
+          _device.cdd['model'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Model: %s' % device.details['model']
+      notes = 'Model: %s' % _device.details['model']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterManufacturer(self):
@@ -1045,35 +1053,35 @@ class Printer(LogoCert):
     test_id = '68134ba3-5a05-4a77-82ca-b06ae6195cd8'
     test_name = 'testPrinterManufacturer'
     try:
-      self.assertIn('manufacturer', device.details)
+      self.assertIn('manufacturer', _device.details)
     except AssertionError:
       notes = 'Manufacturer in not set in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
       self.assertIn(Constants.PRINTER['MANUFACTURER'],
-                    device.details['manufacturer'])
+                    _device.details['manufacturer'])
     except AssertionError:
       notes = 'Manufacturer is not in printer details. Found %s' % (
-          device.details['Manufacturer'])
+          _device.details['Manufacturer'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('manufacturer', device.cdd)
+      self.assertIn('manufacturer', _device.cdd)
     except AssertionError:
       notes = 'Manufacturer is not set in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
       self.assertIn(Constants.PRINTER['MANUFACTURER'],
-                    device.cdd['manufacturer'])
+                    _device.cdd['manufacturer'])
     except AssertionError:
       notes = 'Manufacturer not found in printer CDD. Found %s' % (
-          device.cdd['manufacturer'])
+          _device.cdd['manufacturer'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Manufacturer: %s' % device.details['manufacturer']
+      notes = 'Manufacturer: %s' % _device.details['manufacturer']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterSerialNumber(self):
@@ -1081,19 +1089,19 @@ class Printer(LogoCert):
     test_id = '3996db1d-93ea-4f4c-b70c-dfd9355d5e5d'
     test_name = 'testPrinterSerialNumber'
     try:
-      self.assertIn('uuid', device.details)
+      self.assertIn('uuid', _device.details)
     except AssertionError:
       notes = 'Serial number not found in device details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.details['uuid']), 1)
+      self.assertGreaterEqual(len(_device.details['uuid']), 1)
     except AssertionError:
       notes = 'Serial number does is not valid number.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Serial Number: %s' % device.details['uuid']
+      notes = 'Serial Number: %s' % _device.details['uuid']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterGCPVersion(self):
@@ -1101,33 +1109,33 @@ class Printer(LogoCert):
     test_id = '7a8ec212-52d2-441d-8e18-383ac850f567'
     test_name = 'testPrinterGCPVersion'
     try:
-      self.assertIn('gcpVersion', device.details)
+      self.assertIn('gcpVersion', _device.details)
     except AssertionError:
       notes = 'GCP Version not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertEqual('2.0', device.details['gcpVersion'])
+      self.assertEqual('2.0', _device.details['_gcpVersion'])
     except AssertionError:
       notes = 'Version 2.0 not found in GCP Version support. Found %s' % (
-          device.details['Google Cloud Print Version'])
+          _device.details['Google Cloud Print Version'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('gcpVersion', device.cdd)
+      self.assertIn('gcpVersion', _device.cdd)
     except AssertionError:
       notes = 'GCP Version not found in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertEqual('2.0', device.cdd['gcpVersion'])
+      self.assertEqual('2.0', _device.cdd['gcpVersion'])
     except AssertionError:
       notes = 'Version 2.0 not found in GCP Version. Found %s' % (
-          device.cdd['gcpVersion'])
+          _device.cdd['gcpVersion'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'GCP Version: %s' % device.details['gcpVersion']
+      notes = 'GCP Version: %s' % _device.details['gcpVersion']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterFirmwareVersion(self):
@@ -1135,31 +1143,31 @@ class Printer(LogoCert):
     test_id = '96b2fc8d-708d-4be8-b439-7fec563c44d9'
     test_name = 'testPrinterFirmwareVersion'
     try:
-      self.assertIn('firmware', device.details)
+      self.assertIn('firmware', _device.details)
     except AssertionError:
       notes = 'Firmware version is missing in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.details['firmware']), 1)
+      self.assertGreaterEqual(len(_device.details['firmware']), 1)
     except AssertionError:
       notes = 'Firmware version is not correctly identified.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('firmware', device.cdd)
+      self.assertIn('firmware', _device.cdd)
     except AssertionError:
       notes = 'Firmware version is missing in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.cdd['firmware']), 1)
+      self.assertGreaterEqual(len(_device.cdd['firmware']), 1)
     except AssertionError:
       notes = 'Firmware version is not correctly identified in CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Firmware version: %s' % device.details['firmware']
+      notes = 'Firmware version: %s' % _device.details['firmware']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterType(self):
@@ -1167,32 +1175,32 @@ class Printer(LogoCert):
     test_id = 'f4fb09a4-527b-4fa7-8629-0171037db113'
     test_name = 'testPrinterType'
     try:
-      self.assertIn('type', device.details)
+      self.assertIn('type', _device.details)
     except AssertionError:
       notes = 'Printer Type not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('GOOGLE', device.details['type'])
+      self.assertIn('GOOGLE', _device.details['type'])
     except AssertionError:
       notes = 'Incorrect Printer Type in details. Found %s' % (
-          device.details['PrinterType'])
+          _device.details['PrinterType'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('type', device.cdd)
+      self.assertIn('type', _device.cdd)
     except AssertionError:
       notes = 'Printer Type not found in printer CDD'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('GOOGLE', device.cdd['type'])
+      self.assertIn('GOOGLE', _device.cdd['type'])
     except AssertionError:
-      notes = 'Incorrect Printer Type in CDD. Found %s' % device.cdd['type']
+      notes = 'Incorrect Printer Type in CDD. Found %s' % _device.cdd['type']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer Type: %s' % device.details['type']
+      notes = 'Printer Type: %s' % _device.details['type']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterFirmwareUpdateUrl(self):
@@ -1200,33 +1208,33 @@ class Printer(LogoCert):
     test_id = '27a06940-2f82-4550-8231-69615aa516c8'
     test_name = 'testPrinterFirmwareUpdateUrl'
     try:
-      self.assertIn('updateUrl', device.details)
+      self.assertIn('updateUrl', _device.details)
     except AssertionError:
       notes = 'Firmware update url not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
       self.assertGreaterEqual(len(
-          device.details['updateUrl']), 10)
+          _device.details['updateUrl']), 10)
     except AssertionError:
       notes = 'Firmware Update URL is not valid in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('updateUrl', device.cdd)
+      self.assertIn('updateUrl', _device.cdd)
     except AssertionError:
       notes = 'Firmware update Url not found in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.cdd['updateUrl']), 10)
+      self.assertGreaterEqual(len(_device.cdd['updateUrl']), 10)
     except AssertionError:
       notes = 'Firmware Update URL is not valid in CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       notes = 'Firmware Update URL: %s' % (
-          device.details['updateUrl'])
+          _device.details['updateUrl'])
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterProxy(self):
@@ -1234,31 +1242,31 @@ class Printer(LogoCert):
     test_id = 'd01c84fd-6310-47f0-a464-60997a8e3d68'
     test_name = 'testPrinterProxy'
     try:
-      self.assertIn('proxy', device.details)
+      self.assertIn('proxy', _device.details)
     except AssertionError:
       notes = 'Proxy not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.details['proxy']), 1)
+      self.assertGreaterEqual(len(_device.details['proxy']), 1)
     except AssertionError:
       notes = 'Proxy is not valid value.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('proxy', device.cdd)
+      self.assertIn('proxy', _device.cdd)
     except AssertionError:
       notes = 'Proxy not found in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.cdd['proxy']), 1)
+      self.assertGreaterEqual(len(_device.cdd['proxy']), 1)
     except AssertionError:
       notes = 'Proxy is not valid value.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer Proxy: %s' % device.details['proxy']
+      notes = 'Printer Proxy: %s' % _device.details['proxy']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testSetupUrl(self):
@@ -1266,19 +1274,19 @@ class Printer(LogoCert):
     test_id = 'd03c034d-2deb-42d9-a6fd-1685c2472e97'
     test_name = 'testSetupUrl'
     try:
-      self.assertIn('setupUrl', device.cdd)
+      self.assertIn('setupUrl', _device.cdd)
     except AssertionError:
       notes = 'Setup URL not found in CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.cdd['setupUrl']), 10)
+      self.assertGreaterEqual(len(_device.cdd['setupUrl']), 10)
     except AssertionError:
-      notes = 'Setup URL is not a valid. Found %s' % device.cdd['setupUrl']
+      notes = 'Setup URL is not a valid. Found %s' % _device.cdd['setupUrl']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Setup URL: %s' % device.cdd['setupUrl']
+      notes = 'Setup URL: %s' % _device.cdd['setupUrl']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterID(self):
@@ -1286,31 +1294,31 @@ class Printer(LogoCert):
     test_id = '5bc5d513-3a1f-441a-8acd-d007fe0e0e35'
     test_name = 'testPrinterID'
     try:
-      self.assertIsNotNone(device.dev_id)
+      self.assertIsNotNone(_device.dev_id)
     except AssertionError:
       notes = 'Printer ID not found in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.dev_id), 10)
+      self.assertGreaterEqual(len(_device.dev_id), 10)
     except AssertionError:
       notes = 'Printer ID is not valid in printer details.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('id', device.cdd)
+      self.assertIn('id', _device.cdd)
     except AssertionError:
       notes = 'Printer ID not found in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.cdd['id']), 10)
+      self.assertGreaterEqual(len(_device.cdd['id']), 10)
     except AssertionError:
       notes = 'Printer ID is not valid in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Printer ID: %s' % device.dev_id
+      notes = 'Printer ID: %s' % _device.dev_id
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testLocalSettings(self):
@@ -1318,19 +1326,19 @@ class Printer(LogoCert):
     test_id = 'cede3eec-41fb-43de-b1f1-76d17443b6f3'
     test_name = 'testLocalSettings'
     try:
-      self.assertIn('local_settings', device.cdd)
+      self.assertIn('local_settings', _device.cdd)
     except AssertionError:
       notes = 'local_settings not found in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertIn('current', device.cdd['local_settings'])
+      self.assertIn('current', _device.cdd['local_settings'])
     except AssertionError:
       notes = 'No current settings found in local_settings.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Local settings: %s' % device.cdd['local_settings']
+      notes = 'Local settings: %s' % _device.cdd['local_settings']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCaps(self):
@@ -1338,13 +1346,13 @@ class Printer(LogoCert):
     test_id = '1977ab77-27af-4702-a6f3-5b66fc1b5720'
     test_name = 'testCaps'
     try:
-      self.assertIn('caps', device.cdd)
+      self.assertIn('caps', _device.cdd)
     except AssertionError:
       notes = 'No capabilities found in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.cdd['caps']), 10)
+      self.assertGreaterEqual(len(_device.cdd['caps']), 10)
     except AssertionError:
       notes = 'Capabilities does not have required entries.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1357,19 +1365,19 @@ class Printer(LogoCert):
     test_id = 'e53df4c2-d208-41d0-bb62-ec6be6ebac9f'
     test_name = 'testUuid'
     try:
-      self.assertIn('uuid', device.cdd)
+      self.assertIn('uuid', _device.cdd)
     except AssertionError:
       notes = 'uuid not found in printer CDD.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertGreaterEqual(len(device.cdd['uuid']), 1)
+      self.assertGreaterEqual(len(_device.cdd['uuid']), 1)
     except AssertionError:
       notes = 'uuid is not a valid value.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'UUID: %s' % device.cdd['uuid']
+      notes = 'UUID: %s' % _device.cdd['uuid']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testDefaultDisplayName(self):
@@ -1377,7 +1385,7 @@ class Printer(LogoCert):
     test_id = '1cb52261-cf01-45ed-b447-8ec8902b36f2'
     test_name = 'testDefaultDisplayName'
     try:
-      self.assertIn('defaultDisplayName', device.cdd)
+      self.assertIn('defaultDisplayName', _device.cdd)
     except AssertionError:
       notes = 'defaultDisplayName not found in printer CDD'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1390,13 +1398,13 @@ class Printer(LogoCert):
     test_id = 'aa7c157e-bd0a-4048-a8a9-88ce3e9a96b8'
     test_name = 'testCapsSupportedContentType'
     try:
-      self.assertIn('supported_content_type', device.cdd['caps'])
+      self.assertIn('supported_content_type', _device.cdd['caps'])
     except AssertionError:
       notes = 'supported_content_type missing from printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     content_types = []
-    for item in device.cdd['caps']['supported_content_type']:
+    for item in _device.cdd['caps']['supported_content_type']:
       for k in item:
         if k == 'content_type':
           content_types.append(item[k])
@@ -1409,7 +1417,7 @@ class Printer(LogoCert):
       raise
     else:
       notes = 'Supported content types: %s' % (
-          device.cdd['caps']['supported_content_type'])
+          _device.cdd['caps']['supported_content_type'])
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsPwgRasterConfig(self):
@@ -1417,14 +1425,14 @@ class Printer(LogoCert):
     test_id = 'e3565806-2320-48ef-8eab-2f48fbcffc33'
     test_name = 'testCapsPwgRasterConfig'
     try:
-      self.assertIn('pwg_raster_config', device.cdd['caps'])
+      self.assertIn('pwg_raster_config', _device.cdd['caps'])
     except AssertionError:
       notes = 'pwg_raster_config parameter not found in printer cdd.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       notes = 'pwg_raster_config: %s' % (
-          device.cdd['caps']['pwg_raster_config'])
+          _device.cdd['caps']['pwg_raster_config'])
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsInputTrayUnit(self):
@@ -1432,13 +1440,13 @@ class Printer(LogoCert):
     test_id = 'e10b7314-fc04-4a4a-ae59-8bf4a3ae165d'
     test_name = 'testCapsInputTrayUnit'
     try:
-      self.assertIn('input_tray_unit', device.cdd['caps'])
+      self.assertIn('input_tray_unit', _device.cdd['caps'])
     except AssertionError:
       notes = 'input_tray_unit not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'input_tray_unit: %s' % device.cdd['caps']['input_tray_unit']
+      notes = 'input_tray_unit: %s' % _device.cdd['caps']['input_tray_unit']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsOutputBinUnit(self):
@@ -1446,13 +1454,13 @@ class Printer(LogoCert):
     test_id = '0f329dba-75c3-45f0-a3a1-4d63f5d195b0'
     test_name = 'testCapsOutputBinUnit'
     try:
-      self.assertIn('output_bin_unit', device.cdd['caps'])
+      self.assertIn('output_bin_unit', _device.cdd['caps'])
     except AssertionError:
       notes = 'output_bin_unit not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'output_bin_unit: %s' % device.cdd['caps']['output_bin_unit']
+      notes = 'output_bin_unit: %s' % _device.cdd['caps']['output_bin_unit']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsMarker(self):
@@ -1460,13 +1468,13 @@ class Printer(LogoCert):
     test_id = '35005c07-3b18-48b2-a3a2-20fe78bedff2'
     test_name = 'testCapsMarker'
     try:
-      self.assertIn('marker', device.cdd['caps'])
+      self.assertIn('marker', _device.cdd['caps'])
     except AssertionError:
       notes = 'marker not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'marker: %s' % device.cdd['caps']['marker']
+      notes = 'marker: %s' % _device.cdd['caps']['marker']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsCover(self):
@@ -1474,13 +1482,13 @@ class Printer(LogoCert):
     test_id = 'c5564d8b-d811-4510-b031-b761bb094631'
     test_name = 'testCapsCover'
     try:
-      self.assertIn('cover', device.cdd['caps'])
+      self.assertIn('cover', _device.cdd['caps'])
     except AssertionError:
       notes = 'cover not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'cover: %s' % device.cdd['caps']['cover']
+      notes = 'cover: %s' % _device.cdd['caps']['cover']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsColor(self):
@@ -1488,13 +1496,13 @@ class Printer(LogoCert):
     test_id = '01bd068d-0b8f-41a4-82ea-39ef5fb09994'
     test_name = 'testCapsColor'
     try:
-      self.assertIn('color', device.cdd['caps'])
+      self.assertIn('color', _device.cdd['caps'])
     except AssertionError:
       notes = 'color not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'color: %s' % device.cdd['caps']['color']
+      notes = 'color: %s' % _device.cdd['caps']['color']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsDuplex(self):
@@ -1502,13 +1510,13 @@ class Printer(LogoCert):
     test_id = '7bda6263-a629-4e1a-84e9-28e84fa2b014'
     test_name = 'testCapsDuplex'
     try:
-      self.assertIn('duplex', device.cdd['caps'])
+      self.assertIn('duplex', _device.cdd['caps'])
     except AssertionError:
       notes = 'duplex not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'duplex: %s' % device.cdd['caps']['duplex']
+      notes = 'duplex: %s' % _device.cdd['caps']['duplex']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsCopies(self):
@@ -1519,13 +1527,13 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
       return
     try:
-      self.assertIn('copies', device.cdd['caps'])
+      self.assertIn('copies', _device.cdd['caps'])
     except AssertionError:
       notes = 'copies not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'copies: %s' % device.cdd['caps']['copies']
+      notes = 'copies: %s' % _device.cdd['caps']['copies']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsDpi(self):
@@ -1533,13 +1541,13 @@ class Printer(LogoCert):
     test_id = 'cd4c9dbc-da9d-4de7-a5b7-74e4618ce1b7'
     test_name = 'testCapsDpi'
     try:
-      self.assertIn('dpi', device.cdd['caps'])
+      self.assertIn('dpi', _device.cdd['caps'])
     except AssertionError:
       notes = 'dpi not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'dpi: %s' % device.cdd['caps']['dpi']
+      notes = 'dpi: %s' % _device.cdd['caps']['dpi']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsMediaSize(self):
@@ -1547,13 +1555,13 @@ class Printer(LogoCert):
     test_id = 'dae470da-ac50-47cb-8ef7-073cc856cfed'
     test_name = 'testCapsMediaSize'
     try:
-      self.assertIn('media_size', device.cdd['caps'])
+      self.assertIn('media_size', _device.cdd['caps'])
     except AssertionError:
       notes = 'media_size not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'media_size: %s' % device.cdd['caps']['media_size']
+      notes = 'media_size: %s' % _device.cdd['caps']['media_size']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsCollate(self):
@@ -1565,13 +1573,13 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     try:
-      self.assertIn('collate', device.cdd['caps'])
+      self.assertIn('collate', _device.cdd['caps'])
     except AssertionError:
       notes = 'collate not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'collate: %s' % device.cdd['caps']['collate']
+      notes = 'collate: %s' % _device.cdd['caps']['collate']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsPageOrientation(self):
@@ -1583,7 +1591,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
     else:
       try:
-        self.assertNotIn('page_orientation', device.cdd['caps'])
+        self.assertNotIn('page_orientation', _device.cdd['caps'])
       except AssertionError:
         notes = 'page_orientation found in printer capabilities.'
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1597,7 +1605,7 @@ class Printer(LogoCert):
     test_id = '674b3b1a-282a-4e41-a4d2-046ce65e7403'
     test_name = 'testCapsMargins'
     try:
-      self.assertNotIn('margins', device.cdd['caps'])
+      self.assertNotIn('margins', _device.cdd['caps'])
     except AssertionError:
       notes = 'margins found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1611,7 +1619,7 @@ class Printer(LogoCert):
     test_id = '86c99c63-1581-470f-b771-94e389a5fc32'
     test_name = 'testCapsFitToPage'
     try:
-      self.assertNotIn('fit_to_page', device.cdd['caps'])
+      self.assertNotIn('fit_to_page', _device.cdd['caps'])
     except AssertionError:
       notes = 'fit_to_page found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1625,7 +1633,7 @@ class Printer(LogoCert):
     test_id = 'f80b2077-2ed2-4fc1-a2d6-2fa3b90e9c9f'
     test_name = 'testCapsPageRange'
     try:
-      self.assertNotIn('page_range', device.cdd['caps'])
+      self.assertNotIn('page_range', _device.cdd['caps'])
     except AssertionError:
       notes = 'page_range found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1639,7 +1647,7 @@ class Printer(LogoCert):
     test_id = 'f24797e4-090c-42fd-98e7-f19ea3d39ebf'
     test_name = 'testCapsReverseOrder'
     try:
-      self.assertNotIn('reverse_order', device.cdd['caps'])
+      self.assertNotIn('reverse_order', _device.cdd['caps'])
     except AssertionError:
       notes = 'reverse_order found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1653,7 +1661,7 @@ class Printer(LogoCert):
     test_id = 'd39db864-3e18-46f3-8c16-d367f155c1e0'
     test_name = 'testCapsHash'
     try:
-      self.assertIn('capsHash', device.cdd)
+      self.assertIn('capsHash', _device.cdd)
     except AssertionError:
       notes = 'capsHash not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1667,7 +1675,7 @@ class Printer(LogoCert):
     test_id = '8885e5c7-50a1-4667-aa25-4f40588e396f'
     test_name = 'testCapsCertificationID'
     try:
-      self.assertIn('certificationId', device.cdd)
+      self.assertIn('certificationId', _device.cdd)
     except AssertionError:
       notes = 'certificationId not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1675,14 +1683,14 @@ class Printer(LogoCert):
     else:
       try:
         self.assertEqual(Constants.PRINTER['CERTID'],
-                         device.cdd['certificationId'])
+                         _device.cdd['certificationId'])
       except AssertionError:
         notes = 'Certification ID: %s, expected %s' % (
-            device.cdd['certificationId'], Constants.PRINTER['CERTID'])
+            _device.cdd['certificationId'], Constants.PRINTER['CERTID'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Certification ID: %s' % device.cdd['certificationId']
+        notes = 'Certification ID: %s' % _device.cdd['certificationId']
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsResolvedIssues(self):
@@ -1690,7 +1698,7 @@ class Printer(LogoCert):
     test_id = '5a1ef1e7-26ba-458b-a72f-a5ebf26e437c'
     test_name = 'testCapsResolvedIssues'
     try:
-      self.assertIn('resolvedIssues', device.cdd)
+      self.assertIn('resolvedIssues', _device.cdd)
     except AssertionError:
       notes = 'resolvedIssues not found in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -1716,10 +1724,10 @@ class PreRegistration(LogoCert):
     print 'Listening for the printer\'s advertisements for up to 30 seconds'
     # Using a new instance of MdDnsListener to start sniffing from a clean slate
     # The Mdns browser only signal changes on addition and removal, not update
-    tmp_listener = _mdns.MDnsListener(logger)
+    tmp_listener = _mdns.MDnsListener(_logger)
     tmp_listener.add_listener('privet')
 
-    found = waitForPrivetDiscovery(device.name, tmp_listener)
+    found = waitForPrivetDiscovery(_device.name, tmp_listener)
     try:
       self.assertTrue(found)
     except AssertionError:
@@ -1743,10 +1751,10 @@ class PreRegistration(LogoCert):
     print 'Listening for the printer\'s advertisements for up to 30 seconds'
     # Using a new instance of MdDnsListener to start sniffing from a clean slate
     # The Mdns browser only signal changes on addition and removal, not update
-    tmp_listener = _mdns.MDnsListener(logger)
+    tmp_listener = _mdns.MDnsListener(_logger)
     tmp_listener.add_listener('privet')
 
-    found = waitForPrivetDiscovery(device.name, tmp_listener)
+    found = waitForPrivetDiscovery(_device.name, tmp_listener)
     try:
       self.assertTrue(found)
     except AssertionError:
@@ -1765,7 +1773,7 @@ class PreRegistration(LogoCert):
     test_name = 'testDeviceOffNoAdvertisePrivet'
 
     PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(device.name, False, timeout=300)
+    is_removed = waitForService(_device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
     except AssertionError:
@@ -1776,10 +1784,10 @@ class PreRegistration(LogoCert):
     print 'Listening for the printer\'s advertisements for up to 30 seconds'
     # Using a new instance of MdDnsListener to start sniffing from a clean slate
     # The Mdns browser only signal changes on addition and removal, not update
-    tmp_listener = _mdns.MDnsListener(logger)
+    tmp_listener = _mdns.MDnsListener(_logger)
     tmp_listener.add_listener('privet')
 
-    found = waitForPrivetDiscovery(device.name, tmp_listener)
+    found = waitForPrivetDiscovery(_device.name, tmp_listener)
     try:
       self.assertFalse(found)
     except AssertionError:
@@ -1795,9 +1803,9 @@ class PreRegistration(LogoCert):
       test_id2 = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
       test_name2 = 'testDeviceOffPowerOnAdvertisePrivet'
       # Clear global browser cache before turning on the device, or else the stale printer state will be returned
-      mdns_browser.clear_cache()
+      _mdns_browser.clear_cache()
       PromptUserAction('Power on the printer and wait...')
-      is_added = waitForService(device.name, True, timeout=300)
+      is_added = waitForService(_device.name, True, timeout=300)
       try:
         self.assertTrue(is_added)
       except AssertionError:
@@ -1808,10 +1816,10 @@ class PreRegistration(LogoCert):
       print 'Listening for the printer\'s advertisements for up to 30 seconds'
       # Using a new instance of MdDnsListener to start sniffing from a clean slate
       # The Mdns browser only signal changes on addition and removal, not update
-      tmp_listener = _mdns.MDnsListener(logger)
+      tmp_listener = _mdns.MDnsListener(_logger)
       tmp_listener.add_listener('privet')
 
-      found = waitForPrivetDiscovery(device.name, tmp_listener)
+      found = waitForPrivetDiscovery(_device.name, tmp_listener)
       try:
         self.assertTrue(found)
       except AssertionError:
@@ -1823,7 +1831,7 @@ class PreRegistration(LogoCert):
         self.LogTest(test_id2, test_name2, 'Passed', notes)
       finally:
         # Get the new X-privet-token from the restart
-        device.GetPrivetInfo()
+        _device.GetPrivetInfo()
         tmp_listener.remove_listeners()
 
   def testDeviceRegistrationNotLoggedIn(self):
@@ -1831,7 +1839,7 @@ class PreRegistration(LogoCert):
     test_id = '984be779-3ca4-4bb7-a2e1-e1868f687905'
     test_name = 'testDeviceRegistrationNotLoggedIn'
 
-    success = device.Register('Press ENTER after confirming registration', use_token=False)
+    success = _device.Register('Press ENTER after confirming registration', use_token=False)
     try:
       self.assertFalse(success)
     except AssertionError:
@@ -1842,22 +1850,22 @@ class PreRegistration(LogoCert):
       notes = 'Not able to register printer without a valid auth token.'
       self.LogTest(test_id, test_name, 'Passed', notes)
       # Cancel the registration so the printer is not in an unknown state
-      device.CancelRegistration()
+      _device.CancelRegistration()
 
 
   def testDeviceCancelRegistration(self):
     """Test printer cancellation prevents registration."""
     test_id = 'ce1c9c46-3164-4f07-aa41-241867a4a28b'
     test_name = 'testDeviceCancelRegistration'
-    logger.info('Testing printer registration cancellation.')
+    _logger.info('Testing printer registration cancellation.')
 
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on printer panel.'
 
-    registration_success = device.Register('Press ENTER after CANCELLING the registration on the printer')
+    registration_success = _device.Register('Press ENTER after CANCELLING the registration on the printer')
     if not registration_success:
       # Confirm the user's account has no registered printers
-      res = gcp.Search(device.model)
+      res = _gcp.Search(_device.model)
       try:
         # Assert that 'printers' list is empty
         self.assertFalse(res['printers'])
@@ -1871,7 +1879,7 @@ class PreRegistration(LogoCert):
     else:
       notes = 'Error cancelling registration process.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-      device.CancelRegistration()
+      _device.CancelRegistration()
 
   def testLocalPrintGuestUserUnregisteredPrinter(self):
     """Verify local print for unregistered printer is correct."""
@@ -1879,7 +1887,7 @@ class PreRegistration(LogoCert):
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
     return
     # New instance of device that is not authenticated - contains no auth-token
-    guest_device = Device(logger, None, None, privet_port=device.port)
+    guest_device = Device(_logger, None, None, privet_port=_device.port)
     guest_device.GetDeviceCDDLocally()
 
     cjt = CloudJobTicket(guest_device.privet_info['version'], guest_device.cdd['caps'])
@@ -1915,12 +1923,12 @@ class Registration(LogoCert):
     print 'Wait for the registration request to time out.'
 
     # Timeout test
-    success = device.StartPrivetRegister()
+    success = _device.StartPrivetRegister()
     if success:
       PromptAndWaitForUserAction('Press ENTER once the printer registration times out.')
       Sleep('REGISTRATION')
       # Confirm the user's account has no registered printers
-      res = gcp.Search(device.model)
+      res = _gcp.Search(_device.model)
       try:
         self.assertFalse(res['printers'])
       except AssertionError:
@@ -1936,16 +1944,16 @@ class Registration(LogoCert):
       raise
 
     # Register user1
-    success = device.StartPrivetRegister(user=Constants.USER['EMAIL'])
+    success = _device.StartPrivetRegister(user=Constants.USER['EMAIL'])
     try:
       self.assertTrue(success)
     except AssertionError:
       notes = 'Not able to register user1.'
       self.LogTest(test_id, test_name, 'Failed', notes)
-      device.CancelRegistration(user=Constants.USER['EMAIL'])
+      _device.CancelRegistration(user=Constants.USER['EMAIL'])
       raise
     else:
-      success = device.Register('User2 Registration attempt',
+      success = _device.Register('User2 Registration attempt',
                                 user=Constants.USER2['EMAIL'], no_wait=True)
       try:
         self.assertFalse(success)
@@ -1960,20 +1968,20 @@ class Registration(LogoCert):
 
         # Finish the registration process
         success = False
-        if device.GetPrivetClaimToken():
-          if device.ConfirmRegistration(device.auth_token):
-            device.FinishPrivetRegister()
+        if _device.GetPrivetClaimToken():
+          if _device.ConfirmRegistration(_device.auth_token):
+            _device.FinishPrivetRegister()
             success = True
         try:
           self.assertTrue(success)
         except AssertionError:
           notes = 'User1 failed to register.'
           self.LogTest(test_id, test_name, 'Failed', notes)
-          device.CancelRegistration()
+          _device.CancelRegistration()
           raise
         else:
           print 'Waiting up to 2 minutes to complete the registration.'
-          success = waitForRegistrationStatus(device.name, True, 120)
+          success = waitForRegistrationStatus(_device.name, True, 120)
           try:
             self.assertTrue(success)
           except AssertionError:
@@ -1981,7 +1989,7 @@ class Registration(LogoCert):
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
-            res = gcp.Search(device.model)
+            res = _gcp.Search(_device.model)
             try:
               self.assertTrue(res['printers'])
             except AssertionError:
@@ -2010,7 +2018,7 @@ class LocalDiscovery(LogoCert):
     printer_found = False
 
     setting = {'pending': {'local_discovery': False}}
-    res = gcp.Update(device.dev_id, setting=setting)
+    res = _gcp.Update(_device.dev_id, setting=setting)
 
     if not res['success']:
       notes = 'Error turning off Local Discovery.'
@@ -2018,14 +2026,14 @@ class LocalDiscovery(LogoCert):
       raise
     # Give printer time to update.
     print 'Waiting up to 120 seconds for printer to accept changes.'
-    success = waitForService(device.name, False, timeout=120)
+    success = waitForService(_device.name, False, timeout=120)
 
     if not success:
       notes = 'Printer did not update accordingly within the allotted time.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
-    for v in mdns_browser.listener.discovered.values():
+    for v in _mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
           printer_found = True
@@ -2044,7 +2052,7 @@ class LocalDiscovery(LogoCert):
       raise
 
     setting = {'pending': {'local_discovery': True}}
-    res = gcp.Update(device.dev_id, setting=setting)
+    res = _gcp.Update(_device.dev_id, setting=setting)
     if not res['success']:
       notes2 = 'Error turning on Local Discovery.'
       self.LogTest(test_id, test_name, 'Blocked', notes2)
@@ -2052,14 +2060,14 @@ class LocalDiscovery(LogoCert):
 
     # Give printer time to update.
     print 'Waiting up to 120 seconds for printer to accept changes.'
-    success = waitForService(device.name, True, timeout=120)
+    success = waitForService(_device.name, True, timeout=120)
 
     if not success:
       notes2 = 'Printer did not update accordingly within the alloted time.'
       self.LogTest(test_id, test_name, 'Blocked', notes2)
       raise
 
-    for v in mdns_browser.listener.discovered.values():
+    for v in _mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
           printer_found = True
@@ -2088,7 +2096,7 @@ class LocalDiscovery(LogoCert):
 
     print 'This test should begin with the printer turned off.'
     PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(device.name, False, timeout=300)
+    is_removed = waitForService(_device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
     except AssertionError:
@@ -2097,7 +2105,7 @@ class LocalDiscovery(LogoCert):
       raise
 
     PromptUserAction('Power on the printer and wait...')
-    is_added = waitForService(device.name, True, timeout=300)
+    is_added = waitForService(_device.name, True, timeout=300)
     try:
       self.assertTrue(is_added)
     except AssertionError:
@@ -2105,9 +2113,9 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     # Get the new X-privet-token from the restart
-    device.GetPrivetInfo()
+    _device.GetPrivetInfo()
 
-    for v in mdns_browser.listener.discovered.values():
+    for v in _mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
           printer_found = True
@@ -2135,7 +2143,7 @@ class LocalDiscovery(LogoCert):
 
     print 'This test must start with the printer on and operational.'
     PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(device.name, False, timeout=300)
+    is_removed = waitForService(_device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
     except AssertionError:
@@ -2143,7 +2151,7 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    for v in mdns_browser.listener.discovered.values():
+    for v in _mdns_browser.listener.discovered.values():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
           printer_found = True
@@ -2164,7 +2172,7 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Passed', notes)
 
     PromptUserAction('Power on the printer and wait...')
-    is_added = waitForService(device.name, True, timeout=300)
+    is_added = waitForService(_device.name, True, timeout=300)
     try:
       self.assertTrue(is_added)
     except AssertionError:
@@ -2180,22 +2188,22 @@ class LocalDiscovery(LogoCert):
     printer_found = False
     print 'Ensure printer stays on and remains in idle state.'
     #TODO: Fix this test - may need something other than zeroconf for this...
-    #      this test is broken, mdns_browser updates discovered dict only when the printer is turned on or off
+    #      this test is broken, _mdns_browser updates discovered dict only when the printer is turned on or off
     #      Since the printer is already on, even if there was advertisements, discovered[k]['found'] would never get updated
 
     # Remove any broadcast entries from dictionary.
-    for (k, v) in mdns_browser.listener.discovered.items():
+    for (k, v) in _mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
-          mdns_browser.listener.discovered[k]['found'] = None
+          _mdns_browser.listener.discovered[k]['found'] = None
     # Monitor the local network for privet broadcasts.
     print 'Listening for network broadcasts for 1 minute.'
     time.sleep(60)
-    for (k, v) in mdns_browser.listener.discovered.items():
+    for (k, v) in _mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
-          if mdns_browser.listener.discovered[k]['found'] is None:
-            mdns_browser.listener.discovered[k]['found'] = True
+          if _mdns_browser.listener.discovered[k]['found'] is None:
+            _mdns_browser.listener.discovered[k]['found'] = True
           else:
             printer_found = True
 
@@ -2215,10 +2223,10 @@ class LocalDiscovery(LogoCert):
     test_name = 'testUpdateLocalSettings'
     # Get the current xmpp timeout value.
 
-    orig = device.cdd['local_settings']['current']['xmpp_timeout_value']
+    orig = _device.cdd['local_settings']['current']['xmpp_timeout_value']
     new = orig + 600
     setting = {'pending': {'xmpp_timeout_value': new}}
-    res = gcp.Update(device.dev_id, setting=setting)
+    res = _gcp.Update(_device.dev_id, setting=setting)
 
     if not res['success']:
       notes = 'Error sending Update of local settings.'
@@ -2227,7 +2235,7 @@ class LocalDiscovery(LogoCert):
 
     print 'Waiting up to 30 seconds for printer to accept pending settings'
     try:
-      success = gcp.WaitForUpdate(device.dev_id, 'xmpp_timeout_value', new)
+      success = _gcp.WaitForUpdate(_device.dev_id, 'xmpp_timeout_value', new)
       self.assertTrue(success)
     except AssertionError:
       notes = 'Failed to detect update before timing out.'
@@ -2235,8 +2243,8 @@ class LocalDiscovery(LogoCert):
       raise
     else:
       # Refresh the values of the device.
-      device.GetDeviceCDD(device.dev_id)
-      timeout = device.cdd['local_settings']['current']['xmpp_timeout_value']
+      _device.GetDeviceCDD(_device.dev_id)
+      timeout = _device.cdd['local_settings']['current']['xmpp_timeout_value']
       try:
         self.assertEqual(timeout, new)
       except AssertionError:
@@ -2248,7 +2256,7 @@ class LocalDiscovery(LogoCert):
         self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
         setting = {'pending': {'xmpp_timeout_value': orig}}
-        res = gcp.Update(device.dev_id, setting=setting)
+        res = _gcp.Update(_device.dev_id, setting=setting)
         try:
           self.assertTrue(res['success'])
         except AssertionError:
@@ -2261,7 +2269,7 @@ class LocalPrinting(LogoCert):
   """Tests of local printing functionality."""
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(device.details['gcpVersion'], device.cdd['caps'])
+    self.cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
 
   @classmethod
   def setUpClass(cls):
@@ -2274,7 +2282,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintGuestUser'
 
     # New instance of device that is not authenticated - contains no auth-token
-    guest_device = Device(logger, None, None, privet_port=device.port)
+    guest_device = Device(_logger, None, None, privet_port=_device.port)
     guest_device.GetDeviceCDDLocally()
 
     job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
@@ -2297,7 +2305,7 @@ class LocalPrinting(LogoCert):
 
     print 'Disabling local printing'
     setting = {'pending': {'printer/local_printing_enabled': False}}
-    res = gcp.Update(device.dev_id, setting=setting)
+    res = _gcp.Update(_device.dev_id, setting=setting)
 
     if not res['success']:
       notes = 'Error turning off Local Printing.'
@@ -2307,14 +2315,14 @@ class LocalPrinting(LogoCert):
     # Give the printer time to update.
     print 'Waiting up to 30 seconds for printer to accept pending settings'
     try:
-      success = gcp.WaitForUpdate(device.dev_id, 'printer/local_printing_enabled', False)
+      success = _gcp.WaitForUpdate(_device.dev_id, 'printer/local_printing_enabled', False)
       self.assertTrue(success)
     except AssertionError:
       notes = 'Failed to detect update before timing out.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNone(job_id)
     except AssertionError:
@@ -2326,7 +2334,7 @@ class LocalPrinting(LogoCert):
 
     print 'Re-enabling local printing'
     setting = {'pending': {'printer/local_printing_enabled': True}}
-    res = gcp.Update(device.dev_id, setting=setting)
+    res = _gcp.Update(_device.dev_id, setting=setting)
 
     if not res['success']:
       notes2 = 'Error turning on Local Printing.'
@@ -2336,14 +2344,14 @@ class LocalPrinting(LogoCert):
     # Give the printer time to update.
     print 'Waiting up to 30 seconds for printer to accept pending settings'
     try:
-      success = gcp.WaitForUpdate(device.dev_id, 'printer/local_printing_enabled', True)
+      success = _gcp.WaitForUpdate(_device.dev_id, 'printer/local_printing_enabled', True)
       self.assertTrue(success)
     except AssertionError:
       notes = 'Failed to detect update before timing out.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2366,7 +2374,7 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2387,7 +2395,7 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddMarginOption(CjtConstants.BORDERLESS, 0, 0, 0, 0)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2395,7 +2403,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
 
     self.cjt.AddMarginOption(CjtConstants.STANDARD, 50, 50, 50, 50)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2421,7 +2429,7 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2436,7 +2444,7 @@ class LocalPrinting(LogoCert):
     test_name2 = 'testLocalPrintLayoutLandscape'
 
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    job_id = device.LocalPrint(test_name2, Constants.IMAGES['PWG3'], self.cjt)
+    job_id = _device.LocalPrint(test_name2, Constants.IMAGES['PWG3'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2453,7 +2461,7 @@ class LocalPrinting(LogoCert):
     test_name = 'testLocalPrintPageRange'
 
     self.cjt.AddPageRangeOption(2,3)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2475,7 +2483,7 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddCopiesOption(2)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2497,7 +2505,7 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddColorOption(CjtConstants.COLOR)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2512,7 +2520,7 @@ class LocalPrinting(LogoCert):
     test_name2 = 'testLocalPrintMonochromeSelect'
 
     self.cjt.AddColorOption(CjtConstants.MONOCHROME)
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2528,12 +2536,12 @@ class LocalPrinting(LogoCert):
     test_id = '530c74f7-2764-405e-916b-21fc943ea1f8'
     test_name = 'testLocalPrintUpdateMgtPage'
     #TODO: not tested yet, need a printer that supports this
-    if '/privet/printer/jobstate' not in device.privet_info['api']:
+    if '/privet/printer/jobstate' not in _device.privet_info['api']:
       notes = 'Printer does not support the jobstate privet API.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2545,7 +2553,7 @@ class LocalPrinting(LogoCert):
       PromptAndWaitForUserAction('Press ENTER once the document id printed')
       print 'Waiting 30 seconds for job to print and status to be updated.'
       time.sleep(30)
-      job = device.JobState(job_id)
+      job = _device.JobState(job_id)
       try:
         self.assertIsNotNone(job)
       except AssertionError:
@@ -2568,11 +2576,11 @@ class LocalPrinting(LogoCert):
     test_id = '8745d54b-045a-4378-a024-d331785ac62e'
     test_name = 'testLocalPrintHTML'
 
-    if 'text/html' not in device.supported_types:
+    if 'text/html' not in _device.supported_types:
       self.LogTest(test_id, test_name, 'Skipped', 'No local print Html support')
       return
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['HTML1'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['HTML1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2589,12 +2597,12 @@ class LocalPrinting(LogoCert):
     test_id = '01a0aa7e-80e3-4336-8183-0c5cbf8e9f19'
     test_name = 'testLocalPrintJPG'
 
-    if 'image/jpeg' not in device.supported_types and \
-       'image/pjpeg' not in device.supported_types:
+    if 'image/jpeg' not in _device.supported_types and \
+       'image/pjpeg' not in _device.supported_types:
       self.LogTest(test_id, test_name, 'Skipped', 'No local print Jpg support')
       return
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['JPG12'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['JPG12'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2611,11 +2619,11 @@ class LocalPrinting(LogoCert):
     test_id = 'a4588515-2c18-4f57-80c6-9c23cb57f074'
     test_name = 'testLocalPrintPNG'
 
-    if 'image/png' not in device.supported_types:
+    if 'image/png' not in _device.supported_types:
       self.LogTest(test_id, test_name, 'Skipped', 'No local print PNG support')
       return
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PNG6'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PNG6'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2632,11 +2640,11 @@ class LocalPrinting(LogoCert):
     test_id = '7b61815b-5719-4114-bdf7-8fce6e0d8dc5'
     test_name = 'testLocalPrintGIF'
 
-    if 'image/gif' not in device.supported_types:
+    if 'image/gif' not in _device.supported_types:
       self.LogTest(test_id, test_name, 'Skipped', 'No local print Gif support')
       return
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['GIF4'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['GIF4'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2653,11 +2661,11 @@ class LocalPrinting(LogoCert):
     test_id = '0a02c47a-32b0-47b4-af7a-810c002d282d'
     test_name = 'testLocalPrintPDF'
 
-    if 'application/pdf' not in device.supported_types:
+    if 'application/pdf' not in _device.supported_types:
       self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
       return
 
-    job_id = device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2671,7 +2679,7 @@ class LocalPrinting(LogoCert):
 
 
 class PostRegistration(LogoCert):
-  """Tests to run after device is registered."""
+  """Tests to run after _device is registered."""
 
   @classmethod
   def setUpClass(cls):
@@ -2684,15 +2692,15 @@ class PostRegistration(LogoCert):
     test_name = 'testDeviceDetails'
 
     try:
-      self.assertIsNotNone(device.name)
+      self.assertIsNotNone(_device.name)
     except AssertionError:
       notes = 'Error finding device in GCP MGT Page.'
-      self.logger.error('Check your printer model in the _config file.')
+      self._logger.error('Check your printer model in the _config file.')
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       notes = 'Found printer details on GCP MGT page.'
-      device.GetDeviceCDD(device.dev_id)
+      _device.GetDeviceCDD(_device.dev_id)
       self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testRegisteredDeviceNoPrivetAdvertise(self):
@@ -2701,8 +2709,8 @@ class PostRegistration(LogoCert):
     test_name = 'testRegisteredDeviceNoPrivetAdvertise'
 
     print 'Waiting up to 2 minutes to complete the registration.'
-    mdns_browser.remove_service_entry(device.name)
-    success = waitForRegistrationStatus(device.name, True, 120)
+    _mdns_browser.remove_service_entry(_device.name)
+    success = waitForRegistrationStatus(_device.name, True, 120)
     try:
       self.assertTrue(success)
     except AssertionError:
@@ -2719,7 +2727,7 @@ class PostRegistration(LogoCert):
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
 
     PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(device.name, False, timeout=300)
+    is_removed = waitForService(_device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
     except AssertionError:
@@ -2730,28 +2738,28 @@ class PostRegistration(LogoCert):
       print'Waiting up to 10 minutes for printer status update. Polling every 30 seconds.'
       end = time.time() + 600
       while time.time() < end:
-        device.GetDeviceDetails()
-        if 'OFFLINE' in device.status:
+        _device.GetDeviceDetails()
+        if 'OFFLINE' in _device.status:
           break
         time.sleep(30) # Not using Constant.SLEEP['POLL'] here since the status update actually takes a while
       try:
-        self.assertIsNotNone(device.status)
+        self.assertIsNotNone(_device.status)
       except AssertionError:
         notes = 'Device has no status.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       try:
-        self.assertIn('OFFLINE', device.status)
+        self.assertIn('OFFLINE', _device.status)
       except AssertionError:
-        notes = 'Device is not offline. Status: %s' % device.status
+        notes = 'Device is not offline. Status: %s' % _device.status
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Status: %s' % device.status
+        notes = 'Status: %s' % _device.status
         self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
         PromptUserAction('Power on the printer and wait...')
-        is_added = waitForService(device.name, True, timeout=300)
+        is_added = waitForService(_device.name, True, timeout=300)
         try:
           self.assertTrue(is_added)
         except AssertionError:
@@ -2759,7 +2767,7 @@ class PostRegistration(LogoCert):
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         # Get the new X-privet-token from the restart
-        device.GetPrivetInfo()
+        _device.GetPrivetInfo()
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
@@ -2767,7 +2775,7 @@ class PostRegistration(LogoCert):
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
 
     PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(device.name, False, timeout=300)
+    is_removed = waitForService(_device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
     except AssertionError:
@@ -2776,9 +2784,9 @@ class PostRegistration(LogoCert):
       raise
     else:
       # Need to clear the cache of zeroconf, or else the stale printer details will be returned
-      mdns_browser.clear_cache()
+      _mdns_browser.clear_cache()
       PromptUserAction('Power on the printer and wait...')
-      is_added = waitForService(device.name, True, timeout=300)
+      is_added = waitForService(_device.name, True, timeout=300)
       try:
         self.assertTrue(is_added)
       except AssertionError:
@@ -2787,7 +2795,7 @@ class PostRegistration(LogoCert):
         raise
       else:
         # Get the new X-privet-token from the restart
-        device.GetPrivetInfo()
+        _device.GetPrivetInfo()
         is_registered = isPrinterRegistered(self.printer)
         try:
           self.assertTrue(is_registered)
@@ -2823,7 +2831,7 @@ class PrinterState(LogoCert):
     Returns:
       boolean: True = Pass, False = Fail.
     """
-    uiMsg = device.cdd['uiState']['caption'].lower()
+    uiMsg = _device.cdd['uiState']['caption'].lower()
     uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
     uiMsg.strip()
 
@@ -2861,13 +2869,13 @@ class PrinterState(LogoCert):
     Returns:
       boolean: True = Pass, False = Fail.
     """
-    is_healthy = False if 'caption' in device.cdd['uiState'] else True
+    is_healthy = False if 'caption' in _device.cdd['uiState'] else True
 
     if is_healthy:
       self.LogTest(test_id, test_name, 'Passed')
       return True
     else:
-      notes = 'UI shows error state with message: %s' % device.cdd['uiState']['caption']
+      notes = 'UI shows error state with message: %s' % _device.cdd['uiState']['caption']
       self.LogTest(test_id, test_name, 'Failed', notes)
       return False
 
@@ -2884,9 +2892,9 @@ class PrinterState(LogoCert):
     PromptAndWaitForUserAction('Press ENTER once printer has network connection.')
     print 'Waiting 60 seconds.'
     time.sleep(60)
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertIn('ONLINE', device.status)
+      self.assertIn('ONLINE', _device.status)
     except AssertionError:
       notes = 'Device status is not online.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2907,9 +2915,9 @@ class PrinterState(LogoCert):
     print 'Open the paper tray to the printer.'
     PromptAndWaitForUserAction('Press ENTER once the paper tray is open.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertTrue(device.error_state or device.warning_state)
+      self.assertTrue(_device.error_state or _device.warning_state)
     except AssertionError:
       notes = 'Printer is not in error state with open paper tray.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2924,9 +2932,9 @@ class PrinterState(LogoCert):
     print 'Now close the paper tray.'
     PromptAndWaitForUserAction('Press ENTER once the paper tray is closed.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertFalse(device.error_state or device.warning_state)
+      self.assertFalse(_device.error_state or _device.warning_state)
     except AssertionError:
       notes = 'Paper tray is closed but printer reports error.'
       self.LogTest(test_id2, test_name2, 'Failed', notes)
@@ -2947,7 +2955,7 @@ class PrinterState(LogoCert):
     print 'Remove all media from the paper tray.'
     PromptAndWaitForUserAction('Press ENTER once all media is removed.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     if not self.VerifyUiStateMessage(test_id, test_name, ['input/tray'],suffixes=('is empty')):
       raise
 
@@ -2956,7 +2964,7 @@ class PrinterState(LogoCert):
     print 'Place media in all paper trays.'
     PromptAndWaitForUserAction('Press ENTER once you have placed paper in paper tray.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     if not self.VerifyUiStateHealthy(test_id2, test_name2):
       raise
 
@@ -2972,9 +2980,9 @@ class PrinterState(LogoCert):
     print 'Remove the (or one) toner cartridge from the printer.'
     PromptAndWaitForUserAction('Press ENTER once the toner cartridge is removed.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertTrue(device.error_state)
+      self.assertTrue(_device.error_state)
     except AssertionError:
       notes = 'Printer is not in error state with missing toner cartridge.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2988,9 +2996,9 @@ class PrinterState(LogoCert):
     print 'Insert an empty toner cartridge in printer.'
     PromptAndWaitForUserAction('Press ENTER once an empty toner cartridge is in printer.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertTrue(device.error_state)
+      self.assertTrue(_device.error_state)
     except AssertionError:
       notes = 'Printer is not in error state with empty toner.'
       self.LogTest(test_id2, test_name2, 'Failed', notes)
@@ -3004,9 +3012,9 @@ class PrinterState(LogoCert):
     print 'Verify that the error is fixed by replacing the original toner cartridge.'
     PromptAndWaitForUserAction('Press ENTER once toner is replaced in printer.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertFalse(device.error_state)
+      self.assertFalse(_device.error_state)
     except AssertionError:
       notes = 'Printer is in error state with good toner cartridge.'
       self.LogTest(test_id3, test_name3, 'Failed', notes)
@@ -3027,9 +3035,9 @@ class PrinterState(LogoCert):
     print 'Open a cover on your printer.'
     PromptAndWaitForUserAction('Press ENTER once the cover has been opened.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertTrue(device.error_state)
+      self.assertTrue(_device.error_state)
     except AssertionError:
       notes = 'Printer error state is not True with open cover.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3043,9 +3051,9 @@ class PrinterState(LogoCert):
     print 'Now close the printer cover.'
     PromptAndWaitForUserAction('Press ENTER once the printer cover is closed.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertFalse(device.error_state)
+      self.assertFalse(_device.error_state)
     except AssertionError:
       notes = 'Printer error state is True with closed cover.'
       self.LogTest(test_id2, test_name2, 'Failed', notes)
@@ -3062,9 +3070,9 @@ class PrinterState(LogoCert):
     print 'Cause the printer to become jammed with paper.'
     PromptAndWaitForUserAction('Press ENTER once the printer has become jammed.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertTrue(device.error_state)
+      self.assertTrue(_device.error_state)
     except AssertionError:
       notes = 'Printer is not in error state with paper jam.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3078,9 +3086,9 @@ class PrinterState(LogoCert):
     print 'Now clear the paper jam.'
     PromptAndWaitForUserAction('Press ENTER once the paper jam is clear from printer.')
     Sleep('PRINTER_STATE')
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertFalse(device.error_state)
+      self.assertFalse(_device.error_state)
     except AssertionError:
       notes = 'Printer is in error after paper jam was cleared.'
       self.LogTest(test_id2, test_name2, 'Failed', notes)
@@ -3094,7 +3102,7 @@ class JobState(LogoCert):
   """Test that print jobs are reported correctly from the printer."""
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(device.details['gcpVersion'], device.cdd['caps'])
+    self.cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
     self.timeout = 600
 
   @classmethod
@@ -3108,7 +3116,7 @@ class JobState(LogoCert):
     test_name = 'testOnePagePrintJobState'
     print 'Wait for this one page print job to finish.'
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG6'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG6'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3117,7 +3125,7 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3140,7 +3148,7 @@ class JobState(LogoCert):
     test_name = 'testMultiPageJobState'
     print 'Wait until job starts printing 7 page PDF file...'
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3150,14 +3158,14 @@ class JobState(LogoCert):
     else:
       print 'When printer starts printing, Job State should transition to in progress.'
       try:
-        gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.IN_PROGRESS)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.IN_PROGRESS)
       except AssertionError:
         notes = 'Job is not "In progress" while job is still printing.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         try:
-          job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+          job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
         except AssertionError:
           notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
           self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3179,15 +3187,15 @@ class JobState(LogoCert):
     test_id = 'd270088d-0a95-416c-98ab-c703cadde1c3'
     test_name = 'testJobDeletionRecovery'
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     if output['success']:
       PromptAndWaitForUserAction('Press ENTER once the first page prints out.')
-      delete_res = gcp.DeleteJob(output['job']['id'])
+      delete_res = _gcp.DeleteJob(output['job']['id'])
       if delete_res['success']:
         # Since it's PDF file give the job time to finish printing.
         PromptAndWaitForUserAction('Press ENTER once printer is finished printing')
-        output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
+        output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
         try:
           self.assertTrue(output['success'])
         except AssertionError:
@@ -3200,12 +3208,12 @@ class JobState(LogoCert):
           self.ManualPass(test_id, test_name)
       else:
         notes = 'Error deleting IN_PROGRESS job.'
-        logger.error(notes)
+        _logger.error(notes)
         self.LogTest(test_id, test_name, 'Blocked', notes)
         raise
     else:
       notes = 'Error printing multi-page PDF file.'
-      logger.error(notes)
+      _logger.error(notes)
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
@@ -3217,11 +3225,11 @@ class JobState(LogoCert):
 
     PromptAndWaitForUserAction('Press ENTER once input tray has been emptied.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     if output['success']:
       try:
-        job = gcp.WaitJobStatusNotIn(output['job']['id'], device.dev_id,
+        job = _gcp.WaitJobStatusNotIn(output['job']['id'], _device.dev_id,
                                      [CjtConstants.QUEUED, CjtConstants.IN_PROGRESS],
                                      timeout = self.timeout)
       except AssertionError:
@@ -3242,25 +3250,25 @@ class JobState(LogoCert):
             #TODO: Do we really want to fail here if 'tray' is not in the msg?
             self.assertIn('', job_state_msg)
           except AssertionError:
-            logger.error('The Job State error message did not contain tray')
-            logger.error(notes)
-            logger.error('Note that the error message may be ok.')
+            _logger.error('The Job State error message did not contain tray')
+            _logger.error(notes)
+            _logger.error('Note that the error message may be ok.')
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
             PromptAndWaitForUserAction('Press ENTER after placing the papers back in the input tray.')
             print 'After placing the paper back, Job State should transition to in progress.'
             try:
-              job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.IN_PROGRESS)
+              job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.IN_PROGRESS)
             except AssertionError:
               notes = 'Job is not in progress: %s' % job['status']
-              logger.error(notes)
+              _logger.error(notes)
               self.LogTest(test_id, test_name, 'Failed', notes)
               raise
             else:
               print 'Wait for the print job to finish.'
               try:
-                job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+                job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
               except AssertionError:
                 notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
                 self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3285,10 +3293,10 @@ class JobState(LogoCert):
     print 'Remove ink cartridge or toner from the printer.'
     PromptAndWaitForUserAction('Press ENTER once the toner is removed.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
     if output['success']:
       try:
-        job = gcp.WaitJobStatusNotIn(output['job']['id'], device.dev_id,
+        job = _gcp.WaitJobStatusNotIn(output['job']['id'], _device.dev_id,
                                      [CjtConstants.QUEUED, CjtConstants.IN_PROGRESS],
                                      timeout = self.timeout)
       except AssertionError:
@@ -3309,25 +3317,25 @@ class JobState(LogoCert):
             # Ensure the message at least has the string or more than 4 chars.
             self.assertGreater(len(job_state_msg), 4)
           except AssertionError:
-            logger.error('The Job State error message is insufficient')
-            logger.error(notes)
-            logger.error('Note that the error message may be ok.')
+            _logger.error('The Job State error message is insufficient')
+            _logger.error(notes)
+            _logger.error('Note that the error message may be ok.')
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
             PromptAndWaitForUserAction('Press ENTER once the toner or ink is placed back in printer.')
             print 'After placing the toner back, Job State should transition to in progress.'
             try:
-              job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.IN_PROGRESS)
+              job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.IN_PROGRESS)
             except AssertionError:
               notes = 'Job is not in progress: %s' % job['status']
-              logger.error(notes)
+              _logger.error(notes)
               self.LogTest(test_id, test_name, 'Failed', notes)
               raise
             else:
               print 'Wait for the print job to finish.'
               try:
-                job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+                job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
               except AssertionError:
                 notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
                 self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3346,7 +3354,7 @@ class JobState(LogoCert):
     test_name = 'testJobStateNetworkOutage'
     print 'Once the printer prints 1 page, disconnect printer from network.'
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
 
     if output['success']:
       job_id = output['job']['id']
@@ -3354,7 +3362,7 @@ class JobState(LogoCert):
       PromptAndWaitForUserAction('Press ENTER once network is disconnected.')
 
       try:
-        gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
+        _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % \
                 (CjtConstants.IN_PROGRESS, 30)
@@ -3365,7 +3373,7 @@ class JobState(LogoCert):
         PromptAndWaitForUserAction('Press ENTER once network is reconnected')
         print 'Once network is reconnected, Job state should transition to in progress.'
         try:
-          gcp.WaitJobStatus(job_id, device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
+          _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
         except AssertionError:
           notes = 'Job status did not transition to %s within %s seconds.' % \
                   (CjtConstants.IN_PROGRESS, 30)
@@ -3374,7 +3382,7 @@ class JobState(LogoCert):
         else:
           print 'Wait for the print job to finish.'
           try:
-            job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+            job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
           except AssertionError:
             notes = 'Job status did not transition to Done within %s seconds of starting print job.' % (self.timeout)
             self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3396,7 +3404,7 @@ class JobState(LogoCert):
     print 'Place page inside print path to cause a paper jam.'
     PromptAndWaitForUserAction('Press ENTER once printer reports paper jam.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF9'], test_name, self.cjt)
 
     try:
       self.assertTrue(output['success'])
@@ -3407,11 +3415,11 @@ class JobState(LogoCert):
     else:
       print 'Verifying job is reported in error state.'
       try:
-        gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.ERROR, timeout=30)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.ERROR, timeout=30)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % \
                 (CjtConstants.ERROR, 30)
-        logger.error(notes)
+        _logger.error(notes)
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3432,7 +3440,7 @@ class JobState(LogoCert):
 
     self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
 
     print 'Attempting to print with A4 media size.'
     print 'Fail this test if printer does not warn user to load correct size'
@@ -3448,7 +3456,7 @@ class JobState(LogoCert):
       PromptAndWaitForUserAction('After placing the correct paper size, press ENTER')
       print 'Printer should continue printing and should complete the print job.'
       try:
-        gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3463,7 +3471,7 @@ class JobState(LogoCert):
     print 'This tests that multiple jobs in print queue are printed.'
 
     for _ in xrange(3):
-      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
+      output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
       try:
         self.assertTrue(output['success'])
       except AssertionError:
@@ -3483,7 +3491,7 @@ class JobState(LogoCert):
     print 'This tests that an offline printer will print all jobs'
     print 'when it comes back online.'
     PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(device.name, False, timeout=300)
+    is_removed = waitForService(_device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
     except AssertionError:
@@ -3493,7 +3501,7 @@ class JobState(LogoCert):
 
     for _ in xrange(3):
       print 'Submitting job#',_,' to the print queue.'
-      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
+      output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
       try:
         self.assertTrue(output['success'])
       except AssertionError:
@@ -3501,14 +3509,14 @@ class JobState(LogoCert):
         self.LogTest(test_id, test_name, 'Blocked', notes)
         raise
       try:
-        gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.QUEUED, timeout=30)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.QUEUED, timeout=30)
       except AssertionError:
         notes = 'Print job %s is not in Queued state.' %(_)
         self.LogTest(test_id, test_name, 'Blocked', notes)
         raise
 
     PromptUserAction('Power on the printer and wait...')
-    is_added = waitForService(device.name, True, timeout=300)
+    is_added = waitForService(_device.name, True, timeout=300)
     try:
       self.assertTrue(is_added)
     except AssertionError:
@@ -3517,7 +3525,7 @@ class JobState(LogoCert):
       raise
     else:
       # Get the new X-privet-token from the restart
-      device.GetPrivetInfo()
+      _device.GetPrivetInfo()
       print 'Verify that all 3 print jobs are printed.'
       self.ManualPass(test_id, test_name)
 
@@ -3527,7 +3535,7 @@ class JobState(LogoCert):
     test_name = 'testDeleteQueuedJob'
 
     PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(device.name, False, timeout=300)
+    is_removed = waitForService(_device.name, False, timeout=300)
     try:
       self.assertTrue(is_removed)
     except AssertionError:
@@ -3538,7 +3546,7 @@ class JobState(LogoCert):
     doc_to_print = Constants.IMAGES['PNG7']
 
     print 'Attempting to add a job to the queue.'
-    output = gcp.Submit(device.dev_id, doc_to_print, test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, doc_to_print, test_name, self.cjt)
 
     try:
       self.assertTrue(output['success'])
@@ -3548,14 +3556,14 @@ class JobState(LogoCert):
       raise
 
     try:
-      gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.QUEUED, timeout=30)
+      _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.QUEUED, timeout=30)
     except AssertionError:
       notes = 'Print job is not in queued state.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
     print 'Attempting to delete job in queued state.'
-    job_delete = gcp.DeleteJob(output['job']['id'])
+    job_delete = _gcp.DeleteJob(output['job']['id'])
     try:
       self.assertTrue(job_delete['success'])
     except AssertionError:
@@ -3564,7 +3572,7 @@ class JobState(LogoCert):
       raise
     else:
       PromptUserAction('Power on the printer and wait...')
-      is_added = waitForService(device.name, True, timeout=300)
+      is_added = waitForService(_device.name, True, timeout=300)
       try:
         self.assertTrue(is_added)
       except AssertionError:
@@ -3572,7 +3580,7 @@ class JobState(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       # Get the new X-privet-token from the restart
-      device.GetPrivetInfo()
+      _device.GetPrivetInfo()
       print 'Verify printer does not go into error state because of deleted job'
       self.ManualPass(test_id, test_name)
 
@@ -3586,9 +3594,9 @@ class JobState(LogoCert):
     print 'Submitting a malformatted PDF file.'
 
     # First printing a malformatted PDF file. Not expected to print.
-    gcp.Submit(device.dev_id, Constants.IMAGES['PDF5'], test_name, self.cjt)
+    _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF5'], test_name, self.cjt)
     # Now print a valid file.
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name2, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF9'], test_name2, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3597,7 +3605,7 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3613,7 +3621,7 @@ class JobState(LogoCert):
     test_id = 'e078c865-738a-44a7-bf32-cff5c47d0857'
     test_name = 'testPagesPrinted'
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     print 'Printing a 3 page PDF file'
     try:
       self.assertTrue(output['success'])
@@ -3623,7 +3631,7 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        job = gcp.WaitJobStatus(output['job']['id'], device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3647,7 +3655,7 @@ class RunAfter24Hours(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
-    logger.info('Sleeping for 1 day before running additional tests.')
+    _logger.info('Sleeping for 1 day before running additional tests.')
     print 'Sleeping for 1 day before running additional tests.'
     Sleep('ONE_DAY')
 
@@ -3655,9 +3663,9 @@ class RunAfter24Hours(LogoCert):
     """validate printer has online status."""
     test_id = '5e0bf694-086a-4258-b23a-aa0d9a746dd7'
     test_name = 'testPrinterOnline'
-    device.GetDeviceDetails()
+    _device.GetDeviceDetails()
     try:
-      self.assertIn('ONLINE', device.status)
+      self.assertIn('ONLINE', _device.status)
     except AssertionError:
       notes = 'Printer is not online after 24 hours.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3681,7 +3689,7 @@ class Unregister(LogoCert):
     test_id2 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
     test_name2 = 'testOffDeviceIsDeleted'
 
-    is_registered = isPrinterRegistered(device.name)
+    is_registered = isPrinterRegistered(_device.name)
     try:
       self.assertTrue(is_registered)
     except AssertionError:
@@ -3689,7 +3697,7 @@ class Unregister(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    success = device.UnRegister(device.auth_token)
+    success = _device.UnRegister(_device.auth_token)
     try:
       self.assertTrue(success)
     except AssertionError:
@@ -3701,7 +3709,7 @@ class Unregister(LogoCert):
       self.LogTest(test_id, test_name, 'Passed', notes)
 
     print 'Wait up to 2 minutes for the printer to advertise as an unregistered device'
-    success = waitForRegistrationStatus(device.name, False, 120)
+    success = waitForRegistrationStatus(_device.name, False, 120)
 
     try:
       self.assertTrue(success)
@@ -3719,7 +3727,7 @@ class Printing(LogoCert):
 
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(device.details['gcpVersion'], device.cdd['caps'])
+    self.cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
 
   @classmethod
   def setUpClass(cls):
@@ -3731,7 +3739,7 @@ class Printing(LogoCert):
     test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testPrintUrl'
 
-    output = gcp.Submit(device.dev_id, Constants.GOOGLE, test_name, self.cjt, is_url=True)
+    output = _gcp.Submit(_device.dev_id, Constants.GOOGLE, test_name, self.cjt, is_url=True)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3750,11 +3758,11 @@ class Printing(LogoCert):
       notes = 'Copies not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
-    logger.info('Setting copies to 2...')
+    _logger.info('Setting copies to 2...')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddCopiesOption(2)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG12'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG12'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3771,10 +3779,10 @@ class Printing(LogoCert):
       notes = 'Duplex not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
-    logger.info('Setting duplex to long edge...')
+    _logger.info('Setting duplex to long edge...')
 
     self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3791,10 +3799,10 @@ class Printing(LogoCert):
       notes = 'Duplex not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
-    logger.info('Setting duplex to short edge...')
+    _logger.info('Setting duplex to short edge...')
 
     self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3812,10 +3820,10 @@ class Printing(LogoCert):
       notes = 'Color is not supported.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
-    logger.info('Printing with color selected.')
+    _logger.info('Printing with color selected.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3828,11 +3836,11 @@ class Printing(LogoCert):
   def testPrintMediaSizeSelect(self):
     test_id = '14ee1e62-7b38-423c-8637-50a2ae460ddc'
     test_name = 'testPrintMediaSizeSelect'
-    logger.info('Testing the selection of A4 media size.')
+    _logger.info('Testing the selection of A4 media size.')
     PromptAndWaitForUserAction('Load printer with A4 size paper. Select return when ready.')
 
     self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3847,10 +3855,10 @@ class Printing(LogoCert):
   def testPrintPdfReverseOrder(self):
     test_id = '1c2610c9-4f16-42ca-9d4a-018f127c4b58'
     test_name = 'testPrintPdfReverseOrder'
-    logger.info('Print with reverse order flag set...')
+    _logger.info('Print with reverse order flag set...')
 
     self.cjt.AddReverseOption()
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3863,10 +3871,10 @@ class Printing(LogoCert):
   def testPrintPdfPageRangePage2(self):
     test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
     test_name = 'testPrintPdfPageRangePage2'
-    logger.info('Setting page range to page 2 only')
+    _logger.info('Setting page range to page 2 only')
 
     self.cjt.AddPageRangeOption(2, end = 2)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3879,10 +3887,10 @@ class Printing(LogoCert):
   def testPrintPdfPageRangePage4To6(self):
     test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
     test_name = 'testPrintPdfPageRangePage4To6'
-    logger.info('Setting page range to 4-6...')
+    _logger.info('Setting page range to 4-6...')
 
     self.cjt.AddPageRangeOption(4, end = 6)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3895,11 +3903,11 @@ class Printing(LogoCert):
   def testPrintPdfPageRangePage2And4to6(self):
     test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
     test_name = 'testPrintPdfPageRangePage2And4to6'
-    logger.info('Setting page range to page 2 and 4-6...')
+    _logger.info('Setting page range to page 2 and 4-6...')
 
     self.cjt.AddPageRangeOption(2, end = 2)
     self.cjt.AddPageRangeOption(4, end = 6)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3913,13 +3921,13 @@ class Printing(LogoCert):
     test_id = '93c42b61-30e9-407c-bcd5-df50f418c53b'
     test_name = 'testPrintJpgDpiSetting'
 
-    dpi_options = device.cdd['caps']['dpi']['option']
+    dpi_options = _device.cdd['caps']['dpi']['option']
 
     for dpi_option in dpi_options:
-      logger.info('Setting dpi to %s', dpi_option)
+      _logger.info('Setting dpi to %s', dpi_option)
 
       self.cjt.AddDpiOption(dpi_option['horizontal_dpi'], dpi_option['vertical_dpi'])
-      output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
+      output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
       try:
         self.assertTrue(output['success'])
       except AssertionError:
@@ -3931,10 +3939,10 @@ class Printing(LogoCert):
   def testPrintPngFillPage(self):
     test_id = '0f911f5f-7001-4d87-933f-c15f42823da6'
     test_name = 'testPrintPngFillPage'
-    logger.info('Setting print option to Fill Page...')
+    _logger.info('Setting print option to Fill Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.FILL)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3947,10 +3955,10 @@ class Printing(LogoCert):
   def testPrintPngFitToPage(self):
     test_id = '5f2ab7d7-663b-4b86-b4e5-c38979baad11'
     test_name = 'testPrintPngFitToPage'
-    logger.info('Setting print option to Fit to Page...')
+    _logger.info('Setting print option to Fit to Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.FIT)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3963,10 +3971,10 @@ class Printing(LogoCert):
   def testPrintPngGrowToPage(self):
     test_id = '09532b30-f853-458e-99bf-5c1c532573c8'
     test_name = 'testPrintPngGrowToPage'
-    logger.info('Setting print option to Grow to Page...')
+    _logger.info('Setting print option to Grow to Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.GROW)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3979,10 +3987,10 @@ class Printing(LogoCert):
   def testPrintPngShrinkToPage(self):
     test_id = '3309482d-d23a-4ad7-8161-8c474ab1e6de'
     test_name = 'testPrintPngShrinkToPage'
-    logger.info('Setting print option to Shrink to Page...')
+    _logger.info('Setting print option to Shrink to Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.SHRINK)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3995,10 +4003,10 @@ class Printing(LogoCert):
   def testPrintPngNoFitting(self):
     test_id = '0c8c1bd5-7d2a-4f51-9219-36d1f6957b57'
     test_name = 'testPrintPngNoFitting'
-    logger.info('Setting print option to No Fitting...')
+    _logger.info('Setting print option to No Fitting...')
 
     self.cjt.AddFitToPageOption(CjtConstants.NO_FIT)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4011,11 +4019,11 @@ class Printing(LogoCert):
   def testPrintJpgPortrait(self):
     test_id = '6e36efd8-fb5b-4fce-8d24-2cc1097a88f5'
     test_name = 'testPrintJpgPortrait'
-    logger.info('Print simple JPG file with portrait orientation.')
+    _logger.info('Print simple JPG file with portrait orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG14'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG14'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4028,11 +4036,11 @@ class Printing(LogoCert):
   def testPrintJpgLandscape(self):
     test_id = '1d97a167-bc37-4e24-adf9-7e4bdbfff553'
     test_name = 'testPrintJpgLandscape'
-    logger.info('Print simple JPG file with landscape orientation.')
+    _logger.info('Print simple JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4045,10 +4053,10 @@ class Printing(LogoCert):
   def testPrintJpgBlacknWhite(self):
     test_id = 'bbd3c533-fcc2-4bf1-adc9-9cd63cc35a80'
     test_name = 'testPrintJpgBlacknWhite'
-    logger.info('Print black and white JPG file.')
+    _logger.info('Print black and white JPG file.')
 
     self.cjt.AddColorOption(self.monochrome)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4061,11 +4069,11 @@ class Printing(LogoCert):
   def testPrintJpgColorTestLandscape(self):
     test_id = '26076864-6aad-44e5-96a6-4f455e751fe7'
     test_name = 'testPrintJpgColorTestLandscape'
-    logger.info('Print color test JPG file with landscape orientation.')
+    _logger.info('Print color test JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG2'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG2'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4078,11 +4086,11 @@ class Printing(LogoCert):
   def testPrintJpgPhoto(self):
     test_id = '1f0e4b40-a164-4441-b3cb-182e2a5a5cdb'
     test_name = 'testPrintJpgPhoto'
-    logger.info('Print JPG photo in landscape orientation.')
+    _logger.info('Print JPG photo in landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG5'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG5'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4095,11 +4103,11 @@ class Printing(LogoCert):
   def testPrintJpgSingleObject(self):
     test_id = '03a22a19-8089-4150-8f1b-ceb78180713e'
     test_name = 'testPrintJpgSingleObject'
-    logger.info('Print JPG file single object in landscape.')
+    _logger.info('Print JPG file single object in landscape.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG7'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4112,11 +4120,11 @@ class Printing(LogoCert):
   def testPrintJpgProgressive(self):
     test_id = '8ce44d03-ba45-40c5-af0f-2aacb8a6debf'
     test_name = 'testPrintJpgProgressive'
-    logger.info('Print a Progressive JPG file.')
+    _logger.info('Print a Progressive JPG file.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG8'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG8'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4129,11 +4137,11 @@ class Printing(LogoCert):
   def testPrintJpgMultiImageWithText(self):
     test_id = '2d7ba1af-917b-467b-9e09-72f77cf58a56'
     test_name = 'testPrintJpgMultiImageWithText'
-    logger.info('Print multi image with text JPG file.')
+    _logger.info('Print multi image with text JPG file.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG9'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG9'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4146,10 +4154,10 @@ class Printing(LogoCert):
   def testPrintJpgMaxComplex(self):
     test_id = 'c8208125-e720-406a-9308-bc80d461b08e'
     test_name = 'testPrintJpgMaxComplex'
-    logger.info('Print complex JPG file.')
+    _logger.info('Print complex JPG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG10'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG10'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4162,11 +4170,11 @@ class Printing(LogoCert):
   def testPrintJpgMultiTargetPortrait(self):
     test_id = '3ff201de-77f3-4be1-9cf2-60dc29698f0b'
     test_name = 'testPrintJpgMultiTargetPortrait'
-    logger.info('Print multi-target JPG file with portrait orientation.')
+    _logger.info('Print multi-target JPG file with portrait orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG11'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG11'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4179,11 +4187,11 @@ class Printing(LogoCert):
   def testPrintJpgStepChartLandscape(self):
     test_id = 'f2f2cae4-e835-48e0-8632-953dd50be0ca'
     test_name = 'testPrintJpgStepChartLandscape'
-    logger.info('Print step chart JPG file in landscape orientation.')
+    _logger.info('Print step chart JPG file in landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG13'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG13'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4196,11 +4204,11 @@ class Printing(LogoCert):
   def testPrintJpgLarge(self):
     test_id = 'c45e7ebf-241b-4fdf-8d0b-4d7f850a2b1a'
     test_name = 'testPrintJpgLarge'
-    logger.info('Print large JPG file with landscape orientation.')
+    _logger.info('Print large JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4213,11 +4221,11 @@ class Printing(LogoCert):
   def testPrintJpgLargePhoto(self):
     test_id = 'e30fefe9-1a32-4b22-9088-0af5fe2ffd57'
     test_name = 'testPrintJpgLargePhoto'
-    logger.info('Print large photo JPG file with landscape orientation.')
+    _logger.info('Print large photo JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['JPG4'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG4'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4231,10 +4239,10 @@ class Printing(LogoCert):
     """Test a standard, 1 page b&w PDF file."""
     test_id = '0d4d0d33-b170-414d-a722-00e848bede10'
     test_name = 'testPrintFilePdf'
-    logger.info('Printing a black and white 1 page PDF file.')
+    _logger.info('Printing a black and white 1 page PDF file.')
 
     self.cjt.AddColorOption(self.monochrome)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF4'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF4'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4248,10 +4256,10 @@ class Printing(LogoCert):
     """Test an ICC version 4 test color PDF file."""
     test_id = 'd81fe624-c6ec-4e72-9535-9cead873a4fa'
     test_name = 'testPrintFileColorPdf'
-    logger.info('Printing a color, 1 page PDF file.')
+    _logger.info('Printing a color, 1 page PDF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF13'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4265,10 +4273,10 @@ class Printing(LogoCert):
     """Test a standard, 3 page color PDF file."""
     test_id = '84e4d761-594d-4930-8a91-b43d037a7422'
     test_name = 'testPrintFileMultiPagePdf'
-    logger.info('Printing a 3 page, color PDF file.')
+    _logger.info('Printing a 3 page, color PDF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4282,10 +4290,10 @@ class Printing(LogoCert):
     """Test printing a 20 page, color PDF file."""
     test_id = '005a9954-b55e-40f9-8a66-aa06b5528a78'
     test_name = 'testPrintFileLargeColorPdf'
-    logger.info('Printing a 20 page, color PDF file.')
+    _logger.info('Printing a 20 page, color PDF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4299,9 +4307,9 @@ class Printing(LogoCert):
     """Test printing PDF version 1.2 file."""
     test_id = '7cd98a62-d209-4d5a-934d-f951e0db9666'
     test_name = 'testPrintFilePdfV1_2'
-    logger.info('Printing a PDF v1.2 file.')
+    _logger.info('Printing a PDF v1.2 file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.2'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.2'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4315,9 +4323,9 @@ class Printing(LogoCert):
     """Test printing PDF version 1.3 file."""
     test_id = 'dec3eebc-75b3-47c2-8619-0451e172cb08'
     test_name = 'testPrintFilePdfV1_3'
-    logger.info('Printing a PDF v1.3 file.')
+    _logger.info('Printing a PDF v1.3 file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4331,9 +4339,9 @@ class Printing(LogoCert):
     """Test printing PDF version 1.4 file."""
     test_id = '881cdd22-49e8-4560-ae13-b8c79741f7d1'
     test_name = 'testPrintFilePdfV1_4'
-    logger.info('Printing a PDF v1.4 file.')
+    _logger.info('Printing a PDF v1.4 file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.4'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.4'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4347,9 +4355,9 @@ class Printing(LogoCert):
     """Test printing PDF version 1.5 file."""
     test_id = '518c3a4b-1335-4979-b1e6-2b06acad8905'
     test_name = 'testPrintFilePdfV1_5'
-    logger.info('Printing a PDF v1.5 file.')
+    _logger.info('Printing a PDF v1.5 file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.5'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.5'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4363,10 +4371,10 @@ class Printing(LogoCert):
     """Test printing PDF version 1.6 file."""
     test_id = '94dbee8a-e02c-4926-ad7e-a83dbff716dd'
     test_name = 'testPrintFilePdfV1_6'
-    logger.info('Printing a PDF v1.6 file.')
+    _logger.info('Printing a PDF v1.6 file.')
     return
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.6'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.6'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4380,9 +4388,9 @@ class Printing(LogoCert):
     """Test printing PDF version 1.7 file."""
     test_id = '2ee12493-eeaf-43cd-a136-d01227d63e9a'
     test_name = 'testPrintFilePdfV1_7'
-    logger.info('Printing a PDF v1.7 file.')
+    _logger.info('Printing a PDF v1.7 file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4396,11 +4404,11 @@ class Printing(LogoCert):
     """Test printing PDF file of Color Ticket in landscape orientation."""
     test_id = '4bddcf56-984b-4c4d-9c39-63459b295247'
     test_name = 'testPrintFilePdfColorTicket'
-    logger.info('Printing PDF Color ticket in with landscape orientation.')
+    _logger.info('Printing PDF Color ticket in with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF2'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF2'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4414,9 +4422,9 @@ class Printing(LogoCert):
     """Test printing PDF Letter size margin test file."""
     test_id = 'a7328247-84ab-4a8f-865a-f8f30ed20fc2'
     test_name = 'testPrintFilePdfLetterMarginTest'
-    logger.info('Printing PDF Letter Margin Test.')
+    _logger.info('Printing PDF Letter Margin Test.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4430,9 +4438,9 @@ class Printing(LogoCert):
     """Test printing PDF margin test 2 file."""
     test_id = '215a7db8-ae4b-4784-b49a-49c30cf82b53'
     test_name = 'testPrintFilePdfMarginTest2'
-    logger.info('Printing PDF Margin Test 2 file.')
+    _logger.info('Printing PDF Margin Test 2 file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF6'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF6'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4446,10 +4454,10 @@ class Printing(LogoCert):
     """Test printing PDF with landscape layout."""
     test_id = '2aaa222a-7d35-4f88-bfc0-8cf2eb5f8373'
     test_name = 'testPrintFilePdfSimpleLandscape'
-    logger.info('Printing simple PDF file in landscape.')
+    _logger.info('Printing simple PDF file in landscape.')
 
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF8'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF8'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4463,10 +4471,10 @@ class Printing(LogoCert):
     """Test printing PDF CUPS test page."""
     test_id = 'ae2a075b-ee7c-409c-8d2d-d08f5c2e868b'
     test_name = 'testPrintFilePdfCupsTestPage'
-    logger.info('Printing PDF CUPS test page.')
+    _logger.info('Printing PDF CUPS test page.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF9'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF9'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4480,10 +4488,10 @@ class Printing(LogoCert):
     """Test printing PDF Color Test file."""
     test_id = '882efbf9-47f2-43cd-9ee9-d4b026679406'
     test_name = 'testPrintFilePdfColorTest'
-    logger.info('Printing PDF Color Test page.')
+    _logger.info('Printing PDF Color Test page.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF11'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF11'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4497,10 +4505,10 @@ class Printing(LogoCert):
     """Test printing Barcoded Ticket PDF file."""
     test_id = 'b38c0113-095e-4e73-8efe-7352852cafb7'
     test_name = 'testPrintFilePdfBarCodeTicket'
-    logger.info('Printing PDF Bar coded ticket.')
+    _logger.info('Printing PDF Bar coded ticket.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF12'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF12'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4514,10 +4522,10 @@ class Printing(LogoCert):
     """Test printing complex ticket PDF file."""
     test_id = '12555398-4e1f-4305-bcc6-b2b82d665634'
     test_name = 'testPrintFilePdfComplexTicket'
-    logger.info('Printing PDF of complex ticket.')
+    _logger.info('Printing PDF of complex ticket.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PDF14'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF14'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4531,10 +4539,10 @@ class Printing(LogoCert):
     """Test printing simple GIF file."""
     test_id = '7c346ab2-d8b4-407b-b477-755a0432ace5'
     test_name = 'testPrintFileSimpleGIF'
-    logger.info('Printing simple GIF file.')
+    _logger.info('Printing simple GIF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF2'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF2'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4548,10 +4556,10 @@ class Printing(LogoCert):
     """Test printing a small GIF file."""
     test_id = '2e81decf-e364-4651-af1b-a516ac51f4bb'
     test_name = 'testPrintFileSmallGIF'
-    logger.info('Printing small GIF file.')
+    _logger.info('Printing small GIF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF4'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF4'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4565,10 +4573,10 @@ class Printing(LogoCert):
     """Test printing a large GIF file."""
     test_id = '72ed6bc4-1b42-4bc1-921c-4ab205dd56cd'
     test_name = 'testPrintFileLargeGIF'
-    logger.info('Printing large GIF file.')
+    _logger.info('Printing large GIF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4582,10 +4590,10 @@ class Printing(LogoCert):
     """Test printing a black & white GIF file."""
     test_id = '7fa69496-542e-4f71-8538-7f67b907a2ec'
     test_name = 'testPrintFileBlackNWhiteGIF'
-    logger.info('Printing black and white GIF file.')
+    _logger.info('Printing black and white GIF file.')
 
     self.cjt.AddColorOption(self.monochrome)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['GIF3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4599,9 +4607,9 @@ class Printing(LogoCert):
     """Test printing HTML file."""
     test_id = '46164630-7c6e-4b37-b829-5edac13888ac'
     test_name = 'testPrintFileHTML'
-    logger.info('Printing HTML file.')
+    _logger.info('Printing HTML file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['HTML1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['HTML1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4615,10 +4623,10 @@ class Printing(LogoCert):
     """Test printing A4 Test PNG file."""
     test_id = '4c1e7474-3471-46b2-8e0d-2e605f89c129'
     test_name = 'testPrintFilePngA4Test'
-    logger.info('Printing A4 Test PNG file.')
+    _logger.info('Printing A4 Test PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4632,10 +4640,10 @@ class Printing(LogoCert):
     """Test printing PNG portrait file."""
     test_id = '7f1e0a95-767e-4302-8225-61d93e127a41'
     test_name = 'testPrintFilePngPortrait'
-    logger.info('Printing PNG portrait file.')
+    _logger.info('Printing PNG portrait file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG8'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4649,11 +4657,11 @@ class Printing(LogoCert):
     """Test printing color PNG file."""
     test_id = '6b386438-d5cd-46c5-9b25-4ac50faf169c'
     test_name = 'testPrintFileColorPngLandscape'
-    logger.info('Printing Color PNG file in landscape.')
+    _logger.info('Printing Color PNG file in landscape.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG2'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG2'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4667,10 +4675,10 @@ class Printing(LogoCert):
     """Test printing a small PNG file."""
     test_id = '213b84ed-6ddb-4d9b-ab27-be8d5f6d8370'
     test_name = 'testPrintFileSmallPng'
-    logger.info('Printing a small PNG file.')
+    _logger.info('Printing a small PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4684,11 +4692,11 @@ class Printing(LogoCert):
     """Test printing PNG containing letters."""
     test_id = '83b38406-74f2-4b2e-a74c-54998956ee18'
     test_name = 'testPrintFilePngWithLetters'
-    logger.info('Printing PNG file with letters.')
+    _logger.info('Printing PNG file with letters.')
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG4'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG4'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4702,10 +4710,10 @@ class Printing(LogoCert):
     """Test printing PNG Color Test file."""
     test_id = '8f66270d-64df-49c7-bb49-01705b65d089'
     test_name = 'testPrintFilePngColorTest'
-    logger.info('Printing PNG Color Test file.')
+    _logger.info('Printing PNG Color Test file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG5'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG5'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4719,10 +4727,10 @@ class Printing(LogoCert):
     """Test printing color images with text PNG file."""
     test_id = '931f1994-eebf-4fa6-9549-f8811b4ed641'
     test_name = 'testPrintFilePngColorImageWithText'
-    logger.info('Printing color images with text PNG file.')
+    _logger.info('Printing color images with text PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG6'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG6'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4736,10 +4744,10 @@ class Printing(LogoCert):
     """Test printing Cups Test PNG file."""
     test_id = '055898ba-25f7-4b4b-b116-ff7d499c8994'
     test_name = 'testPrintFilePngCupsTest'
-    logger.info('Printing Cups Test PNG file.')
+    _logger.info('Printing Cups Test PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4753,10 +4761,10 @@ class Printing(LogoCert):
     """Test printing Large PNG file."""
     test_id = '852fab66-af6b-4f06-b94f-9d04508be3c6'
     test_name = 'testPrintFileLargePng'
-    logger.info('Printing large PNG file.')
+    _logger.info('Printing large PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['PNG9'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG9'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4770,9 +4778,9 @@ class Printing(LogoCert):
     """Test printing simple SVG file."""
     test_id = 'f10c0c3c-0d44-440f-8058-a0643235e2f8'
     test_name = 'testPrintFileSvgSimple'
-    logger.info('Printing simple SVG file.')
+    _logger.info('Printing simple SVG file.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG2'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['SVG2'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4786,10 +4794,10 @@ class Printing(LogoCert):
     """Test printing SVG file with images."""
     test_id = '613e3f50-365f-4d4e-be72-d04202f74de4'
     test_name = 'testPrintFileSvgWithImages'
-    logger.info('Printing SVG file with images.')
+    _logger.info('Printing SVG file with images.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['SVG1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['SVG1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4803,9 +4811,9 @@ class Printing(LogoCert):
     """Test printing TIFF file of GCP registration link."""
     test_id = 'ff85ffb1-7032-4006-948d-1725d93c5c5a'
     test_name = 'testPrintFileTiffRegLink'
-    logger.info('Printing TIFF file of GCP registration link.')
+    _logger.info('Printing TIFF file of GCP registration link.')
 
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF1'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['TIFF1'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4819,10 +4827,10 @@ class Printing(LogoCert):
     """Test printing TIFF file of photo."""
     test_id = '983ba7b4-ced0-4144-81cc-6abe89e63f78'
     test_name = 'testPrintFileTiffPhoto'
-    logger.info('Printing TIFF file of photo.')
+    _logger.info('Printing TIFF file of photo.')
 
     self.cjt.AddColorOption(self.color)
-    output = gcp.Submit(device.dev_id, Constants.IMAGES['TIFF2'], test_name, self.cjt)
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['TIFF2'], test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
