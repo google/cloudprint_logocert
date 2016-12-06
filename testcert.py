@@ -2019,7 +2019,6 @@ class LocalDiscovery(LogoCert):
     test_name = 'testLocalDiscoveryToggle'
     notes = None
     notes2 = None
-    printer_found = False
 
     setting = {'pending': {'local_discovery': False}}
     res = _gcp.Update(_device.dev_id, setting=setting)
@@ -2030,67 +2029,41 @@ class LocalDiscovery(LogoCert):
       raise
     # Give printer time to update.
     print 'Waiting up to 120 seconds for printer to accept changes.'
+    # Wait for the service to be removed as local_discovery gets disabled
+    # Could use waitForUpdate() also, but might as well wait for the printer
+    # state to populate properly before moving on
     success = waitForService(_device.name, False, timeout=120)
 
-    if not success:
-      notes = 'Printer did not update accordingly within the allotted time.'
+    try:
+      self.assertTrue(success)
+    except AssertionError:
+      notes = 'Local Discovery was not disabled within the allotted time.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
+    else:
+      notes = 'Local Discovery successfully disabled'
 
-    for v in _mdns_browser.listener.discovered.values():
-      if 'ty' in v['info'].properties:
-        if self.printer in v['info'].properties['ty']:
-          printer_found = True
-          try:
-            self.assertFalse(v['found'])
-          except AssertionError:
-            notes = 'Local Discovery not disabled.'
-            self.LogTest(test_id, test_name, 'Blocked', notes)
-            raise
-          else:
-            notes = 'Local Discovery successfully disabled.'
-          break
-    if not printer_found:
-      notes = 'No printer announcement seen.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
+      setting = {'pending': {'local_discovery': True}}
+      res = _gcp.Update(_device.dev_id, setting=setting)
+      if not res['success']:
+        notes2 = 'Error turning on Local Discovery.'
+        self.LogTest(test_id, test_name, 'Blocked', notes + '\n' + notes2)
+        raise
 
-    setting = {'pending': {'local_discovery': True}}
-    res = _gcp.Update(_device.dev_id, setting=setting)
-    if not res['success']:
-      notes2 = 'Error turning on Local Discovery.'
-      self.LogTest(test_id, test_name, 'Blocked', notes2)
-      raise
+      # Give printer time to update.
+      print 'Waiting up to 120 seconds for printer to accept changes.'
+      success = waitForService(_device.name, True, timeout=120)
 
-    # Give printer time to update.
-    print 'Waiting up to 120 seconds for printer to accept changes.'
-    success = waitForService(_device.name, True, timeout=120)
-
-    if not success:
-      notes2 = 'Printer did not update accordingly within the alloted time.'
-      self.LogTest(test_id, test_name, 'Blocked', notes2)
-      raise
-
-    for v in _mdns_browser.listener.discovered.values():
-      if 'ty' in v['info'].properties:
-        if self.printer in v['info'].properties['ty']:
-          printer_found = True
-          try:
-            self.assertTrue(v['found'])
-          except AssertionError:
-            notes2 = 'Local Discovery not enabled.'
-            self.LogTest(test_id, test_name, 'Blocked', notes2)
-            raise
-          else:
-            notes2 = 'Local Discovery successfully enabled.'
-          break
-    if not printer_found:
-      notes2 = 'No printer announcement seen.'
-      self.LogTest(test_id, test_name, 'Blocked', notes2)
-      raise
-
-    notes = notes + '\n' + notes2
-    self.LogTest(test_id, test_name, 'Passed', notes)
+      try:
+        self.assertTrue(success)
+      except AssertionError:
+        notes2 = 'Local Discovery was not enabled within the allotted time.'
+        self.LogTest(test_id, test_name, 'Blocked', notes + '\n' + notes2)
+        raise
+      else:
+        notes2 = 'Local Discovery successfully enabled'
+        notes = notes + '\n' + notes2
+        self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterOnAdvertiseLocally(self):
     """Verify printer advertises self using Privet when turned on."""
