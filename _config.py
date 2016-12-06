@@ -185,7 +185,7 @@ class Constants(object):
                 'Printer',
                 'PrinterState',
                 'JobState',
-                'Printing',
+                'CloudPrinting',
                 'RunAfter24Hours',
                 'Unregister',
             ],

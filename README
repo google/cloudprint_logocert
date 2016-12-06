@@ -157,7 +157,7 @@ suites require the printer to be registered:
 - Printer
 - PrinterState
 - JobState
-- Printing
+- CloudPrinting
 - RunAfter24Hours
 - Unregister
 
