@@ -2162,6 +2162,7 @@ class LocalDiscovery(LogoCert):
     """Verify idle printer doesn't send mDNS broadcasts."""
     test_id = '703a55d2-7291-4637-b257-dc885fdb5abd'
     test_name = 'testPrinterIdleNoBroadcastPrivet'
+    return
     printer_found = False
     print 'Ensure printer stays on and remains in idle state.'
     #TODO: Fix this test - may need something other than zeroconf for this...
@@ -2175,7 +2176,7 @@ class LocalDiscovery(LogoCert):
           _mdns_browser.listener.discovered[k]['found'] = None
     # Monitor the local network for privet broadcasts.
     print 'Listening for network broadcasts for 1 minute.'
-    time.sleep(60)
+    time.sleep(60) # Not being used since this test is broken and returns right away
     for (k, v) in _mdns_browser.listener.discovered.items():
       if 'ty' in v['info'].properties:
         if self.printer in v['info'].properties['ty']:
@@ -2529,7 +2530,7 @@ class LocalPrinting(LogoCert):
       # Give the printer time to complete the job and update the status.
       PromptAndWaitForUserAction('Press ENTER once the document id printed')
       print 'Waiting 30 seconds for job to print and status to be updated.'
-      time.sleep(30)
+      time.sleep(30) # Determine if this is needed after testing a printer that supports Privet Info API
       job = _device.JobState(job_id)
       try:
         self.assertIsNotNone(job)
@@ -2863,12 +2864,10 @@ class PrinterState(LogoCert):
 
     print 'Test printer handles connection status when reconnecting to network.'
     PromptAndWaitForUserAction('Press ENTER once printer loses network connection.')
-    print 'Waiting 60 seconds.'
-    time.sleep(60)
+    Sleep('NETWORK_DETECTION')
     print 'Now reconnect printer to the network.'
     PromptAndWaitForUserAction('Press ENTER once printer has network connection.')
-    print 'Waiting 60 seconds.'
-    time.sleep(60)
+    Sleep('NETWORK_DETECTION')
     _device.GetDeviceDetails()
     try:
       self.assertIn('ONLINE', _device.status)

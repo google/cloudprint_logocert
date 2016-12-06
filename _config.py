@@ -76,6 +76,7 @@ class Constants(object):
                               #                    on the printer
     'PRINTER_STATE': 10,      # Printer dependent: used when printer state is altered physically
                               #                    e.g. Paper tray open/close, ink catridge remove/replaced
+    'NETWORK_DETECTION': 60,  # Printer dependent: used when printer is connected or disconnected to a network
     'ONE_DAY': 86400,         # 24 hrs in seconds
     'AUTO_RUN': 5             # Used if AUTOMODE is set to be true
 
