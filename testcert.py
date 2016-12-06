@@ -247,7 +247,7 @@ def waitForRegistrationStatus(name, is_wait_for_reg, timeout):
     else:
       # Currently, there's no support for device privet updates. When the privet advertisement changes, it
       # doesn't get picked up by the browser even though the browser continuously pings the device.
-      # Responses from existing services are dropped there for we need to remove the service.
+      # Responses from existing services are dropped therefore we need to remove the service.
       # By removing the service, then waiting for the service to be added again, we get an updated value from the browser
       _mdns_browser.remove_service_entry(_device.name)
       waitForService(_device.name, True, timeout=end-time.time())
@@ -1721,24 +1721,26 @@ class PreRegistration(LogoCert):
     test_id = '3382acca-15f7-46d1-9b43-2d36defa9443'
     test_name = 'testDeviceAdvertisePrivet'
 
-    print 'Listening for the printer\'s advertisements for up to 30 seconds'
-    # Using a new instance of MdDnsListener to start sniffing from a clean slate
-    # The Mdns browser only signal changes on addition and removal, not update
-    tmp_listener = _mdns.MDnsListener(_logger)
-    tmp_listener.add_listener('privet')
-
-    found = waitForPrivetDiscovery(_device.name, tmp_listener)
+    print 'Listening for the printer\'s advertisements for up to 60 seconds'
+    _mdns_browser.remove_service_entry(_device.name)
+    success = waitForService(_device.name, True)
     try:
-      self.assertTrue(found)
+      self.assertTrue(success)
     except AssertionError:
-      notes = 'device is not found advertising in privet'
+      notes = 'Device is not found advertising in privet'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Found privet advertisement from device.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      tmp_listener.remove_listeners()
+      is_registered = isPrinterRegistered(_device.name)
+      try:
+        self.assertFalse(is_registered)
+      except AssertionError:
+        notes = 'Device is advertising as a registered device'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'Device is advertising as an unregistered device'
+        self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testDeviceSleepingAdvertisePrivet(self):
     """Verify sleeping printer advertises itself using Privet."""
@@ -1748,24 +1750,27 @@ class PreRegistration(LogoCert):
     print 'Put the printer in sleep mode.'
     PromptAndWaitForUserAction('Press ENTER when printer is sleeping.')
 
-    print 'Listening for the printer\'s advertisements for up to 30 seconds'
-    # Using a new instance of MdDnsListener to start sniffing from a clean slate
-    # The Mdns browser only signal changes on addition and removal, not update
-    tmp_listener = _mdns.MDnsListener(_logger)
-    tmp_listener.add_listener('privet')
-
-    found = waitForPrivetDiscovery(_device.name, tmp_listener)
+    print 'Listening for the printer\'s advertisements for up to 60 seconds'
+    _mdns_browser.remove_service_entry(_device.name)
+    success = waitForService(_device.name, True)
     try:
-      self.assertTrue(found)
+      self.assertTrue(success)
     except AssertionError:
-      notes = 'Device not found advertising in sleep mode'
+      notes = 'Device is not found advertising in privet'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Device is found advertising in sleep mode'
-      self.LogTest(test_id, test_name, 'Passed', notes)
-    finally:
-      tmp_listener.remove_listeners()
+      is_registered = isPrinterRegistered(_device.name)
+      try:
+        self.assertFalse(is_registered)
+      except AssertionError:
+        notes = 'Device not found advertising as a registered device in sleep mode'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'Device is found advertising as an unregistered device in sleep mode'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+
 
   def testDeviceOffNoAdvertisePrivet(self):
     """Verify powered off device does not advertise using Privet."""
@@ -1781,13 +1786,10 @@ class PreRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    print 'Listening for the printer\'s advertisements for up to 30 seconds'
-    # Using a new instance of MdDnsListener to start sniffing from a clean slate
-    # The Mdns browser only signal changes on addition and removal, not update
-    tmp_listener = _mdns.MDnsListener(_logger)
-    tmp_listener.add_listener('privet')
+    print 'Listening for the printer\'s advertisements for up to 60 seconds'
+    _mdns_browser.remove_service_entry(_device.name)
+    found = waitForService(_device.name, True)
 
-    found = waitForPrivetDiscovery(_device.name, tmp_listener)
     try:
       self.assertFalse(found)
     except AssertionError:
@@ -1797,7 +1799,6 @@ class PreRegistration(LogoCert):
     else:
       notes = 'Device no longer advertising when powered off'
       self.LogTest(test_id, test_name, 'Passed', notes)
-      tmp_listener.remove_listeners()
 
       """Verify freshly powered on device advertises itself using Privet."""
       test_id2 = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
@@ -1813,26 +1814,29 @@ class PreRegistration(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
 
-      print 'Listening for the printer\'s advertisements for up to 30 seconds'
-      # Using a new instance of MdDnsListener to start sniffing from a clean slate
-      # The Mdns browser only signal changes on addition and removal, not update
-      tmp_listener = _mdns.MDnsListener(_logger)
-      tmp_listener.add_listener('privet')
-
-      found = waitForPrivetDiscovery(_device.name, tmp_listener)
+      print 'Listening for the printer\'s advertisements for up to 60 seconds'
+      _mdns_browser.remove_service_entry(_device.name)
+      success = waitForService(_device.name, True)
       try:
-        self.assertTrue(found)
+        self.assertTrue(success)
       except AssertionError:
-        notes = 'Device not found advertising when freshly powered on'
-        self.LogTest(test_id2, test_name2, 'Failed', notes)
+        notes = 'Device is not found advertising in privet when freshly powered on'
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Device found advertising when freshly powered on'
-        self.LogTest(test_id2, test_name2, 'Passed', notes)
-      finally:
-        # Get the new X-privet-token from the restart
-        _device.GetPrivetInfo()
-        tmp_listener.remove_listeners()
+        is_registered = isPrinterRegistered(_device.name)
+        try:
+          self.assertFalse(is_registered)
+        except AssertionError:
+          notes = 'Device found advertising as registered when freshly powered on'
+          self.LogTest(test_id2, test_name2, 'Failed', notes)
+          raise
+        else:
+          notes = 'Device found advertising as unregistered when freshly powered on'
+          self.LogTest(test_id2, test_name2, 'Passed', notes)
+        finally:
+          # Get the new X-privet-token from the restart
+          _device.GetPrivetInfo()
 
   def testDeviceRegistrationNotLoggedIn(self):
     """Test printer cannot be registered if user not logged in."""

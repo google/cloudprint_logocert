@@ -123,14 +123,14 @@ class MDnsListener(object):
           boolean, True = serice removed, False = service not found.
         """
     for service in self.sb.services:
-      if name.lower() in service.lower():
-        # Prevent the next service add to fetch stale info
+      if service.lower().startswith(name.lower()):
+        # Prevent the next service_add() to fetch stale info
         self.clear_cache()
         # Delete from our own data storage
         for key in self.listener.discovered:
           if key.startswith(name):
             self.listener.discovered[key]={}
-        # Delete from service browser so a service add can be triggered
+        # Delete from service browser so service_add() can be triggered
         del(self.sb.services[service])
         self.logger.info('Service removed: ' + service)
         return True
