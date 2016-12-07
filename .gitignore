@@ -3,3 +3,4 @@
 credentials.txt
 *.pyc
 _config.py
+images/*.pwg

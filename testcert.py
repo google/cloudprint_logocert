@@ -334,6 +334,55 @@ def GetNewTokens():
   else:
     _logger.error('Error getting authorization code.')
 
+def writeRasterToFile(file_path, content):
+  """ Save a raster image to file
+
+        Args:
+          file_path: string, file path to write to
+          content: string, content to write
+        """
+  f = open(file_path, 'wb')
+  f.write(content)
+  f.close()
+
+def getRasterImageFromCloud(pwg_path, img_path):
+  """ Submit a GCP print job so that the image is coverted to a supported raster file that can be downloaded
+      Download the raster image from the cloud then delete the job since we don't need to print it
+      Save the raster image to disk
+
+      Args:
+        pwg_path: string, destination file path of the pwg_raster image
+        img_path: string, src file path of the image to convert from
+      """
+
+  #
+  cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
+
+  print '%s not found. Likely that this is the first time LocalPrinting suite is run.' % (pwg_path)
+  print 'Generating pwg-raster via cloud print'
+  output = _gcp.Submit(_device.dev_id, img_path, 'LocalPrinting Raster Setup', cjt)
+  if not output['success']:
+    print 'Cloud printing failed.'
+  else:
+    res = _gcp.FetchRaster(output['job']['id'])
+    writeRasterToFile(pwg_path, res)
+    _gcp.DeleteJob(output['job']['id'])
+
+
+def getLocalPrintingRasterImages():
+  """ Checks to see if the raster images used for local printing exist on the machine,
+      generate and store to disk if not
+      """
+  print "Generating and retrieving pwg-raster images for the LocalPrinting testsuite if they are missing"
+  if not os.path.exists(Constants.IMAGES['PWG1']):
+    getRasterImageFromCloud(Constants.IMAGES['PWG1'], Constants.IMAGES['PNG7'])
+
+  if not os.path.exists(Constants.IMAGES['PWG2']):
+    getRasterImageFromCloud(Constants.IMAGES['PWG2'], Constants.IMAGES['PDF10'])
+
+  if not os.path.exists(Constants.IMAGES['PWG3']):
+    getRasterImageFromCloud(Constants.IMAGES['PWG3'], Constants.IMAGES['PNG2'])
+
 
 class LogoCert(unittest.TestCase):
   """Base Class to drive Logo Certification tests."""
@@ -2253,6 +2302,12 @@ class LocalPrinting(LogoCert):
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
     LogoCert.GetDeviceDetails()
+
+    # Need to download a few raster files that will be used to test local printing
+    # Different printers support different pwg-raster resolution and colours
+    # Leverage GCP conversion by submitting a cloud print tickets, then downloading
+    # the raster files and saving them to disk
+    getLocalPrintingRasterImages()
 
   def testLocalPrintGuestUser(self):
     """Verify local print on a registered printer is available to guest user."""

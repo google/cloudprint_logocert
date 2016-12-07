@@ -106,8 +106,30 @@ class GCPService(object):
 
     return GCPQuery
 
+  @VerifyNotNone
+  def FetchRaster(self, job_id):
+    """Get the data content belonging to a job_id in pwg-raster format
+       Note: This only works for job_id's that are queued, or in_progress.
+             This will not work for jobs that have finished
+
+       Args:
+          job_id: string, printer's id
+       Returns:
+         str, the content in pwg-raster format if successful, otherwise, None
+
+         """
+    url = '%s/download?id=%s&forcepwg=1' % (Constants.GCP['MGT'], job_id)
+    r = requests.get(url, headers={'Authorization': 'Bearer %s' % self.auth_token})
+
+    if r is None or requests.codes.ok != r.status_code:
+      return None
+
+    return r.content
+
+
+
   # Not decorated with @InterfaceQuery since Submit() uses 'requests' instead of '_transport'
-  @ VerifyNotNone
+  @VerifyNotNone
   def Register(self, printer, printer_id, proxy, cdd_path):
     """Register a printer under the user's account
 
