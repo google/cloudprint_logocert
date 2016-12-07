@@ -448,7 +448,7 @@ class Device(object):
 
     url = self.privet_url['submitdoc'] + '?job_id=%s&job_name=%s' % (job_id, title)
 
-    content_type = 'image/pwg-raster' if name.lower().endswith('.pwg') else mimetypes.guess_type(name)[0]
+    content_type = 'image/pwg-raster'
 
     if content_type not in self.supported_types:
       print 'This printer does not support the following content type: ', content_type

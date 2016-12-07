@@ -153,16 +153,24 @@ and add a '#' infront of suite names you don't want to run. The following
 suites require the printer to be registered:
 
 - LocalDiscovery
-- LocalPrinting
 - Printer
 - PrinterState
 - JobState
 - CloudPrinting
+- LocalPrinting
 - RunAfter24Hours
 - Unregister
 
 The order that the test run in is not deterministic, but the suites will run
 in the order they are placed in.
+
+LocalPrinting has a slight dependency on CloudPrinting. When the
+LocalPrinting suite is run for the first time, it will make 3 calls to the GCP
+submit interface in order to download the pwg-raster formats that will be used
+in subsequent LocalPrinting tests. If Cloud Printing does not work for your printer, 
+you would have to manually generate pwg-raster formats of testpage.png, rosemary.pdf, 
+and dna_overview.png store them under the images directory as testpage.pwg, rosemary.pwg, 
+and dna_overview.pwg.
 
 Once the test has run, results will be placed in a log file. Log files are
 created with a date-time stamp in the logname. All of the test results will be
