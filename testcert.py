@@ -347,8 +347,7 @@ def writeRasterToFile(file_path, content):
 
 def getRasterImageFromCloud(pwg_path, img_path):
   """ Submit a GCP print job so that the image is coverted to a supported raster file that can be downloaded
-      Download the raster image from the cloud then delete the job since we don't need to print it
-      Save the raster image to disk
+      Download the raster image from the cloud then save the raster image to disk
 
       Args:
         pwg_path: string, destination file path of the pwg_raster image
@@ -364,9 +363,15 @@ def getRasterImageFromCloud(pwg_path, img_path):
   if not output['success']:
     print 'Cloud printing failed.'
   else:
+    print 'Waiting up to 30 seconds for the printer to start printing'
+    _device.WaitForPrinterState('processing', timeout=30)
+
     res = _gcp.FetchRaster(output['job']['id'])
     writeRasterToFile(pwg_path, res)
-    _gcp.DeleteJob(output['job']['id'])
+
+    print 'Waiting up to 180 seconds for the printer to finish printing'
+    _device.WaitForPrinterState('idle', timeout=180)
+
 
 
 def getLocalPrintingRasterImages():
@@ -382,7 +387,6 @@ def getLocalPrintingRasterImages():
 
   if not os.path.exists(Constants.IMAGES['PWG3']):
     getRasterImageFromCloud(Constants.IMAGES['PWG3'], Constants.IMAGES['PNG2'])
-
 
 class LogoCert(unittest.TestCase):
   """Base Class to drive Logo Certification tests."""

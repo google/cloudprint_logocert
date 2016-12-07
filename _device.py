@@ -31,6 +31,7 @@ from json import dumps
 from os.path import basename
 import requests
 import mimetypes
+import time
 
 
 
@@ -80,12 +81,11 @@ class Device(object):
     self.privet_url = self.privet.SetPrivetUrls(self.ipv4, self.port)
     self.GetPrivetInfo()
 
+
   def GetPrivetInfo(self):
     self.privet_info = {}
-    response = self.transport.HTTPReq(self.privet_url['info'],
-                                      headers=self.privet.headers_empty)
-    info = self.jparser.Read(response['data'])
-    if info['json']:
+    info = self.Info()
+    if info is not None:
       for key in info:
         self.privet_info[key] = info[key]
         self.logger.debug('Privet Key: %s', key)
@@ -93,15 +93,7 @@ class Device(object):
         self.logger.debug('--------------------------')
       if 'x-privet-token' in info:
         self.headers = {'X-Privet-Token': str(info['x-privet-token'])}
-    else:
-      if response['code']:
-        self.logger.info('HTTP device return code: %s', response['code'])
-      if response['headers']:
-        self.logger.debug('HTTP Headers:  ')
-        for key in response['headers']:
-          self.logger.debug('%s: %s', key, response['headers'][key])
-      if response['data']:
-        self.logger.info('Data from response: %s', response['data'])
+
 
   def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True, no_wait=False):
     """Register device using Privet.
@@ -494,6 +486,50 @@ class Device(object):
     return r.json()
 
 
+  def Info(self):
+    """Make call to the privet/info API to get the latest printer info
+
+      Returns:
+        dict, the info object if successful, else None
+        """
+    response = self.transport.HTTPReq(self.privet_url['info'],
+                                      headers=self.privet.headers_empty)
+    info = self.jparser.Read(response['data'])
+    if not info['json']:
+      if response['code']:
+        self.logger.info('HTTP device return code: %s', response['code'])
+      if response['headers']:
+        self.logger.debug('HTTP Headers:  ')
+        for key in response['headers']:
+          self.logger.debug('%s: %s', key, response['headers'][key])
+      if response['data']:
+        self.logger.info('Data from response: %s', response['data'])
+      return None
+    else:
+      return info
+
+
+  def WaitForPrinterState(self, state, timeout=30):
+    """Wait until the printer state becomes the specified status
+
+        Args:
+          state: string, printer state to wait for
+          timeout: integer, number of seconds to wait.
+        Returns:
+          boolean, True if state is observed within timeout; otherwise, False.
+        """
+    end = time.time() + timeout
+
+    while time.time() < end:
+      info = self.Info()
+
+      if info is not None:
+        if info['device_state'] == state:
+          return True
+
+      Sleep('POLL')
+
+    return False
 
 
   def CancelJob(self, job_id):
