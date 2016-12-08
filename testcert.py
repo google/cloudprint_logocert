@@ -213,7 +213,7 @@ def waitForPrivetDiscovery(printer, browser):
   return False
 
 
-def isPrinterRegistered(printer):
+def isPrinterAdvertisingAsRegistered(printer):
   """Checks the printer's privet advertisements and see if it is advertising as registered or not
 
       Args:
@@ -229,7 +229,7 @@ def isPrinterRegistered(printer):
           return properties['id'] and 'online' in properties['cs'].lower()
   return None
 
-def waitForRegistrationStatus(name, is_wait_for_reg, timeout):
+def waitForAdvertisementRegistrationStatus(name, is_wait_for_reg, timeout):
   """Wait for the device to privet advertise as registered or unregistered
 
       Args:
@@ -241,7 +241,7 @@ def waitForRegistrationStatus(name, is_wait_for_reg, timeout):
       """
   end = time.time() + timeout
   while time.time() < end:
-    is_registered = isPrinterRegistered(name)
+    is_registered = isPrinterAdvertisingAsRegistered(name)
     if is_registered is is_wait_for_reg:
       return True
     else:
@@ -1784,7 +1784,7 @@ class PreRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      is_registered = isPrinterRegistered(_device.name)
+      is_registered = isPrinterAdvertisingAsRegistered(_device.name)
       try:
         self.assertFalse(is_registered)
       except AssertionError:
@@ -1813,7 +1813,7 @@ class PreRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      is_registered = isPrinterRegistered(_device.name)
+      is_registered = isPrinterAdvertisingAsRegistered(_device.name)
       try:
         self.assertFalse(is_registered)
       except AssertionError:
@@ -1877,7 +1877,7 @@ class PreRegistration(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        is_registered = isPrinterRegistered(_device.name)
+        is_registered = isPrinterAdvertisingAsRegistered(_device.name)
         try:
           self.assertFalse(is_registered)
         except AssertionError:
@@ -2038,7 +2038,7 @@ class Registration(LogoCert):
           raise
         else:
           print 'Waiting up to 2 minutes to complete the registration.'
-          success = waitForRegistrationStatus(_device.name, True, 120)
+          success = waitForAdvertisementRegistrationStatus(_device.name, True, 120)
           try:
             self.assertTrue(success)
           except AssertionError:
@@ -2215,38 +2215,56 @@ class LocalDiscovery(LogoCert):
     """Verify idle printer doesn't send mDNS broadcasts."""
     test_id = '703a55d2-7291-4637-b257-dc885fdb5abd'
     test_name = 'testPrinterIdleNoBroadcastPrivet'
-    return
-    printer_found = False
-    print 'Ensure printer stays on and remains in idle state.'
-    #TODO: Fix this test - may need something other than zeroconf for this...
-    #      this test is broken, _mdns_browser updates discovered dict only when the printer is turned on or off
-    #      Since the printer is already on, even if there was advertisements, discovered[k]['found'] would never get updated
 
-    # Remove any broadcast entries from dictionary.
-    for (k, v) in _mdns_browser.listener.discovered.items():
-      if 'ty' in v['info'].properties:
-        if self.printer in v['info'].properties['ty']:
-          _mdns_browser.listener.discovered[k]['found'] = None
+    print 'Ensure printer stays on and remains in idle state.'
+    # Service TTL should not be updated if there are no advertisements from the idle printer
+    # Only exception is if the last record's TTL expires, then the service browser's
+    # queries will exclude the printer service's answer in it's constant polls, prompting
+    # the printer to respond with an advertisement, so power off and power on the printer
+    # to get a fresh TTL
+    start_ttl = _mdns_browser.get_service_ttl(_device.name)
+
+    if start_ttl < 60:
+      # Force restart for corner cases where TTL might expire
+      PromptUserAction('Turn off the printer and wait...')
+      is_removed = waitForService(_device.name, False, timeout=300)
+      try:
+        self.assertTrue(is_removed)
+      except AssertionError:
+        notes = 'Error receiving the shutdown signal from the printer.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        # Need to clear the cache of zeroconf, or else the stale printer details will be returned
+        _mdns_browser.clear_cache()
+        PromptUserAction('Power on the printer and wait...')
+        is_added = waitForService(_device.name, True, timeout=300)
+        try:
+          self.assertTrue(is_added)
+        except AssertionError:
+          notes = 'Error receiving the power-on signal from the printer.'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          # Get the new X-privet-token from the restart
+          _device.GetPrivetInfo()
+          start_ttl = _mdns_browser.get_service_ttl(_device.name)
+
     # Monitor the local network for privet broadcasts.
-    print 'Listening for network broadcasts for 1 minute.'
-    time.sleep(60) # Not being used since this test is broken and returns right away
-    for (k, v) in _mdns_browser.listener.discovered.items():
-      if 'ty' in v['info'].properties:
-        if self.printer in v['info'].properties['ty']:
-          if _mdns_browser.listener.discovered[k]['found'] is None:
-            _mdns_browser.listener.discovered[k]['found'] = True
-          else:
-            printer_found = True
+    print 'Listening for network broadcasts for 60 seconds.'
+    time.sleep(60)
+    end_ttl = _mdns_browser.get_service_ttl(_device.name)
 
     try:
-      self.assertFalse(printer_found)
+      self.assertTrue(start_ttl > end_ttl)
     except AssertionError:
-      notes = 'Found printer mDNS broadcast packets containing privet.'
+      notes = 'Found printer mDNS broadcast packets containing privet while printer is idle.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'No printer mDNS broadcast packets containing privet were found.'
+      notes = 'No printer mDNS broadcast packets containing privet were found while printer is idle.'
       self.LogTest(test_id, test_name, 'Passed', notes)
+
 
   def testUpdateLocalSettings(self):
     """Verify printer's local settings can be updated with Update API."""
@@ -2569,7 +2587,7 @@ class LocalPrinting(LogoCert):
       self.ManualPass(test_id2, test_name2)
 
   def testLocalPrintUpdateMgtPage(self):
-    """Verify printer updates GCP MGT page when Local Printing."""
+    """Verify printer jobstate API is functional."""
     test_id = '530c74f7-2764-405e-916b-21fc943ea1f8'
     test_name = 'testLocalPrintUpdateMgtPage'
     #TODO: not tested yet, need a printer that supports this
@@ -2740,26 +2758,9 @@ class PostRegistration(LogoCert):
       _device.GetDeviceCDD(_device.dev_id)
       self.LogTest(test_id, test_name, 'Passed', notes)
 
-  def testRegisteredDeviceNoPrivetAdvertise(self):
-    """Verify printer does not advertise itself as unregistered once it is registered."""
-    test_id = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
-    test_name = 'testRegisteredDeviceNoPrivetAdvertise'
-
-    print 'Waiting up to 2 minutes to complete the registration.'
-    _mdns_browser.remove_service_entry(_device.name)
-    success = waitForRegistrationStatus(_device.name, True, 120)
-    try:
-      self.assertTrue(success)
-    except AssertionError:
-      notes = 'Printer is advertising as an unregistered device'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      notes = 'Printer is advertising as a registered device'
-      self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testRegisteredDevicePoweredOffShowsOffline(self):
-    """Verify device shows offline that is powered off."""
+    """Verify device shows offline when it is powered off."""
     test_id = 'ba6b2c0c-10da-4910-bb6f-63c826087054'
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
 
@@ -2833,7 +2834,7 @@ class PostRegistration(LogoCert):
       else:
         # Get the new X-privet-token from the restart
         _device.GetPrivetInfo()
-        is_registered = isPrinterRegistered(self.printer)
+        is_registered = isPrinterAdvertisingAsRegistered(self.printer)
         try:
           self.assertTrue(is_registered)
         except AssertionError:
@@ -3724,7 +3725,8 @@ class Unregister(LogoCert):
     test_id2 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
     test_name2 = 'testOffDeviceIsDeleted'
 
-    is_registered = isPrinterRegistered(_device.name)
+    print 'Printer needs to be registered at the beginning of this testcase'
+    is_registered = _device.isPrinterRegistered()
     try:
       self.assertTrue(is_registered)
     except AssertionError:
@@ -3744,8 +3746,7 @@ class Unregister(LogoCert):
       self.LogTest(test_id, test_name, 'Passed', notes)
 
     print 'Wait up to 2 minutes for the printer to advertise as an unregistered device'
-    success = waitForRegistrationStatus(_device.name, False, 120)
-
+    success = waitForAdvertisementRegistrationStatus(_device.name, False, 120)
     try:
       self.assertTrue(success)
     except AssertionError:

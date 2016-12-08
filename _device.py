@@ -531,6 +531,18 @@ class Device(object):
 
     return False
 
+  def isPrinterRegistered(self):
+    """Use the /privet/info interface to see if printer is registered
+
+        Returns:
+          boolean, True if registered, False if not registered, None if /privet/info failed
+        """
+    info = self.Info()
+    if info is not None:
+        return info['id'] and info['connection_state'] == 'online'
+    return None
+
+
 
   def CancelJob(self, job_id):
     #TODO: Posting a mismatch job seems to cancel the created job, find a better way to do this

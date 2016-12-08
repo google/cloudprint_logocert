@@ -120,7 +120,7 @@ class MDnsListener(object):
         Args:
           name: string, the service to remove.
         Returns:
-          boolean, True = serice removed, False = service not found.
+          boolean, True = service removed, False = service not found.
         """
     for service in self.sb.services:
       if service.lower().startswith(name.lower()):
@@ -135,6 +135,16 @@ class MDnsListener(object):
         self.logger.info('Service removed: ' + service)
         return True
     return False
+
+  def get_service_ttl(self, name):
+    """Get the printer service's DNS record's TTL
+
+    Returns:
+          integer, TTL if service is found, None otherwise."""
+    for service in self.sb.services:
+      if service.lower().startswith(name.lower()):
+        return self.sb.services[service].get_remaining_ttl(time.time()* 1000)
+    return None
 
   def remove_listeners(self):
     """Remove all listeners."""
