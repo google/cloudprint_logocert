@@ -497,13 +497,13 @@ class Device(object):
     info = self.jparser.Read(response['data'])
     if not info['json']:
       if response['code']:
-        self.logger.info('HTTP device return code: %s', response['code'])
+        self.logger.debug('HTTP device return code: %s', response['code'])
       if response['headers']:
         self.logger.debug('HTTP Headers:  ')
         for key in response['headers']:
           self.logger.debug('%s: %s', key, response['headers'][key])
       if response['data']:
-        self.logger.info('Data from response: %s', response['data'])
+        self.logger.debug('Data from response: %s', response['data'])
       return None
     else:
       return info

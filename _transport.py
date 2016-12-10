@@ -143,7 +143,7 @@ class Transport(object):
         self.logger.debug('Header Key: %s\nHeader Value: %s', header,
                           response['headers'][header])
     if response['code']:
-      self.logger.info('HTTP device return code: %s', response['code'])
+      self.logger.debug('HTTP device return code: %s', response['code'])
       if response['code'] == 200:
         return True
       else:

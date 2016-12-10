@@ -2318,7 +2318,7 @@ class LocalPrinting(LogoCert):
   """Tests of local printing functionality."""
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
+    self.cjt = CloudJobTicket(_device.privet_info['version'], _device.cdd['caps'])
 
   @classmethod
   def setUpClass(cls):
@@ -2869,9 +2869,15 @@ class PrinterState(LogoCert):
     Returns:
       boolean: True = Pass, False = Fail.
     """
-    uiMsg = _device.cdd['uiState']['caption'].lower()
-    uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
-    uiMsg.strip()
+    if 'uiState' in _device.cdd:
+      if 'caption' in _device.cdd['uiState']:
+        uiMsg = _device.cdd['uiState']['caption'].lower()
+        uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
+        uiMsg.strip()
+      else:
+        notes = 'No \'caption\' attribute found inside uiState'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        return False
 
     found = False
     # check for keywords
@@ -3075,7 +3081,7 @@ class PrinterState(LogoCert):
     try:
       self.assertTrue(_device.error_state)
     except AssertionError:
-      notes = 'Printer error state is not True with open cover.'
+      notes = 'Printer is not in error state with open cover.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -3091,7 +3097,7 @@ class PrinterState(LogoCert):
     try:
       self.assertFalse(_device.error_state)
     except AssertionError:
-      notes = 'Printer error state is True with closed cover.'
+      notes = 'Printer is in error state with closed cover.'
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
