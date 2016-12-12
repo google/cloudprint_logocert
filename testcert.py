@@ -174,7 +174,8 @@ def setUpModule():
             _logger.debug('Privet advertises port: %d', privet_port)
 
   _gcp = GCPService(Constants.AUTH["ACCESS"])
-  _device = Device(_logger, Constants.AUTH["ACCESS"], _gcp, privet_port=privet_port)
+  _device = Device(_logger, Constants.AUTH["ACCESS"], _gcp,
+                   privet_port= privet_port if 'PORT' not in Constants.PRINTER else Constants.PRINTER['PORT'])
   _transport = Transport(_logger)
 
   if Constants.TEST['SPREADSHEET']:
@@ -196,6 +197,26 @@ def LogTestSuite(name):
   if Constants.TEST['SPREADSHEET']:
     row = [name,'','','','','','','']
     _sheet.AddRow(row)
+
+def promptForShutDown(device_name):
+  """Prompts for the user to turn off the printer.
+     Handle different for printers that send Goodbye packets vs those that don't
+     Goodbye packets are recommended but not required
+
+      Args:
+        device_name: string, printer name
+      Returns:
+        boolean, True = device is in an off state or confirmed as off by user, False = goodbye packet not seen
+      """
+  if Constants.CAPS['GOODBYE_PACKET']:
+    PromptUserAction('Turn off the printer and wait...')
+    return waitForService(device_name, False, timeout=120)
+  else:
+    PromptAndWaitForUserAction('Press ENTER once printer is powered off')
+    # Delete service from zeroconf, so device start up can be polled via mandatory startup packets
+    _mdns_browser.clear_cache()
+    _mdns_browser.remove_service_entry(device_name)
+    return True
 
 
 def waitForPrivetDiscovery(printer, browser):
@@ -753,7 +774,7 @@ class Privet(LogoCert):
       try:
         self.assertEqual(response['code'], return_code)
       except AssertionError:
-        notes = 'Incorrect return code, found %d' % response['code']
+        notes = 'Incorrect return code from %s, found %d' % (_device.privet_url[api],response['code'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -1830,10 +1851,9 @@ class PreRegistration(LogoCert):
     test_id = '35ce7a3d-3403-499e-9a60-4d17e1693178'
     test_name = 'testDeviceOffNoAdvertisePrivet'
 
-    PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(_device.name, False, timeout=300)
+    is_off = promptForShutDown(_device.name)
     try:
-      self.assertTrue(is_removed)
+      self.assertTrue(is_off)
     except AssertionError:
       notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2125,10 +2145,9 @@ class LocalDiscovery(LogoCert):
     printer_found = False
 
     print 'This test should begin with the printer turned off.'
-    PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(_device.name, False, timeout=300)
+    is_off = promptForShutDown(_device.name)
     try:
-      self.assertTrue(is_removed)
+      self.assertTrue(is_off)
     except AssertionError:
       notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2172,10 +2191,9 @@ class LocalDiscovery(LogoCert):
     printer_found = False
 
     print 'This test must start with the printer on and operational.'
-    PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(_device.name, False, timeout=300)
+    is_off = promptForShutDown(_device.name)
     try:
-      self.assertTrue(is_removed)
+      self.assertTrue(is_off)
     except AssertionError:
       notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2226,10 +2244,9 @@ class LocalDiscovery(LogoCert):
 
     if start_ttl < 60:
       # Force restart for corner cases where TTL might expire
-      PromptUserAction('Turn off the printer and wait...')
-      is_removed = waitForService(_device.name, False, timeout=300)
+      is_off = promptForShutDown(_device.name)
       try:
-        self.assertTrue(is_removed)
+        self.assertTrue(is_off)
       except AssertionError:
         notes = 'Error receiving the shutdown signal from the printer.'
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2764,10 +2781,9 @@ class PostRegistration(LogoCert):
     test_id = 'ba6b2c0c-10da-4910-bb6f-63c826087054'
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
 
-    PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(_device.name, False, timeout=300)
+    is_off = promptForShutDown(_device.name)
     try:
-      self.assertTrue(is_removed)
+      self.assertTrue(is_off)
     except AssertionError:
       notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -2812,10 +2828,9 @@ class PostRegistration(LogoCert):
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
 
-    PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(_device.name, False, timeout=300)
+    is_off = promptForShutDown(_device.name)
     try:
-      self.assertTrue(is_removed)
+      self.assertTrue(is_off)
     except AssertionError:
       notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3532,10 +3547,9 @@ class JobState(LogoCert):
 
     print 'This tests that an offline printer will print all jobs'
     print 'when it comes back online.'
-    PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(_device.name, False, timeout=300)
+    is_off = promptForShutDown(_device.name)
     try:
-      self.assertTrue(is_removed)
+      self.assertTrue(is_off)
     except AssertionError:
       notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3576,10 +3590,9 @@ class JobState(LogoCert):
     test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
     test_name = 'testDeleteQueuedJob'
 
-    PromptUserAction('Turn off the printer and wait...')
-    is_removed = waitForService(_device.name, False, timeout=300)
+    is_off = promptForShutDown(_device.name)
     try:
-      self.assertTrue(is_removed)
+      self.assertTrue(is_off)
     except AssertionError:
       notes = 'Error receiving the shutdown signal from the printer.'
       self.LogTest(test_id, test_name, 'Failed', notes)
