@@ -114,10 +114,6 @@ def _ParseArgs():
                     help='Relative directory for logfiles [default: %default]',
                     default=Constants.LOGFILES,
                     dest='logdir')
-  parser.add_option('--passwd',
-                    help='Email account password [default: %default]',
-                    default=Constants.USER['PW'],
-                    dest='passwd')
   parser.add_option('--printer',
                     help='Name of printer [default: %default]',
                     default=Constants.PRINTER['NAME'],
@@ -380,7 +376,6 @@ class LogoCert(unittest.TestCase):
     options, unused_args = _ParseArgs()
     cls.loadtime = options.loadtime
     cls.username = options.email
-    cls.pw = options.passwd
     cls.autorun = options.autorun
     cls.printer = options.printer
 
