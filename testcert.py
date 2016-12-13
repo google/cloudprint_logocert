@@ -335,14 +335,12 @@ def getRasterImageFromCloud(pwg_path, img_path):
   if not output['success']:
     print 'Cloud printing failed.'
   else:
-    print 'Waiting up to 60 seconds for the printer to start printing'
-    _device.WaitForPrinterState('processing', timeout=60)
+    _device.WaitForPrinterState('processing')
 
     res = _gcp.FetchRaster(output['job']['id'])
     writeRasterToFile(pwg_path, res)
 
-    print 'Waiting up to 180 seconds for the printer to finish printing\n'
-    _device.WaitForPrinterState('idle', timeout=180)
+    _device.WaitForPrinterState('idle')
 
 
 
@@ -2350,7 +2348,7 @@ class LocalPrinting(LogoCert):
       raise
     print 'Local print successfully enabled'
 
-    success = _device.WaitForPrinterState('idle', timeout=180)
+    success = _device.WaitForPrinterState('idle')
     try:
       self.assertTrue(success)
     except AssertionError:
@@ -3097,7 +3095,6 @@ class JobState(LogoCert):
   def setUp(self):
     # Create a fresh CJT for each test case
     self.cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
-    self.timeout = 600
 
   @classmethod
   def setUpClass(cls):
@@ -3119,9 +3116,11 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                                 timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+        notes = 'Job status did not transition to %s within %s seconds.' % \
+                (CjtConstants.DONE, Constants.TIMEOUT['PRINTING'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3159,9 +3158,11 @@ class JobState(LogoCert):
         raise
       else:
         try:
-          job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+          job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                                   timeout=Constants.TIMEOUT['PRINTING'])
         except AssertionError:
-          notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+          notes = 'Job status did not transition to %s within %s seconds.' % \
+                  (CjtConstants.DONE, Constants.TIMEOUT['PRINTING'])
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
@@ -3225,9 +3226,10 @@ class JobState(LogoCert):
       try:
         job = _gcp.WaitJobStatusNotIn(output['job']['id'], _device.dev_id,
                                      [CjtConstants.QUEUED, CjtConstants.IN_PROGRESS],
-                                     timeout = self.timeout)
+                                     timeout = Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = 'Job not found or status transitioned into Queued or In Progress within %s seconds.' % (self.timeout)
+        notes = 'Job not found or status transitioned into Queued or In Progress within %s seconds.' % \
+                (Constants.TIMEOUT['PRINTING'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3262,9 +3264,11 @@ class JobState(LogoCert):
             else:
               print 'Wait for the print job to finish.'
               try:
-                job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+                job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                                         timeout=Constants.TIMEOUT['PRINTING'])
               except AssertionError:
-                notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+                notes = 'Job status did not transition to %s within %s seconds.' % \
+                        (CjtConstants.DONE, Constants.TIMEOUT['PRINTING'])
                 self.LogTest(test_id, test_name, 'Failed', notes)
                 raise
               else:
@@ -3292,9 +3296,10 @@ class JobState(LogoCert):
       try:
         job = _gcp.WaitJobStatusNotIn(output['job']['id'], _device.dev_id,
                                      [CjtConstants.QUEUED, CjtConstants.IN_PROGRESS],
-                                     timeout = self.timeout)
+                                     timeout = Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = 'Job not found or status transitioned into Queued or In Progress within %s seconds.' % (self.timeout)
+        notes = 'Job not found or status transitioned into Queued or In Progress within %s seconds.' % \
+                (Constants.TIMEOUT['PRINTING'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3329,9 +3334,11 @@ class JobState(LogoCert):
             else:
               print 'Wait for the print job to finish.'
               try:
-                job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+                job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                                         timeout=Constants.TIMEOUT['PRINTING'])
               except AssertionError:
-                notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+                notes = 'Job status did not transition to %s within %s seconds.' % \
+                        (CjtConstants.DONE, Constants.TIMEOUT['PRINTING'])
                 self.LogTest(test_id, test_name, 'Failed', notes)
                 raise
               else:
@@ -3356,7 +3363,7 @@ class JobState(LogoCert):
       PromptAndWaitForUserAction('Press ENTER once network is disconnected.')
 
       try:
-        _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
+        _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % \
                 (CjtConstants.IN_PROGRESS, 30)
@@ -3367,7 +3374,7 @@ class JobState(LogoCert):
         PromptAndWaitForUserAction('Press ENTER once network is reconnected')
         print 'Once network is reconnected, Job state should transition to in progress.'
         try:
-          _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS, timeout=30)
+          _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS)
         except AssertionError:
           notes = 'Job status did not transition to %s within %s seconds.' % \
                   (CjtConstants.IN_PROGRESS, 30)
@@ -3376,9 +3383,11 @@ class JobState(LogoCert):
         else:
           print 'Wait for the print job to finish.'
           try:
-            job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+            job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                                     timeout=Constants.TIMEOUT['PRINTING'])
           except AssertionError:
-            notes = 'Job status did not transition to Done within %s seconds of starting print job.' % (self.timeout)
+            notes = 'Job status did not transition to Done within %s seconds of starting print job.' % \
+                    (Constants.TIMEOUT['PRINTING'])
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
@@ -3409,7 +3418,7 @@ class JobState(LogoCert):
     else:
       print 'Verifying job is reported in error state.'
       try:
-        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.ERROR, timeout=30)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.ERROR)
       except AssertionError:
         notes = 'Job status did not transition to %s within %s seconds.' % \
                 (CjtConstants.ERROR, 30)
@@ -3450,9 +3459,11 @@ class JobState(LogoCert):
       PromptAndWaitForUserAction('After placing the correct paper size, press ENTER')
       print 'Printer should continue printing and should complete the print job.'
       try:
-        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                           timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+        notes = 'Job status did not transition to %s within %s seconds.' % \
+                (CjtConstants.DONE, Constants.TIMEOUT['PRINTING'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3502,7 +3513,7 @@ class JobState(LogoCert):
         self.LogTest(test_id, test_name, 'Blocked', notes)
         raise
       try:
-        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.QUEUED, timeout=30)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.QUEUED)
       except AssertionError:
         notes = 'Print job %s is not in Queued state.' %(_)
         self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -3548,7 +3559,7 @@ class JobState(LogoCert):
       raise
 
     try:
-      _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.QUEUED, timeout=30)
+      _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.QUEUED)
     except AssertionError:
       notes = 'Print job is not in queued state.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
@@ -3597,9 +3608,11 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                           timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+        notes = 'Job status did not transition to %s within %s seconds.' % \
+                (CjtConstants.DONE, Constants.TIMEOUT['PRINTING'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3623,9 +3636,11 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE, timeout=self.timeout)
+        job = _gcp.WaitJobStatus(output['job']['id'], _device.dev_id, CjtConstants.DONE,
+                                 timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = 'Job status did not transition to %s within %s seconds.' % (CjtConstants.DONE, self.timeout)
+        notes = 'Job status did not transition to %s within %s seconds.' % \
+                (CjtConstants.DONE, Constants.TIMEOUT['PRINTING'])
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:

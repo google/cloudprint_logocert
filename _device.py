@@ -509,7 +509,7 @@ class Device(object):
       return info
 
 
-  def WaitForPrinterState(self, state, timeout=30):
+  def WaitForPrinterState(self, state, timeout=Constants.TIMEOUT['PRINTER_STATUS']):
     """Wait until the printer state becomes the specified status
 
         Args:
@@ -518,6 +518,9 @@ class Device(object):
         Returns:
           boolean, True if state is observed within timeout; otherwise, False.
         """
+    print '[Configurable timeout] PRINTER_STATUS:'
+    print 'Waiting up to %s seconds for the printer to have status: %s' % (timeout, state)
+
     end = time.time() + timeout
 
     while time.time() < end:

@@ -30,7 +30,7 @@ from _config import Constants
 def Sleep(wait_type):
   sec = Constants.SLEEP[wait_type]
   if 'POLL' not in wait_type:
-    print '[Configurable wait] %s: %s seconds' %(wait_type, sec)
+    print '[Configurable sleep] %s: %s seconds' %(wait_type, sec)
   time.sleep(sec)
 
 def GreenText(str):

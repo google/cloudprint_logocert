@@ -65,8 +65,7 @@ class Constants(object):
                               # if the paper tray is open.
       'MEDIA_SENSOR': False,  # Set this to True if printer has sensor to detect
                               # if the paper tray is empty.
-      'MARGIN': True,		  # If a Printer supports Margin specifications, 
-						      # set this to True
+      'MARGIN': True,		  # Set this to True if a Printer supports Margin specifications
       'GOODBYE_PACKET': True  # Set this to True if a printer advertises TTL of 0
                               # when the device is shut off.
       }
@@ -85,8 +84,12 @@ class Constants(object):
   }
 
   # TIMEOUT contains the various durations of maximum wait times in SECONDS for polling waits
+  # Used for setting the upperbound for event-driven polling waits
   TIMEOUT = {
     'GCP_UPDATE': 60,         # Used for waiting on GCP update requests to change state from pending to current
+    'PRINTER_STATUS': 180,    # Used for waiting for the printer to have a certain status: processing, idle, etc
+                              # Status comes from the device's Privet/info interface
+    'PRINTING': 600,          # Used for waiting for a printer to complete printing a job
   }
 
   # Carriage return.

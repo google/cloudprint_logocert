@@ -374,7 +374,7 @@ class GCPService(object):
       return job
 
   @VerifyNotNone
-  def WaitJobStatusNotIn(self, job_id, printer_id, job_status_list, timeout=600):
+  def WaitJobStatusNotIn(self, job_id, printer_id, job_status_list, timeout=60):
     """Wait until the job status becomes a status which is not in the list.
 
     Args:
@@ -386,6 +386,9 @@ class GCPService(object):
       string, current job.
 
     """
+    print 'Waiting up to %s seconds for the printer to not have a status(es) in the list: %s' % \
+          (timeout, job_status_list)
+
     end = time.time() + timeout
 
     while time.time() < end:
@@ -400,7 +403,7 @@ class GCPService(object):
     return None
 
   @VerifyNotNone
-  def WaitJobStatus(self, job_id, printer_id, job_status, timeout=600):
+  def WaitJobStatus(self, job_id, printer_id, job_status, timeout=60):
     """Wait until the job status becomes the specified status
 
     Args:
@@ -412,6 +415,8 @@ class GCPService(object):
       dict, current job.
 
     """
+    print 'Waiting up to %s seconds for the printer to have the status: %s' % (timeout, job_status)
+
     end = time.time() + timeout
 
     while time.time() < end:
@@ -437,7 +442,8 @@ class GCPService(object):
       Returns:
         boolean, True if expected value is observed, otherwise False
     '''
-    print '[Configurable] Waiting up to %s seconds for printer to accept pending settings' % timeout
+    print '[Configurable timeout] GCP_UPDATE:'
+    print 'Waiting up to %s seconds for printer to accept pending settings' % timeout
 
     end = time.time() + timeout
 
