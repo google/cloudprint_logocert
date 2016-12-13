@@ -210,10 +210,8 @@ class Constants(object):
       'CLIENT_ID': '<OAuth2_Client_ID_of_test_account>',
       'CLIENT_SECRET': '<OAuth2_Client_Secret_of_test_account>',
       'EMAIL': '<test_account@gmail.com>',
-      'PW': '<password of test account.>',
       }
 
   USER2 = {
       'EMAIL': '<test_account2@gmail.com>',
-      'PW': '<password of 2nd test account>',
       }
