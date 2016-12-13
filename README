@@ -175,7 +175,7 @@ as follows:
 The order that the test cases run in is not deterministic, but the suites will run
 in the order they are placed in.
 
-LocalPrinting has a slight dependency on CloudPrinting. When the
+LocalPrinting has a one-time dependency on CloudPrinting. When the
 LocalPrinting suite is run for the first time, it will make 3 calls to the GCP
 submit interface in order to download the converted pwg-raster images that will be used
 in subsequent LocalPrinting tests. If Cloud Printing does not work for your printer, 

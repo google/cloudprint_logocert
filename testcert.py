@@ -64,7 +64,7 @@ from _common import RedText
 from _common import PromptAndWaitForUserAction
 from _common import PromptUserAction
 
-from _zconf import wait_for_privet_mdns_service # TODO Capitalize public function name
+from _zconf import Wait_for_privet_mdns_service
 from _zconf import MDNS_Browser
 
 
@@ -149,7 +149,7 @@ def setUpModule():
   getTokens()
 
   # Wait to receive Privet printer advertisements. Timeout in 30 seconds
-  printer_service = wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'], _logger)
+  printer_service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'], _logger)
 
   if printer_service is None:
     _logger.info("No printers discovered under "+ options.printer)
@@ -240,7 +240,7 @@ def waitForAdvertisementRegistrationStatus(name, is_wait_for_reg, timeout):
 
   end = time.time() + timeout
   while time.time() < end:
-    service = wait_for_privet_mdns_service(end-time.time(), name, _logger)
+    service = Wait_for_privet_mdns_service(end-time.time(), name, _logger)
     if service is None:
       _logger.info("No printers discovered under " + name)
     else:
@@ -1747,7 +1747,7 @@ class PreRegistration(LogoCert):
     test_name = 'testDeviceAdvertisePrivet'
 
     print 'Listening for the printer\'s advertisements for up to 60 seconds'
-    service = wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'], _logger)
+    service = Wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'], _logger)
     try:
       self.assertIsNotNone(service)
     except AssertionError:
@@ -1775,7 +1775,7 @@ class PreRegistration(LogoCert):
     PromptAndWaitForUserAction('Press ENTER when printer is sleeping.')
 
     print 'Listening for the printer\'s advertisements for up to 60 seconds'
-    service = wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'], _logger)
+    service = Wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'], _logger)
     try:
       self.assertIsNotNone(service)
     except AssertionError:
@@ -1809,7 +1809,7 @@ class PreRegistration(LogoCert):
       raise
 
     print 'Listening for the printer\'s advertisements for up to 60 seconds'
-    service = wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'], _logger)
+    service = Wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'], _logger)
     try:
       self.assertIsNone(service)
     except AssertionError:
@@ -1825,7 +1825,7 @@ class PreRegistration(LogoCert):
       test_name2 = 'testDeviceOffPowerOnAdvertisePrivet'
 
       PromptUserAction('Power on the printer and wait...')
-      service = wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
+      service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
       try:
         self.assertIsNotNone(service)
       except AssertionError:
@@ -2049,7 +2049,7 @@ class LocalDiscovery(LogoCert):
       else:
         # Should not be any advertisements from the printer anymore
         print 'Listening for advertisements for 30 seconds, there should not be any from the printer'
-        service = wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'], _logger)
+        service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'], _logger)
         try:
           self.assertIsNone(service)
         except AssertionError:
@@ -2079,7 +2079,7 @@ class LocalDiscovery(LogoCert):
         raise
       else:
         print 'Listening for advertisements for up to 30 seconds, there should be advertisements from the printer'
-        service = wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'], _logger)
+        service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'], _logger)
         try:
           self.assertIsNotNone(service)
         except AssertionError:
@@ -2108,7 +2108,7 @@ class LocalDiscovery(LogoCert):
       raise
 
     PromptUserAction('Power on the printer and wait...')
-    service = wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
+    service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
     try:
       self.assertIsNotNone(service)
     except AssertionError:
@@ -2160,7 +2160,7 @@ class LocalDiscovery(LogoCert):
       mdns_browser.Close()
       # Turn the printer back on
       PromptUserAction('Power on the printer and wait...')
-      service = wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
+      service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
       try:
         self.assertIsNotNone(service)
       except AssertionError:
@@ -2418,14 +2418,6 @@ class LocalPrinting(LogoCert):
     """Verify printer respects layout settings in local print."""
     test_id = 'fb522a69-2454-40ab-9453-270553664fea'
     test_name = 'testLocalPrintLayoutPortrait'
-
-    #TODO: Do we still care about this???
-    #  When the Chrome issue of local printing page layout is fixed, this
-    #  code should be removed.
-    if not Constants.CAPS['LAYOUT_ISSUE']:
-      notes = 'Printer does not have the workaround for the Chrome issue.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
 
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
@@ -2762,7 +2754,7 @@ class PostRegistration(LogoCert):
           self.LogTest(test_id, test_name, 'Passed', notes)
         finally:
           PromptUserAction('Power on the printer and wait...')
-          service = wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
+          service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
           try:
             self.assertIsNotNone(service)
           except AssertionError:
@@ -3509,7 +3501,7 @@ class JobState(LogoCert):
         raise
 
     PromptUserAction('Power on the printer and wait...')
-    service = wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
+    service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
     try:
       self.assertIsNotNone(service)
     except AssertionError:
@@ -3564,7 +3556,7 @@ class JobState(LogoCert):
       raise
     else:
       PromptUserAction('Power on the printer and wait...')
-      service = wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
+      service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
       try:
         self.assertIsNotNone(service)
       except AssertionError:

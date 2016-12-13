@@ -18,8 +18,10 @@ Support for mdns operations.
 This module will provide a class to browse MDNS messages on the local network.
 It depends on the Python package zeroconf.
 
-The main interface to this module are the wait_for_privet_mdns_service and
-mdns_privet_device functions.  The _Listener class is intended for the internals
+The main interface to this module are the Wait_for_privet_mdns_service function
+and MDNS_Browser class. Wait_for_privet_mdns_service instatiates a listening
+session and closes it within the function whereas MDNS_Browser lets the caller
+decide when to close the session. The _Listener class is intended for the internals
 of this module and users of this module do not directly need to use it.
 """
 import copy
@@ -113,7 +115,7 @@ def _find_zeroconf_threads():
 
 # pylint: disable=dangerous-default-value
 # The default case, [] is explicitly handled, and common.
-def wait_for_privet_mdns_service(t_seconds, service, logger, wifi_interfaces=[]):
+def Wait_for_privet_mdns_service(t_seconds, service, logger, wifi_interfaces=[]):
   """Listens for t_seconds and returns an information object for each service.
 
   This is the primary interface to discover mDNS services.  It blocks for
