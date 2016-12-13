@@ -179,9 +179,9 @@ def LogTestSuite(name):
   Args:
     name: string, name of the testsuite that is logging.
   """
-  print '=============================================================================================================='
-  print '                                     Starting %s testSuite'% (name)
-  print '=============================================================================================================='
+  print '============================================================================='
+  print '                     Starting %s testSuite'% (name)
+  print '============================================================================='
   if Constants.TEST['SPREADSHEET']:
     row = [name,'','','','','','','']
     _sheet.AddRow(row)
@@ -330,19 +330,18 @@ def getRasterImageFromCloud(pwg_path, img_path):
   #
   cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
 
-  print '%s not found. Likely that this is the first time LocalPrinting suite is run.' % (pwg_path)
   print 'Generating pwg-raster via cloud print'
   output = _gcp.Submit(_device.dev_id, img_path, 'LocalPrinting Raster Setup', cjt)
   if not output['success']:
     print 'Cloud printing failed.'
   else:
-    print 'Waiting up to 30 seconds for the printer to start printing'
-    _device.WaitForPrinterState('processing', timeout=30)
+    print 'Waiting up to 60 seconds for the printer to start printing'
+    _device.WaitForPrinterState('processing', timeout=60)
 
     res = _gcp.FetchRaster(output['job']['id'])
     writeRasterToFile(pwg_path, res)
 
-    print 'Waiting up to 180 seconds for the printer to finish printing'
+    print 'Waiting up to 180 seconds for the printer to finish printing\n'
     _device.WaitForPrinterState('idle', timeout=180)
 
 
@@ -351,14 +350,16 @@ def getLocalPrintingRasterImages():
   """ Checks to see if the raster images used for local printing exist on the machine,
       generate and store to disk if not
       """
-  print "Generating and retrieving pwg-raster images for the LocalPrinting testsuite if they are missing"
   if not os.path.exists(Constants.IMAGES['PWG1']):
+    print '%s not found. Likely that this is the first time LocalPrinting suite is run.' % (Constants.IMAGES['PWG1'])
     getRasterImageFromCloud(Constants.IMAGES['PWG1'], Constants.IMAGES['PNG7'])
 
   if not os.path.exists(Constants.IMAGES['PWG2']):
+    print '%s not found. Likely that this is the first time LocalPrinting suite is run.' % (Constants.IMAGES['PWG2'])
     getRasterImageFromCloud(Constants.IMAGES['PWG2'], Constants.IMAGES['PDF10'])
 
   if not os.path.exists(Constants.IMAGES['PWG3']):
+    print '%s not found. Likely that this is the first time LocalPrinting suite is run.' % (Constants.IMAGES['PWG3'])
     getRasterImageFromCloud(Constants.IMAGES['PWG3'], Constants.IMAGES['PNG2'])
 
 class LogoCert(unittest.TestCase):
@@ -368,7 +369,7 @@ class LogoCert(unittest.TestCase):
     '''Overriding the docstring printout function'''
     doc = self._testMethodDoc
     msg =  doc and doc.split("\n")[0].strip() or None
-    return BlueText('\n================'+msg+'================\n\n')
+    return BlueText('\n============'+msg+'============\n\n')
 
 
   @classmethod
@@ -1109,10 +1110,10 @@ class Printer(LogoCert):
       notes = 'Manufacturer: %s' % _device.details['manufacturer']
       self.LogTest(test_id, test_name, 'Passed', notes)
 
-  def testPrinterSerialNumber(self):
-    """Verify printer provides a serial number."""
+  def testPrinterUUID(self):
+    """Verify printer provides a UUID ( equilvalent to serial number )."""
     test_id = '3996db1d-93ea-4f4c-b70c-dfd9355d5e5d'
-    test_name = 'testPrinterSerialNumber'
+    test_name = 'testPrinterUUID'
     try:
       self.assertIn('uuid', _device.details)
     except AssertionError:
@@ -2039,7 +2040,7 @@ class LocalDiscovery(LogoCert):
       raise
     else:
       # Give printer time to update.
-      success = _gcp.WaitForUpdate(_device.dev_id, 'local_discovery', False, timeout=60)
+      success = _gcp.WaitForUpdate(_device.dev_id, 'local_discovery', False)
       try:
         self.assertTrue(success)
       except AssertionError:
@@ -2070,7 +2071,7 @@ class LocalDiscovery(LogoCert):
       raise
     else:
       # Give printer time to update.
-      success = _gcp.WaitForUpdate(_device.dev_id, 'local_discovery', True, timeout=60)
+      success = _gcp.WaitForUpdate(_device.dev_id, 'local_discovery', True)
       try:
         self.assertTrue(success)
       except AssertionError:
@@ -2226,7 +2227,6 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
-    print 'Waiting up to 30 seconds for printer to accept pending settings'
     try:
       success = _gcp.WaitForUpdate(_device.dev_id, 'xmpp_timeout_value', new)
       self.assertTrue(success)
@@ -2312,14 +2312,14 @@ class LocalPrinting(LogoCert):
       raise
 
     # Give the printer time to update.
-    print 'Waiting up to 30 seconds for printer to accept pending settings'
+    success = _gcp.WaitForUpdate(_device.dev_id, 'printer/local_printing_enabled', False)
     try:
-      success = _gcp.WaitForUpdate(_device.dev_id, 'printer/local_printing_enabled', False)
       self.assertTrue(success)
     except AssertionError:
       notes = 'Failed to detect update before timing out.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    print 'Local print successfully turned off'
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
@@ -2341,13 +2341,21 @@ class LocalPrinting(LogoCert):
       raise
 
     # Give the printer time to update.
-    print 'Waiting up to 30 seconds for printer to accept pending settings'
+    success = _gcp.WaitForUpdate(_device.dev_id, 'printer/local_printing_enabled', True)
     try:
-      success = _gcp.WaitForUpdate(_device.dev_id, 'printer/local_printing_enabled', True)
       self.assertTrue(success)
     except AssertionError:
       notes = 'Failed to detect update before timing out.'
       self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    print 'Local print successfully enabled'
+
+    success = _device.WaitForPrinterState('idle', timeout=180)
+    try:
+      self.assertTrue(success)
+    except AssertionError:
+      notes2 = 'Printer not in idle state after updates.'
+      self.LogTest(test_id, test_name, 'Blocked', notes2)
       raise
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)

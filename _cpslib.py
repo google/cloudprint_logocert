@@ -54,7 +54,11 @@ class GCPService(object):
   """Send and receive network messages and communication."""
 
   def __init__(self, auth_token):
-    """Get a reference to a logger object."""
+    """Get a reference to a logger object.
+
+      Args:
+      auth_token: the authentication token to use for GCP requests
+    """
     self.auth_token = auth_token
     self.logger = _log.GetLogger('LogoCert')
     self.jparser = JsonParser(self.logger)
@@ -422,7 +426,7 @@ class GCPService(object):
     return None
 
 
-  def WaitForUpdate(self, dev_id, key, expected_value, timeout=30):
+  def WaitForUpdate(self, dev_id, key, expected_value, timeout=Constants.TIMEOUT['GCP_UPDATE']):
     '''Wait until the printer's local_settings attribute matches an expected value
 
       Args:
@@ -433,6 +437,8 @@ class GCPService(object):
       Returns:
         boolean, True if expected value is observed, otherwise False
     '''
+    print '[Configurable] Waiting up to %s seconds for printer to accept pending settings' % timeout
+
     end = time.time() + timeout
 
     while time.time() < end:

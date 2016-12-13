@@ -47,7 +47,7 @@ class _Listener(object):
     self.logger = logger
 
   def remove_service(self, zeroconf_obj, service_type, name):
-    self.logger.info('Service removed: "%s" (type is %s)', name, service_type)
+    self.logger.info('Service removed: "%s"', name)
     self.lock.acquire()
     self._removed_service_names.append(name)
     self.lock.release()
@@ -65,7 +65,7 @@ class _Listener(object):
         as '_privet._tcp.local.'.
       name: The name of the service on mDNS.
     """
-    self.logger.info('Service added: "%s" (type is %s)', name, service_type)
+    self.logger.info('Service added: "%s"', name)
     self.lock.acquire()
     info = zeroconf_obj.get_service_info(service_type, name, timeout=10000)
     retries = 5

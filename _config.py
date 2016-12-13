@@ -83,6 +83,12 @@ class Constants(object):
     'AUTO_RUN': 5             # Used if AUTOMODE is set to be true
 
   }
+
+  # TIMEOUT contains the various durations of maximum wait times in SECONDS for polling waits
+  TIMEOUT = {
+    'GCP_UPDATE': 60,         # Used for waiting on GCP update requests to change state from pending to current
+  }
+
   # Carriage return.
   CRLF = '\r\n'
 
