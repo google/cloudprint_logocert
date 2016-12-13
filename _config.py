@@ -49,24 +49,26 @@ class Constants(object):
   CAPS = {
       'COLLATE': False,
       'COLOR': False,
-      'COPIES_LOCAL': True,  # If a Printer supports copies for local printing,
-                             # set this to True.
-      'COPIES_CLOUD': True,  # If a Printer supports copies for cloud printing,
-                             # set this to True.
-      'COVER': True,         # Not all printers have a cover.
+      'COPIES_LOCAL': True,   # If a Printer supports copies for local printing,
+                              # set this to True.
+      'COPIES_CLOUD': True,   # If a Printer supports copies for cloud printing,
+                              # set this to True.
+      'COVER': True,          # Not all printers have a cover.
       'DUPLEX': True,
-      'LAYOUT_ISSUE': True,  # Printer must set page orientation for local
-                             # printing, so page_orientation is still needed
-                             # in the printer capabilities.
-      'LOCAL_PRINT': True,   # If a Printer supports local printing without
-                             # being registered, set this to True.
-      'TONER': True,  # Set to false if printer is thermal or has no toner.
-      'TRAY_SENSOR': False,  # Set this to True if printer has sensor to detect
-                             # if the paper tray is open.
-      'MEDIA_SENSOR': False, # Set this to True if printer has sensor to detect
-                             # if the paper tray is empty.
-      'MARGIN': True,		 # If a Printer supports Margin specifications, 
-						     # set this to True
+      'LAYOUT_ISSUE': True,   # Printer must set page orientation for local
+                              # printing, so page_orientation is still needed
+                              # in the printer capabilities.
+      'LOCAL_PRINT': True,    # If a Printer supports local printing without
+                              # being registered, set this to True.
+      'TONER': True,          # Set to false if printer is thermal or has no toner.
+      'TRAY_SENSOR': False,   # Set this to True if printer has sensor to detect
+                              # if the paper tray is open.
+      'MEDIA_SENSOR': False,  # Set this to True if printer has sensor to detect
+                              # if the paper tray is empty.
+      'MARGIN': True,		  # If a Printer supports Margin specifications, 
+						      # set this to True
+      'GOODBYE_PACKET': True  # Set this to True if a printer advertises TTL of 0
+                              # when the device is shut off.
       }
 
   # Sleep contains the various durations of time.sleep() in SECONDS that are used in this suite of scripts
