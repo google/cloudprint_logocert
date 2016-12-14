@@ -888,9 +888,7 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        print 'Accept the registration request on the device.'
-        PromptAndWaitForUserAction('Press ENTER once registration accepted.')
-        Sleep('REGISTRATION')
+        PromptUserAction('ACCEPT the registration request on the Printer UI.')
         try:
           self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
@@ -924,10 +922,8 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        print 'Accept the registration request on the device.'
+        PromptUserAction('ACCEPT the registration request on the Printer UI.')
         print 'Note: some printers may not show a registration request.'
-        PromptAndWaitForUserAction('Press ENTER once registration is accepted.')
-        Sleep('REGISTRATION')
         try:
           self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
@@ -1818,7 +1814,7 @@ class PreRegistration(LogoCert):
     test_id = '984be779-3ca4-4bb7-a2e1-e1868f687905'
     test_name = 'testDeviceRegistrationNotLoggedIn'
 
-    success = _device.Register('Press ENTER after confirming registration', use_token=False)
+    success = _device.Register('ACCEPT the registration request on the Printer UI.', use_token=False)
     try:
       self.assertFalse(success)
     except AssertionError:
@@ -1841,7 +1837,7 @@ class PreRegistration(LogoCert):
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on printer panel.'
 
-    registration_success = _device.Register('Press ENTER after CANCELLING the registration on the printer')
+    registration_success = _device.Register('CANCEL the registration request on the Printer UI.')
     if not registration_success:
       # Confirm the user's account has no registered printers
       res = _gcp.Search(_device.model)
@@ -1905,7 +1901,6 @@ class Registration(LogoCert):
     success = _device.StartPrivetRegister()
     if success:
       PromptAndWaitForUserAction('Press ENTER once the printer registration times out.')
-      Sleep('REGISTRATION')
       # Confirm the user's account has no registered printers
       res = _gcp.Search(_device.model)
       try:
@@ -1941,10 +1936,7 @@ class Registration(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        PromptUserAction('Now accept the registration request from %s on the printer UI.' % Constants.USER['EMAIL'])
-        PromptAndWaitForUserAction('Press ENTER once the registration is accepted.');
-        Sleep('REGISTRATION')
-
+        PromptUserAction('ACCEPT the registration request from %s on the printer UI.' % Constants.USER['EMAIL'])
         # Finish the registration process
         success = False
         if _device.GetPrivetClaimToken():

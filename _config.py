@@ -73,7 +73,7 @@ class Constants(object):
   # Sleep contains the various durations of time.sleep() in SECONDS that are used in this suite of scripts
   SLEEP = {
     'POLL' : 1,               # Used inside loops to space out polls to GCP/Privet API's
-    'REGISTRATION': 5,        # Printer dependent: used after user accepts or cancels registration request
+    'REG_CANCEL': 5,          # Printer dependent: used after user cancels registration request
                               #                    on the printer
     'PRINTER_STATE': 10,      # Printer dependent: used when printer state is altered physically
                               #                    e.g. Paper tray open/close, ink catridge remove/replaced

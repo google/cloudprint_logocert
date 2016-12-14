@@ -1,27 +1,25 @@
 Google Cloud Print Logo Certification Tool
 
 Here are the major changes that occurred between version 1.X to 2.0
-Please also see the README
+Please also see the README for updated set up details
 
--  No more WebDriver usage, all interactions are done via Privet or GCP interfaces now
+-  No more WebDriver usage, all interactions are now done direclty via Privet or GCP interfaces
 
--  Privet is used instead of the Chrome Browser for local printing now
+-  Privet API is used instead of the Chrome Browser for local printing
 
 -  _config.py has been overhauled, please see their comments in the file
-        - New fields:
+        - Added:
             - Under CAPS: MARGIN and GOODBYE_PACKET
             - SLEEP dict
+            - TIMEOUT dict
             - Under IMAGES: PWG1, PWG2, and PWG3
             - Under TEST: RUN array
-        - Removed fields:
+        - Removed:
             - GOOGLE_DOCS dict
             - Under TESTENV: CHROME and CHROMEDRIVER
             - Under UESR and USER2: PW
 
--  Power on's are now polling waits the script polls for privet advertisement from the printer
-
--  Power off's are now polling waits if your printer sends Goodbye packets when powered off; otherwise, it
-   still needs the user to press Enter once the printer is off
+-  Power on's are polling waits - the script polls for privet advertisement from the printer
 
 -  Passwords are no longer stored in plaintext, you will have to enter the password the first time you log into
    the USER account. You also have to manually accept the user data authorization prompt right after authentication.
@@ -33,4 +31,4 @@ Please also see the README
 -  Google sheet output now separates testsuites with an extra row for clarity, and provides a single testcase
    re-run command when a testcase fails so you can focus on passing that test and ignore the rest
 
--  The old master branch now resides on #TODO
+-  The old master branch now resides on ______ #TODO fill this in

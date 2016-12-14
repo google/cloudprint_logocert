@@ -26,11 +26,10 @@ from _privet import Privet
 from _transport import Transport
 
 from _common import Sleep
-from _common import PromptAndWaitForUserAction
+from _common import PromptUserAction
 from json import dumps
 from os.path import basename
 import requests
-import mimetypes
 import time
 
 
@@ -111,8 +110,7 @@ class Device(object):
       if no_wait:
         print msg
       else:
-        PromptAndWaitForUserAction(msg)
-      Sleep('REGISTRATION')
+        PromptUserAction(msg)
       if self.GetPrivetClaimToken(user=user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
@@ -229,7 +227,7 @@ class Device(object):
     response = self.transport.HTTPReq(cancel_url, data='',
                                       headers=self.headers,
                                       user=Constants.USER['EMAIL'])
-    Sleep('REGISTRATION')
+    Sleep('REG_CANCEL')
     return response['code']
 
   def StartPrivetRegister(self, user=Constants.USER['EMAIL']):
@@ -252,15 +250,15 @@ class Device(object):
     return response['code'] == 200
 
   def GetPrivetClaimToken(self, user=Constants.USER['EMAIL']):
-    """Attempt to get a Privet Claim Token.
+    """Wait for user interaction with the Printer's UI and get a Privet Claim Token.
 
     Returns:
       boolean: True = success, False = errors.
     """
-    self.logger.debug('Getting Privet Claim Token.')
-    counter = 0
-    max_cycles = 5  # Don't loop more than this number of times.
-    while counter < max_cycles:
+    self.logger.debug('Waiting up to 60 seconds for printer UI interfaction then getting Privet Claim Token.')
+    t_end = time.time() + 60;
+    print "Waiting up to 60 seconds for printer UI interfaction then getting Privet Claim Token."
+    while time.time()<t_end:
       response = self.transport.HTTPReq(
           self.privet_url['register']['getClaimToken'], data='',
           headers=self.headers, user=user)
@@ -274,11 +272,12 @@ class Device(object):
         return True
 
       if 'error' in response['data']:
-        self.logger.warning(response['data'])
         if 'pending_user_action' in response['data']:
-          counter += 1
+          # Still waiting for user input
+          continue
         else:
           return False
+      time.sleep(Constants.SLEEP['POLL'])
 
     return False  # If here, means unexpected condition, so return False.
 
