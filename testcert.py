@@ -186,33 +186,6 @@ def LogTestSuite(name):
     row = [name,'','','','','','','']
     _sheet.AddRow(row)
 
-def promptForShutDown():
-  """Prompts for the user to turn off the printer.
-     Behaves differently for printers that send Goodbye packets vs those that don't
-     This is because goodbye packets are recommended but not mandatory
-
-      Args:
-        device_name: string, printer name
-      Returns:
-        boolean, True = device is in an off state or confirmed as off by user, False = goodbye packet not seen
-      """
-  if Constants.CAPS['GOODBYE_PACKET']:
-    success = False
-
-    mdns_browser = MDNS_Browser(_logger)
-    service = mdns_browser.Wait_for_service_add(30, Constants.PRINTER['NAME'])
-    if service is not None:
-      PromptUserAction('Turn off the printer and wait...')
-      service = mdns_browser.Wait_for_service_remove(120, Constants.PRINTER['NAME'])
-      success = service is not None
-    else:
-      print 'Error. No privet advertisements detected from the powered on printer'
-    mdns_browser.Close()
-    return success
-  else:
-    PromptAndWaitForUserAction('Press ENTER once printer is powered off')
-    return True
-
 
 def isPrinterAdvertisingAsRegistered(service):
   """Checks the printer's privet advertisements and see if it is advertising as registered or not
@@ -1799,13 +1772,7 @@ class PreRegistration(LogoCert):
     test_id = '35ce7a3d-3403-499e-9a60-4d17e1693178'
     test_name = 'testDeviceOffNoAdvertisePrivet'
 
-    is_off = promptForShutDown()
-    try:
-      self.assertTrue(is_off)
-    except AssertionError:
-      notes = 'Error receiving the shutdown signal from the printer.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+    PromptAndWaitForUserAction('Press ENTER once printer is completely powered off')
 
     print 'Listening for the printer\'s advertisements for up to 60 seconds'
     service = Wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'], _logger)
@@ -2093,18 +2060,12 @@ class LocalDiscovery(LogoCert):
     self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterOnAdvertiseLocally(self):
-    """Verify printer advertises self using Privet when turned on."""
+    """Verify printer sends start up advertisement packets using Privet when turned on."""
     test_id = 'e979119e-5a35-4065-89cf-1c4ef795c5b9'
     test_name = 'testPrinterOnAdvertiseLocally'
 
     print 'This test should begin with the printer turned off.'
-    is_off = promptForShutDown()
-    try:
-      self.assertTrue(is_off)
-    except AssertionError:
-      notes = 'Error receiving the shutdown signal from the printer.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+    PromptAndWaitForUserAction('Press ENTER once printer is completely powered off')
 
     PromptUserAction('Power on the printer and wait...')
     service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
@@ -2132,8 +2093,7 @@ class LocalDiscovery(LogoCert):
       return
 
     print 'This test must start with the printer on and operational.'
-    # Need a somewhat persistent (for this testcase at least) browser
-    # to detect service removal
+    # Need a somewhat persistent browser (for the duration of this testcase at least) to detect service removal
     mdns_browser = MDNS_Browser(_logger)
     service = mdns_browser.Wait_for_service_add(30, Constants.PRINTER['NAME'])
     try:
@@ -2218,6 +2178,7 @@ class LocalDiscovery(LogoCert):
     orig = _device.cdd['local_settings']['current']['xmpp_timeout_value']
     new = orig + 600
     setting = {'pending': {'xmpp_timeout_value': new}}
+    print 'Updating xmpp timeout value via the update interface'
     res = _gcp.Update(_device.dev_id, setting=setting)
 
     if not res['success']:
@@ -2225,8 +2186,9 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
 
+    print 'Successfully updated'
+    success = _gcp.WaitForUpdate(_device.dev_id, 'xmpp_timeout_value', new)
     try:
-      success = _gcp.WaitForUpdate(_device.dev_id, 'xmpp_timeout_value', new)
       self.assertTrue(success)
     except AssertionError:
       notes = 'Failed to detect update before timing out.'
@@ -2247,13 +2209,12 @@ class LocalDiscovery(LogoCert):
         self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
         setting = {'pending': {'xmpp_timeout_value': orig}}
+        print 'Reverting the xmpp timeout value via the update interface'
         res = _gcp.Update(_device.dev_id, setting=setting)
-        try:
-          self.assertTrue(res['success'])
-        except AssertionError:
-          notes = 'Error sending Update of local settings.'
-          self.LogTest(test_id, test_name, 'Blocked', notes)
-          raise
+        if res['success']:
+          print 'Successfully updated'
+          _gcp.WaitForUpdate(_device.dev_id, 'xmpp_timeout_value', orig)
+
 
 
 class LocalPrinting(LogoCert):
@@ -2728,72 +2689,59 @@ class PostRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      is_off = promptForShutDown()
+      PromptAndWaitForUserAction('Press ENTER once printer is completely powered off')
+      print'Waiting up to 10 minutes for printer status update. Polling every 30 seconds.'
+      end = time.time() + 600
+      while time.time() < end:
+        _device.GetDeviceDetails()
+        if 'OFFLINE' in _device.status:
+          break
+        time.sleep(30) # Not using Constant.SLEEP['POLL'] here since the status update actually takes a while
       try:
-        self.assertTrue(is_off)
+        self.assertIsNotNone(_device.status)
       except AssertionError:
-        notes = 'Error receiving the shutdown signal from the printer.'
+        notes = 'Device has no status.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      try:
+        self.assertIn('OFFLINE', _device.status)
+      except AssertionError:
+        notes = 'Device is not offline. Status: %s' % _device.status
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        print'Waiting up to 10 minutes for printer status update. Polling every 30 seconds.'
-        end = time.time() + 600
-        while time.time() < end:
-          _device.GetDeviceDetails()
-          if 'OFFLINE' in _device.status:
-            break
-          time.sleep(30) # Not using Constant.SLEEP['POLL'] here since the status update actually takes a while
+        notes = 'Status: %s' % _device.status
+        self.LogTest(test_id, test_name, 'Passed', notes)
+      finally:
+        PromptUserAction('Power on the printer and wait...')
+        service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
         try:
-          self.assertIsNotNone(_device.status)
+          self.assertIsNotNone(service)
         except AssertionError:
-          notes = 'Device has no status.'
+          notes = 'Error receiving the power-on signal from the printer.'
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
-        try:
-          self.assertIn('OFFLINE', _device.status)
-        except AssertionError:
-          notes = 'Device is not offline. Status: %s' % _device.status
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          raise
-        else:
-          notes = 'Status: %s' % _device.status
-          self.LogTest(test_id, test_name, 'Passed', notes)
-        finally:
-          PromptUserAction('Power on the printer and wait...')
-          service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'], _logger)
-          try:
-            self.assertIsNotNone(service)
-          except AssertionError:
-            notes = 'Error receiving the power-on signal from the printer.'
-            self.LogTest(test_id, test_name, 'Failed', notes)
-            raise
-          # Get the new X-privet-token from the restart
-          _device.GetPrivetInfo()
+        # Get the new X-privet-token from the restart
+        _device.GetPrivetInfo()
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device does not advertise using Privet."""
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
 
-    is_off = promptForShutDown()
+    PromptAndWaitForUserAction('Press ENTER once printer is completely powered off')
+
+    PromptUserAction('Power on the printer and wait...')
+    success = waitForAdvertisementRegistrationStatus(Constants.PRINTER['NAME'], True, 300)
     try:
-      self.assertTrue(is_off)
+      self.assertTrue(success)
     except AssertionError:
-      notes = 'Error receiving the shutdown signal from the printer.'
+      notes = 'Printer is advertising as an unregistered device'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      PromptUserAction('Power on the printer and wait...')
-      success = waitForAdvertisementRegistrationStatus(Constants.PRINTER['NAME'], True, 300)
-      try:
-        self.assertTrue(success)
-      except AssertionError:
-        notes = 'Printer is advertising as an unregistered device'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        notes = 'Printer is advertising as a registered device.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
+      notes = 'Printer is advertising as a registered device.'
+      self.LogTest(test_id, test_name, 'Passed', notes)
 
 
 class PrinterState(LogoCert):
@@ -3186,10 +3134,14 @@ class JobState(LogoCert):
 
     if output['success']:
       PromptAndWaitForUserAction('Press ENTER once the first page prints out.')
+      print "Deleting job mid print"
       delete_res = _gcp.DeleteJob(output['job']['id'])
       if delete_res['success']:
+        print "Job deleted successfully"
+        print "Give the printer time to finish printing the deleted job"
         # Since it's PDF file give the job time to finish printing.
         PromptAndWaitForUserAction('Press ENTER once printer is finished printing')
+        print "Printing another job"
         output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
         try:
           self.assertTrue(output['success'])
@@ -3244,7 +3196,7 @@ class JobState(LogoCert):
           notes = 'Job State Error msg: %s' % job_state_msg
           try:
             #TODO: Do we really want to fail here if 'tray' is not in the msg?
-            self.assertIn('', job_state_msg)
+            self.assertIn('tray', job_state_msg)
           except AssertionError:
             _logger.error('The Job State error message did not contain tray')
             _logger.error(notes)
@@ -3495,16 +3447,10 @@ class JobState(LogoCert):
 
     print 'This tests that an offline printer will print all jobs'
     print 'when it comes back online.'
-    is_off = promptForShutDown()
-    try:
-      self.assertTrue(is_off)
-    except AssertionError:
-      notes = 'Error receiving the shutdown signal from the printer.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+    PromptAndWaitForUserAction('Press ENTER once printer is completely powered off')
 
     for _ in xrange(3):
-      print 'Submitting job#',_,' to the print queue.'
+      print 'Submitting job #',_,' to the print queue.'
       output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name, self.cjt)
       try:
         self.assertTrue(output['success'])
@@ -3538,13 +3484,7 @@ class JobState(LogoCert):
     test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
     test_name = 'testDeleteQueuedJob'
 
-    is_off = promptForShutDown()
-    try:
-      self.assertTrue(is_off)
-    except AssertionError:
-      notes = 'Error receiving the shutdown signal from the printer.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+    PromptAndWaitForUserAction('Press ENTER once printer is completely powered off')
 
     doc_to_print = Constants.IMAGES['PNG7']
 
