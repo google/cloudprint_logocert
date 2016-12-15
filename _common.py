@@ -19,13 +19,12 @@ This provides some common functions and classes that are needed by multiple
 classes and modules in the Logo Certification Package.
 """
 
-import json
-import math
-import os
 import time
-import _log
+import os
 from _config import Constants
 
+# Module level variable
+_is_windows = 'nt' in os.name.lower()
 
 def Sleep(wait_type):
   sec = Constants.SLEEP[wait_type]
@@ -34,39 +33,47 @@ def Sleep(wait_type):
   time.sleep(sec)
 
 def GreenText(str):
-  """Display text in green - cross-platform
+  """Display text in green
 
       Args:
         str: string, the str to display, cannot be None.
     """
-  return '\033[92m'+str+'\033[0m'
+  global _is_windows
+
+  return str if _is_windows else '\033[92m'+str+'\033[0m'
 
 def RedText(str):
-  """Display text in red - cross-platform
+  """Display text in red
 
       Args:
         str: string, the str to display, cannot be None.
     """
-  return '\033[91m'+str+'\033[0m'
+  global _is_windows
+
+  return str if _is_windows else '\033[91m'+str+'\033[0m'
 
 def BlueText(str):
-  """Display text in blue - cross-platform
+  """Display text in blue
 
       Args:
         str: string, the str to display, cannot be None.
     """
-  return '\033[94m'+str+'\033[0m'
+  global _is_windows
+
+  return str if _is_windows else '\033[94m'+str+'\033[0m'
 
 def YellowText(str):
-  """Display text in yellow - cross-platform
+  """Display text in yellow
 
       Args:
         str: string, the str to display, cannot be None.
     """
-  return '\033[93m' + str + '\033[0m'
+  global _is_windows
+
+  return str if _is_windows else '\033[93m' + str + '\033[0m'
 
 def PromptUserAction(msg):
-  """Display text in warning color and beep - cross-platform
+  """Display text in warning color and beep
 
     Args:
       msg: string, the msg to prompt the user.

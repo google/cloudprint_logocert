@@ -340,7 +340,7 @@ class LogoCert(unittest.TestCase):
     '''Overriding the docstring printout function'''
     doc = self._testMethodDoc
     msg =  doc and doc.split("\n")[0].strip() or None
-    return BlueText('\n============'+msg+'============\n\n')
+    return BlueText('\n======================================================================\n'+msg+'\n')
 
 
   @classmethod
@@ -390,7 +390,7 @@ class LogoCert(unittest.TestCase):
       return True
 
 
-  def LogTest(self, test_id, test_name, result, notes=None):
+  def LogTest(self, test_id, test_name, result, notes=''):
     """Log a test result.
 
     Args:
@@ -404,13 +404,15 @@ class LogoCert(unittest.TestCase):
     console_result = RedText(result) if failure else GreenText(result)
     console_test_name = RedText(test_name) if failure else GreenText(test_name)
 
-    _logger.info('test_id: %s: %s', test_id, console_result)
-    _logger.info('%s: %s', test_id, console_test_name)
+    print '' # For spacing
+    _logger.info('Test ID: %s', test_id)
+    _logger.info('Result: %s', console_result)
+    _logger.info('Name: %s', console_test_name)
+
     if notes:
       console_notes = RedText(notes) if failure else GreenText(notes)
-      _logger.info('%s: Notes: %s', test_id, console_notes)
-    else:
-      notes = ''
+      _logger.info('Notes: %s', console_notes)
+
     if Constants.TEST['SPREADSHEET']:
       row = [str(test_id), test_name, result, notes,'','','']
       if failure:
