@@ -31,8 +31,11 @@ Please also see the README for updated set up details
    For Windows, cmd does not support it(except Win10 but you have to manually enable it), so the colorized output
    is turned off by default. It is highly recommended that an ANSI supporting alternative such as ConEmu is used. If
    an ANSI supported alternative is chosen for Windows, you need to set FORCE_COLOR_OUTPUT to True in _config.py
+   (See console_output.png for a preview of the new output format)
 
--  A sound is played to notify the user when the tool is waiting for user interaction
+-  A sound is played to notify the user when the tool is waiting for user interaction.
+   Note: If you are running this tool on Windows from ConEmu, note that ConEmu suppresses this beeping sound by default,
+   you can enable sounds by going to Settings->Features and unchecking 'Suppress Bells'
 
 -  Google sheet output now separates testsuites with an extra row for clarity, and provides a single testcase
    re-run command when a testcase fails so you can focus on passing that test and ignore the rest

@@ -133,7 +133,9 @@ stored in a different location.
 - PRINTER --> add the correct values for CERTID (Certification ID), FIRMWARE,
 IP address, MANUFACTURER, MODEL, PORT (integer, not string), SERIAL, and STATUS.
 - TEST --> If you don't want the test results to be written to a Google
-Spreadsheet, then change SPREADSHEET to False.
+Spreadsheet, then change SPREADSHEET to False. If you are on a Windows machine
+and running the tool out of an ANSI color supporting console and want to
+enable console color coding, set FORCE_COLOR_OUTPUT to True.
 - TESTENV --> add the versions used during testing
 - USER --> add the client id, client secret of the test account from step 1.
 Also add the email address and password of this user. 

@@ -186,6 +186,8 @@ class Constants(object):
       'NAME': 'LogoCertification_Results',
       'RESULTS': ['Test Case ID', 'Test Case Name', 'Status', 'Notes','','','','Re-run Cmd line'],
       'SPREADSHEET': True,
+      # Set the following to True if you wish to enable console output coloring on Windows
+      # Note that you would need an ANSI color supporting console for this or else strange characters would be printed
       'FORCE_COLOR_OUTPUT': False,
       'RUN':[     # Order matters, prefix with '#' to skip the test
                   # Update this each time new test classes are added or class names have changed in testcert.py

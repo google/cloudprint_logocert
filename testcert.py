@@ -149,7 +149,8 @@ def setUpModule():
   getTokens()
 
   # Wait to receive Privet printer advertisements. Timeout in 30 seconds
-  printer_service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'], _logger)
+  printer_service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'],
+                                                 _logger)
 
   if printer_service is None:
     _logger.info("No printers discovered under "+ options.printer)
@@ -163,7 +164,8 @@ def setUpModule():
 
   _gcp = GCPService(Constants.AUTH["ACCESS"])
   _device = Device(_logger, Constants.AUTH["ACCESS"], _gcp,
-                   privet_port= privet_port if 'PORT' not in Constants.PRINTER else Constants.PRINTER['PORT'])
+                   privet_port= privet_port if 'PORT' not in Constants.PRINTER
+                   else Constants.PRINTER['PORT'])
   _transport = Transport(_logger)
 
   if Constants.TEST['SPREADSHEET']:
