@@ -43,7 +43,7 @@ are:
 12. Post-unregistration Tests
 
 DEPENDENCIES:
-- For Windows, use easy_install.py from PythonDir/Scripts 
+(Instructions below are for Unix devices. For Windows, use easy_install.py from PythonDir/Scripts)
 
 Requests module is required for HTTP comms. To install, use the command:
 sudo pip install --upgrade requests
