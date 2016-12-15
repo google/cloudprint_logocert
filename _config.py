@@ -186,6 +186,7 @@ class Constants(object):
       'NAME': 'LogoCertification_Results',
       'RESULTS': ['Test Case ID', 'Test Case Name', 'Status', 'Notes','','','','Re-run Cmd line'],
       'SPREADSHEET': True,
+      'FORCE_COLOR_OUTPUT': False,
       'RUN':[     # Order matters, prefix with '#' to skip the test
                   # Update this each time new test classes are added or class names have changed in testcert.py
                 'SystemUnderTest',

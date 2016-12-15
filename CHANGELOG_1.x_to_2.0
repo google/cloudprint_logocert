@@ -3,7 +3,7 @@ Google Cloud Print Logo Certification Tool
 Here are the major changes that occurred between version 1.X to 2.0
 Please also see the README for updated set up details
 
--  No more WebDriver usage, all interactions are now done direclty via Privet or GCP interfaces
+-  No more WebDriver usage, all interactions are now done directly via Privet or GCP interfaces
 
 -  Privet API is used instead of the Chrome Browser for local printing
 
@@ -14,21 +14,27 @@ Please also see the README for updated set up details
             - TIMEOUT dict
             - Under IMAGES: PWG1, PWG2, and PWG3
             - Under TEST: RUN array
+            - Under TEST: FORCE_COLOR_OUTPUT field
         - Removed:
             - GOOGLE_DOCS dict
             - Under TESTENV: CHROME and CHROMEDRIVER
             - Under UESR and USER2: PW
 
--  Power on's are polling waits - the script polls for privet advertisement from the printer
+-  Power on's are polling waits instead of sleeps- the script polls for privet advertisement from the printer
 
 -  Passwords are no longer stored in plaintext, you will have to enter the password the first time you log into
-   the USER account. You also have to manually accept the user data authorization prompt right after authentication.
+   the USER account. Then you also have to manually accept the user data authorization prompt.
    This process should happen only once per testing session as the Google account should remain logged in and
    OAUTH access and refresh tokens are stored on disk
 
--  Console output is now colorized and clearer to read
+-  Console output is now colorized using ANSI escape sequences, these will automatically kick in on UNIX terminals.
+   For Windows, cmd does not support it(except Win10 but you have to manually enable it), so the colorized output
+   is turned off by default. It is highly recommended that an ANSI supporting alternative such as ConEmu is used. If
+   an ANSI supported alternative is chosen for Windows, you need to set FORCE_COLOR_OUTPUT to True in _config.py
+
+-  A sound is played to notify the user when the tool is waiting for user interaction
 
 -  Google sheet output now separates testsuites with an extra row for clarity, and provides a single testcase
    re-run command when a testcase fails so you can focus on passing that test and ignore the rest
 
--  The old master branch now resides on ______ #TODO fill this in
+-  The old master branch now resides on ______ #TODO fill this in once master is replaced

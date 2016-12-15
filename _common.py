@@ -24,7 +24,7 @@ import os
 from _config import Constants
 
 # Module level variable
-_is_windows = 'nt' in os.name.lower()
+_use_color_output = Constants.TEST['FORCE_COLOR_OUTPUT'] or 'nt' not in os.name.lower()
 
 def Sleep(wait_type):
   sec = Constants.SLEEP[wait_type]
@@ -38,9 +38,9 @@ def GreenText(str):
       Args:
         str: string, the str to display, cannot be None.
     """
-  global _is_windows
+  global _use_color_output
 
-  return str if _is_windows else '\033[92m'+str+'\033[0m'
+  return str if not _use_color_output else '\033[92m'+str+'\033[0m'
 
 def RedText(str):
   """Display text in red
@@ -48,9 +48,9 @@ def RedText(str):
       Args:
         str: string, the str to display, cannot be None.
     """
-  global _is_windows
+  global _use_color_output
 
-  return str if _is_windows else '\033[91m'+str+'\033[0m'
+  return str if not _use_color_output else '\033[91m'+str+'\033[0m'
 
 def BlueText(str):
   """Display text in blue
@@ -58,9 +58,9 @@ def BlueText(str):
       Args:
         str: string, the str to display, cannot be None.
     """
-  global _is_windows
+  global _use_color_output
 
-  return str if _is_windows else '\033[94m'+str+'\033[0m'
+  return str if not _use_color_output else '\033[94m'+str+'\033[0m'
 
 def YellowText(str):
   """Display text in yellow
@@ -68,9 +68,9 @@ def YellowText(str):
       Args:
         str: string, the str to display, cannot be None.
     """
-  global _is_windows
+  global _use_color_output
 
-  return str if _is_windows else '\033[93m' + str + '\033[0m'
+  return str if not _use_color_output else '\033[93m' + str + '\033[0m'
 
 def PromptUserAction(msg):
   """Display text in warning color and beep
@@ -81,7 +81,7 @@ def PromptUserAction(msg):
       string, prompt string
   """
   print '\n', YellowText('[ACTION] '+msg)
-  print "\a" #Beep
+  print "\a" # Cross-platform beep
 
 def PromptAndWaitForUserAction(msg):
   """Display text in green and beep - cross-platform, then wait for user to press enter before continuing
