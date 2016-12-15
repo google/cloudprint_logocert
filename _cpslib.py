@@ -79,7 +79,8 @@ class GCPService(object):
     return response_dict
 
   def VerifyNotNone(query):
-    """Decorator to check that None is not returned. This keeps calling code cleaner
+    """Decorator to check that None is not returned.
+       This keeps calling code cleaner
 
     Args:
       query: function we are wrapping.
@@ -123,7 +124,8 @@ class GCPService(object):
 
          """
     url = '%s/download?id=%s&forcepwg=1' % (Constants.GCP['MGT'], job_id)
-    r = requests.get(url, headers={'Authorization': 'Bearer %s' % self.auth_token})
+    r = requests.get(url,
+                     headers={'Authorization': 'Bearer %s' % self.auth_token})
 
     if r is None or requests.codes.ok != r.status_code:
       return None
@@ -132,7 +134,8 @@ class GCPService(object):
 
 
 
-  # Not decorated with @InterfaceQuery since Submit() uses 'requests' instead of '_transport'
+  # Not decorated with @InterfaceQuery since Submit() uses 'requests'
+  # instead of '_transport'
   @VerifyNotNone
   def Register(self, printer, printer_id, proxy, cdd_path):
     """Register a printer under the user's account
@@ -143,7 +146,8 @@ class GCPService(object):
           proxy: string, network proxy.
           cdd_path: string, file path to the CDD file
         Returns:
-          dictionary, response msg from the printer if successful; otherwise, None
+          dictionary, response msg from the printer if successful;
+                      otherwise, None
             """
     data = {'printer': printer,
             'printerid': printer_id,
@@ -153,15 +157,17 @@ class GCPService(object):
     files = {"capabilities": ('capabilities', open(cdd_path, 'rb'))}
     url = '%s/register' % (Constants.GCP['MGT'])
 
-    r = requests.post(url, data=data, files=files, headers={'Authorization': 'Bearer %s' % self.auth_token})
+    r = requests.post(url, data=data, files=files,
+                      headers={'Authorization': 'Bearer %s' % self.auth_token})
 
     if r is None or requests.codes.ok != r.status_code:
       return None
 
     return r.json()
 
-  # Not decorated with @InterfaceQuery since Submit() uses 'requests' instead of '_transport'
-  # 'requests' is chosen because it provides a simple one liner for HTTP Post with files
+  # Not decorated with @InterfaceQuery since Submit() uses 'requests' instead
+  # of '_transport'. 'requests' is chosen because it provides a simple one liner
+  # for HTTP Posts with files
   @VerifyNotNone
   def Submit(self, printer_id, content, title, cjt=None, is_url=False):
     """Submit a print job to the printer
@@ -173,7 +179,8 @@ class GCPService(object):
           cjt: CloudJobTicket, object that defines the options of the print job
           is_url: boolean, flag to identify between url's and files
         Returns:
-          dictionary, response msg from the printer if successful; otherwise, None
+          dictionary, response msg from the printer if successful;
+                      otherwise, None
         """
 
     if cjt is None:
@@ -200,23 +207,28 @@ class GCPService(object):
             'contentType': content_type,
             'ticket': dumps(cjt)}
 
-    r = requests.post(url, data = data, files = files , headers= {'Authorization': 'Bearer %s' % self.auth_token})
+    r = requests.post(url, data = data, files = files ,
+                      headers= {'Authorization': 'Bearer %s' % self.auth_token})
 
     if r is None or requests.codes.ok != r.status_code:
       return None
 
     res = r.json()
-    res['success'] = res['success'] and 'print job added' in res['message'].lower() #TODO may have to fuzzy match here, print job added may not be a standard
+    # TODO may have to fuzzy match here, print job added may not be a standard
+    res['success'] = (res['success'] and
+                      'print job added' in res['message'].lower())
     return res
 
-  # Not decorated with @InterfaceQuery since Update() uses 'requests' instead of '_transport'
+  # Not decorated with @InterfaceQuery since Update() uses 'requests'
+  # instead of '_transport'
   @VerifyNotNone
   def Update(self, printer_id, setting):
     """Update a cloud printer
 
         Args:
           printer_id: string, target printer to update.
-          setting: dict, local settings structure that describes the fields to update
+          setting: dict, local settings structure that describes the fields
+                         to update
         Returns:
           dictionary, response msg from the printer
         """
@@ -225,13 +237,16 @@ class GCPService(object):
     data = {'printerid': printer_id,
             'local_settings': dumps(setting)}
 
-    r = requests.post(url, data=data, headers={'Authorization': 'Bearer %s' % self.auth_token})
+    r = requests.post(url, data=data,
+                      headers={'Authorization': 'Bearer %s' % self.auth_token})
 
     if r is None or requests.codes.ok != r.status_code:
       return False
 
     res = r.json()
-    res['success'] = res['success'] and 'printer updated successfully' in res['message'].lower() #TODO may have to fuzzy match here, print job added may not be a standard
+    # TODO may have to fuzzy match here, print job added may not be a standard
+    res['success'] = (res['success'] and
+                      'printer updated successfully' in res['message'].lower())
     return res
 
 
@@ -365,7 +380,7 @@ class GCPService(object):
             job_id: string, id of the print job.
             printer_id: string, id of the printer
             owner: string, filter jobs submitted by this owner.
-            job_title: string, filter jobs whose title or tags contain this string.
+            job_title: string, filter jobs whose title or tags contain this str.
           Returns:
             object: the job object with the specified job_id
       """
@@ -386,8 +401,8 @@ class GCPService(object):
       string, current job.
 
     """
-    print 'Waiting up to %s seconds for the printer to not have a status(es) in the list: %s' % \
-          (timeout, job_status_list)
+    print ('Waiting up to %s seconds for the printer to not have a status(es) '
+           'in the list: %s' % (timeout, job_status_list))
 
     end = time.time() + timeout
 
@@ -415,7 +430,8 @@ class GCPService(object):
       dict, current job.
 
     """
-    print 'Waiting up to %s seconds for the printer to have the status: %s' % (timeout, job_status)
+    print ('Waiting up to %s seconds for the printer to have the status: %s' %
+           (timeout, job_status))
 
     end = time.time() + timeout
 
@@ -431,19 +447,21 @@ class GCPService(object):
     return None
 
 
-  def WaitForUpdate(self, dev_id, key, expected_value, timeout=Constants.TIMEOUT['GCP_UPDATE']):
-    '''Wait until the printer's local_settings attribute matches an expected value
+  def WaitForUpdate(self, dev_id, key, expected_value,
+                    timeout=Constants.TIMEOUT['GCP_UPDATE']):
+    '''Wait for the printer's local_settings attribute matches an expected value
 
       Args:
         dev_id: string, id of the printer.
         key: string, the local_settings attribute to poll for.
-        expected_value: int or boolean, the expected value of the local_settings attribute.
+        expected_value: int or boolean, the expected value of the attribute.
         timeout: integer, number of seconds to wait.
       Returns:
         boolean, True if expected value is observed, otherwise False
     '''
     print '[Configurable timeout] GCP_UPDATE:'
-    print 'Waiting up to %s seconds for printer to accept pending settings' % timeout
+    print ('Waiting up to %s seconds for printer to accept pending settings' %
+           timeout)
 
     end = time.time() + timeout
 

@@ -94,10 +94,12 @@ class Device(object):
         self.headers = {'X-Privet-Token': str(info['x-privet-token'])}
 
 
-  def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True, no_wait=False):
+  def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True,
+               no_wait=False):
     """Register device using Privet.
     Args:
-      msg: string, the instruction for the user about the registration confirmation dialog on the printer
+      msg: string, the instruction for the user about the registration
+                   confirmation dialog on the printer
       user: string, the user to register for
       use_token: boolean, use auth_token if True
       no_wait: boolean, if True, do not wait
@@ -121,7 +123,7 @@ class Device(object):
 
 
   def GetDeviceCDDLocally(self):
-    """Get device cdd and populate device object with the details through privet.
+    """Get device cdd and populate device object with the details via privet.
 
     Args:
       device_id: string, Cloud Print device id.
@@ -137,7 +139,8 @@ class Device(object):
       self.cdd['caps'] = {}
       for k in response['printer']:
         self.cdd['caps'][k] = response['printer'][k]
-      self.supported_types = [type['content_type'] for type in self.cdd['caps']['supported_content_type']]
+      self.supported_types = [type['content_type'] for type in
+                              self.cdd['caps']['supported_content_type']]
       return True
     else:
       self.logger.error('Could not find printers in cdd.')
@@ -172,13 +175,14 @@ class Device(object):
     self.__parseDeviceDetails(response['printers'][0])
     if self.dev_id:
       if self.GetDeviceCDD(self.dev_id):
-        self.supported_types = [type['content_type'] for type in self.cdd['caps']['supported_content_type']]
+        self.supported_types = [type['content_type'] for type in
+                                self.cdd['caps']['supported_content_type']]
         return True
 
     return False
 
   def GetDeviceCDD(self, device_id):
-    """Get device cdd and populate device object with the details through the cloud.
+    """Get device cdd and populate device object with the details via the cloud.
 
     Args:
       device_id: string, Cloud Print device id.
@@ -250,14 +254,17 @@ class Device(object):
     return response['code'] == 200
 
   def GetPrivetClaimToken(self, user=Constants.USER['EMAIL']):
-    """Wait for user interaction with the Printer's UI and get a Privet Claim Token.
+    """Wait for user interaction with the Printer's UI and get a
+       Privet Claim Token.
 
     Returns:
       boolean: True = success, False = errors.
     """
-    self.logger.debug('Waiting up to 60 seconds for printer UI interfaction then getting Privet Claim Token.')
+    self.logger.debug('Waiting up to 60 seconds for printer UI interfaction '
+                      'then getting Privet Claim Token.')
     t_end = time.time() + 60;
-    print "Waiting up to 60 seconds for printer UI interfaction then getting Privet Claim Token."
+    print ('Waiting up to 60 seconds for printer UI interfaction then getting '
+           'Privet Claim Token.')
     while time.time()<t_end:
       response = self.transport.HTTPReq(
           self.privet_url['register']['getClaimToken'], data='',
@@ -398,7 +405,8 @@ class Device(object):
       # Cancel the job creation to get back to a normal state
       self.CancelJob(job_id)
       print 'Error printing a local print job.'
-      print 'Printer may be in an unstable state if the job isn\'t cancelled correctly, may need to reboot printer'
+      print ('Printer may be in an unstable state if the job isn\'t cancelled '
+             'correctly, may need to reboot printer')
 
     return output
 
@@ -445,12 +453,14 @@ class Device(object):
     with open(content, 'rb') as f:
       content = f.read()
 
-    url = self.privet_url['submitdoc'] + '?job_id=%s&job_name=%s' % (job_id, title)
+    url = (self.privet_url['submitdoc'] + '?job_id=%s&job_name=%s' %
+           (job_id, title))
 
     content_type = 'image/pwg-raster'
 
     if content_type not in self.supported_types:
-      print 'This printer does not support the following content type: ', content_type
+      print ('This printer does not support the following content type: %s' %
+             (content_type))
       print 'List of supported types are: ', self.supported_types
       return None
 
@@ -508,7 +518,8 @@ class Device(object):
       return info
 
 
-  def WaitForPrinterState(self, state, timeout=Constants.TIMEOUT['PRINTER_STATUS']):
+  def WaitForPrinterState(self, state,
+                          timeout=Constants.TIMEOUT['PRINTER_STATUS']):
     """Wait until the printer state becomes the specified status
 
         Args:
@@ -518,7 +529,8 @@ class Device(object):
           boolean, True if state is observed within timeout; otherwise, False.
         """
     print '[Configurable timeout] PRINTER_STATUS:'
-    print 'Waiting up to %s seconds for the printer to have status: %s' % (timeout, state)
+    print ('Waiting up to %s seconds for the printer to have status: %s' %
+           (timeout, state))
 
     end = time.time() + timeout
 
@@ -537,7 +549,8 @@ class Device(object):
     """Use the /privet/info interface to see if printer is registered
 
         Returns:
-          boolean, True if registered, False if not registered, None if /privet/info failed
+          boolean, True if registered, False if not registered,
+                   None if /privet/info failed
         """
     info = self.Info()
     if info is not None:
@@ -547,7 +560,8 @@ class Device(object):
 
 
   def CancelJob(self, job_id):
-    #TODO: Posting a mismatch job seems to cancel the created job, find a better way to do this
+    #TODO: Posting a mismatch job seems to cancel the created job,
+    # find a better way to do this
     url = self.privet_url['submitdoc'] + '?job_id=%s' % (job_id)
 
     headers = self.headers

@@ -70,7 +70,8 @@ class GoogleDataMgr(object):
     if res is not None and 'spreadsheetId' in res:
       self.logger.info('Created a new google spreadsheet with sheets API.')
     else:
-      self.logger.info('Failed to create a new google spreadhseet with sheets API')
+      self.logger.info('Failed to create a new google spreadhseet with '
+                       'sheets API')
 
 
   def GetSpreadSheetID(self, name):

@@ -24,7 +24,8 @@ import os
 from _config import Constants
 
 # Module level variable
-_use_color_output = Constants.TEST['FORCE_COLOR_OUTPUT'] or 'nt' not in os.name.lower()
+_use_color_output = (Constants.TEST['FORCE_COLOR_OUTPUT'] or
+                     'nt' not in os.name.lower())
 
 def Sleep(wait_type):
   sec = Constants.SLEEP[wait_type]
@@ -84,7 +85,8 @@ def PromptUserAction(msg):
   print "\a" # Cross-platform beep
 
 def PromptAndWaitForUserAction(msg):
-  """Display text in green and beep - cross-platform, then wait for user to press enter before continuing
+  """Display text in green and beep - cross-platform, then wait for user to
+     press enter before continuing
 
       Args:
         msg: string, the msg to prompt the user.

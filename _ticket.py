@@ -20,7 +20,8 @@ CloudJobTicket will provide methods to set the various fields of a job ticket:
 """
 
 class CloudJobTicket(object):
-  """Represents the print job specifications sent to the printer on job submission."""
+  """Represents the print job specifications sent to the printer on
+     job submission."""
 
 
   def __init__(self, version, caps):
@@ -52,7 +53,8 @@ class CloudJobTicket(object):
         break
 
     if 'vendor_id' not in color_option:
-      print 'Failed to find vendor id for ', color_type, ' in printer capabilities'
+      print ('Failed to find vendor id for %s in printer capabilities' %
+             color_type)
       raise
 
     self.val['print']['color'] = color_option
@@ -134,7 +136,8 @@ class CloudJobTicket(object):
       Specify the size of the print job
 
       Args:
-        type: string, NO_FITTING, FIT_TO_PAGE, GROW_TO_PAGE, SHRINK_TO_PAGE, or FILL_PAGE
+        type: string, NO_FITTING, FIT_TO_PAGE, GROW_TO_PAGE, SHRINK_TO_PAGE,
+                      or FILL_PAGE
     """
     self.val['print']['fit_to_page'] = {'type': type}
 
@@ -149,7 +152,8 @@ class CloudJobTicket(object):
     """
     # If this is the first page range for this CJT, start with an empty array;
     # otherwise, get the existing array
-    page_ranges = [] if 'page_range' not in self.val['print'] else self.val['print']['page_range']['interval']
+    page_ranges = ([] if 'page_range' not in self.val['print'] else
+                   self.val['print']['page_range']['interval'])
 
     new_range = {'start': start}
     if end is not None:
