@@ -220,6 +220,7 @@ class Constants(object):
                 'LocalPrinting',
                 'RunAfter24Hours',
                 'Unregister',
+                'PostUnregistration',
             ],
       }
 

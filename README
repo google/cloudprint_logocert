@@ -162,12 +162,12 @@ See the list below for the required initial condition of each suite.
 The complete list of all testsuites and the order they should run is
 as follows:
 
---------------------------Printer needs to be UNREGISTERED to run the suites below 
+-------------------------Printer is UNREGISTERED before running the suites below
 - SystemUnderTest
 - Privet
 - PreRegistration
 - Registration
-------------------------- Printe rneeds to be REGISTERED to run the suites below 
+-------------------------Printer is REGISTERED before running the suites below
 - PostRegistration
 - LocalDiscovery
 - Printer
@@ -177,17 +177,19 @@ as follows:
 - LocalPrinting
 - RunAfter24Hours
 - Unregister
+-------------------------Printer is UNREGISTERED before running the suites below
+- PostUnregistration
 
 The order that the test cases run in is not deterministic, but the suites will run
 in the order they are placed in.
 
 LocalPrinting has a one-time dependency on CloudPrinting. When the
 LocalPrinting suite is run for the first time, it will make 3 calls to the GCP
-submit interface in order to download the converted pwg-raster images that will be used
-in subsequent LocalPrinting tests. If Cloud Printing does not work for your printer, 
-you would have to manually generate pwg-raster formats of testpage.png, rosemary.pdf, 
-and dna_overview.png and store them under the images directory as testpage.pwg, rosemary.pwg, 
-and dna_overview.pwg.
+submit interface in order to download the converted pwg-raster images that will
+be used in subsequent LocalPrinting tests. If Cloud Printing does not work for
+your printer, you would have to manually generate pwg-raster formats of
+testpage.png, rosemary.pdf, and dna_overview.png and store them under the images
+directory as testpage.pwg, rosemary.pwg, and dna_overview.pwg.
 
 Once the test has run, results will be placed in a log file. Log files are
 created with a date-time stamp in the logname. All of the test results will be

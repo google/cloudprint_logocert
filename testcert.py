@@ -332,18 +332,18 @@ def getLocalPrintingRasterImages():
       machine, generate and store to disk if not
       """
   if not os.path.exists(Constants.IMAGES['PWG1']):
-    print ('%s not found. Likely that this is the first time '
-           'LocalPrinting suite is run.') % (Constants.IMAGES['PWG1'])
+    print '%s not found.'% (Constants.IMAGES['PWG1'])
+    print 'Likely that this is the first time LocalPrinting suite is run.'
     getRasterImageFromCloud(Constants.IMAGES['PWG1'], Constants.IMAGES['PNG7'])
 
   if not os.path.exists(Constants.IMAGES['PWG2']):
-    print ('%s not found. Likely that this is the first time '
-           'LocalPrinting suite is run.') % (Constants.IMAGES['PWG2'])
+    print '%s not found.' % (Constants.IMAGES['PWG2'])
+    print 'Likely that this is the first time LocalPrinting suite is run.'
     getRasterImageFromCloud(Constants.IMAGES['PWG2'], Constants.IMAGES['PDF10'])
 
   if not os.path.exists(Constants.IMAGES['PWG3']):
-    print ('%s not found. Likely that this is the first time '
-           'LocalPrinting suite is run.') % (Constants.IMAGES['PWG3'])
+    print '%s not found.' % (Constants.IMAGES['PWG3'])
+    print 'Likely that this is the first time LocalPrinting suite is run.'
     getRasterImageFromCloud(Constants.IMAGES['PWG3'], Constants.IMAGES['PNG2'])
 
 class LogoCert(unittest.TestCase):
@@ -1886,32 +1886,6 @@ class PreRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Blocked', notes)
       _device.CancelRegistration()
 
-  def testLocalPrintGuestUserUnregisteredPrinter(self):
-    """Verify local print for unregistered printer is correct."""
-    test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
-    test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
-    return
-    # New instance of device that is not authenticated - contains no auth-token
-    guest_device = Device(_logger, None, None, privet_port=_device.port)
-    guest_device.GetDeviceCDDLocally()
-
-    cjt = CloudJobTicket(guest_device.privet_info['version'],
-                         guest_device.cdd['caps'])
-
-    job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = ('Guest failed to print a page via local printing '
-               'on the unregistered printer.')
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-    else:
-      print ('Guest successfully printed a page via local printing '
-             'on the unregistered printer.')
-      print 'If not, fail this test.'
-      self.ManualPass(test_id, test_name)
-
-
 class Registration(LogoCert):
   """Test device registration."""
 
@@ -2043,6 +2017,7 @@ class LocalDiscovery(LogoCert):
         self.LogTest(test_id, test_name, 'Blocked', notes)
         raise
       else:
+        print 'Local Discovery successfully disabled'
         # Should not be any advertisements from the printer anymore
         print ('Listening for advertisements for 30 seconds, there should not '
                'be any from the printer')
@@ -2076,6 +2051,7 @@ class LocalDiscovery(LogoCert):
         self.LogTest(test_id, test_name, 'Blocked', notes2)
         raise
       else:
+        print  'Local Discovery successfully enabled'
         print ('Listening for advertisements for up to 30 seconds, '
                'there should be advertisements from the printer')
         service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'],
@@ -3761,12 +3737,12 @@ class RunAfter24Hours(LogoCert):
       notes = 'Printer online after 24 hours.'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
-
 class Unregister(LogoCert):
   """Test removing device from registered status."""
 
   @classmethod
   def setUpClass(cls):
+    LogoCert.setUpClass(cls)
     LogoCert.GetDeviceDetails()
 
   def testUnregisterDevice(self):
@@ -3811,6 +3787,50 @@ class Unregister(LogoCert):
       notes = 'Deleted device found advertising as unregistered device.'
       self.LogTest(test_id2, test_name2, 'Passed', notes)
 
+class PostUnregistration(LogoCert):
+  """Test local printing on an unregistered device
+     This test is put at the end instead of inside PreRegistration()
+     because the PWG file used for printing is generated from GCP which requires
+     the printer to be registered
+  """
+
+  @classmethod
+  def setUpClass(cls):
+    LogoCert.setUpClass(cls)
+
+  def testLocalPrintGuestUserUnregisteredPrinter(self):
+    """Verify local print for unregistered printer is correct."""
+    test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
+    test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
+
+    if not os.path.exists(Constants.IMAGES['PWG1']):
+      print '%s not found.' % (Constants.IMAGES['PWG1'])
+      print 'LocalPrinting suite should be run before this suite'
+      print 'LocalPrinting will produce the raster file needed for this test'
+      notes = 'Run LocalPrinting suite before PostUnregistration suite'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+
+    # New instance of device that is not authenticated - contains no auth-token
+    guest_device = Device(_logger, None, None, privet_port=_device.port)
+    guest_device.GetDeviceCDDLocally()
+
+    cjt = CloudJobTicket(guest_device.privet_info['version'],
+                         guest_device.cdd['caps'])
+
+    job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = ('Guest failed to print a page via local printing '
+               'on the unregistered printer.')
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+    else:
+      print ('Guest successfully printed a page via local printing '
+             'on the unregistered printer.')
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
 
 class CloudPrinting(LogoCert):
   """Test printing using Cloud Print."""

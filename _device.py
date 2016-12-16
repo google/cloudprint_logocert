@@ -260,11 +260,10 @@ class Device(object):
     Returns:
       boolean: True = success, False = errors.
     """
-    self.logger.debug('Waiting up to 60 seconds for printer UI interfaction '
-                      'then getting Privet Claim Token.')
+    print ('Waiting up to 60 seconds for printer UI interfaction '
+           'then getting Privet Claim Token.')
     t_end = time.time() + 60;
-    print ('Waiting up to 60 seconds for printer UI interfaction then getting '
-           'Privet Claim Token.')
+
     while time.time()<t_end:
       response = self.transport.HTTPReq(
           self.privet_url['register']['getClaimToken'], data='',
@@ -395,9 +394,16 @@ class Device(object):
         Returns:
           int, the job id of the local print job that succeeded, else None
         """
+    print '\nWait for idle state before starting a local print job'
+    success = self.WaitForPrinterState('idle')
+
+    if not success:
+      print 'Idle state not observed\n'
+      return None
+
     job_id = self.CreateJob(cjt)
     if job_id is None:
-      print 'Error creating a local print job.'
+      print 'Error creating a local print job.\n'
       return None
 
     output = self.SubmitDoc(job_id, title, content)
@@ -411,7 +417,9 @@ class Device(object):
     return output
 
   def CreateJob(self, cjt=None):
-    """First step required to submit a local print job
+    """First step required to submit a local print job.
+       Keep trying to obtain the job id for 60 seconds if the printer returns
+       busy status
 
         Args:
           cjt: CloudJobTicket, object that defines the options of the print job
@@ -426,18 +434,30 @@ class Device(object):
 
     url = self.privet_url['createjob']
 
-    r = requests.post(url, data=dumps(cjt), headers=self.headers)
 
-    if r is None or requests.codes.ok != r.status_code:
-      return None
+    print 'Attempt to get a local job id for up to 30 seconds'
+    t_end = time.time() + 30
 
-    res = r.json()
+    while time.time() < t_end:
+      r = requests.post(url, data=dumps(cjt), headers=self.headers)
 
-    if 'job_id' not in res:
-      print 'Error: ', res['error']
-      return None
-    return res['job_id']
+      if r is None or requests.codes.ok != r.status_code:
+        return None
 
+      res = r.json()
+
+      if 'job_id' not in res:
+        if 'error' in res and 'printer_busy' in res['error'].lower():
+          print ('Printer is still busy, will try again in %s second(s)' %
+                 Constants.SLEEP['POLL'])
+          Sleep('POLL')
+        else:
+          print 'Error: ', res['error']
+          return None
+      else:
+        print 'Got a job id\n'
+        return res['job_id']
+    return None
 
   def SubmitDoc(self, job_id, title, content):
     """Second step for printing locally, submit a local print job to the printer
@@ -536,11 +556,10 @@ class Device(object):
 
     while time.time() < end:
       info = self.Info()
-
       if info is not None:
         if info['device_state'] == state:
+          print 'Device state observed to be %s' % state
           return True
-
       Sleep('POLL')
 
     return False
