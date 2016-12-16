@@ -41,7 +41,6 @@ from _common import Sleep
 from _common import Extract
 from _config import Constants
 from _jsonparser import JsonParser
-import _log
 from _transport import Transport
 
 from json import dumps
@@ -49,6 +48,7 @@ from os.path import basename
 import requests
 import mimetypes
 import time
+import _log
 
 class GCPService(object):
   """Send and receive network messages and communication."""
@@ -90,6 +90,7 @@ class GCPService(object):
     def VerifyNotNone(self, *args, **kwargs):
       res = query(self, *args, **kwargs)
       if res is None:
+        print '%s failed' % str(query)
         raise AssertionError
       return res
 
@@ -207,17 +208,37 @@ class GCPService(object):
             'contentType': content_type,
             'ticket': dumps(cjt)}
 
-    r = requests.post(url, data = data, files = files ,
-                      headers= {'Authorization': 'Bearer %s' % self.auth_token})
+    # Depending on network speed, large files may take a while to submit
+    print 'Attempting to submit a job through GCP for up to 60 seconds'
+    t_end = time.time()+60
+    while time.time() < t_end:
+      r = requests.post(url, data = data, files = files ,
+                        headers= {'Authorization':
+                                  'Bearer %s' % self.auth_token})
+      if r is None:
+        return None
+      elif r.status_code == requests.codes.ok:
+        # Success
+        res = r.json()
+        # TODO may have to fuzzy match here, print job added may not be standard
+        res['success'] = (res['success'] and
+                          'print job added' in res['message'].lower())
 
-    if r is None or requests.codes.ok != r.status_code:
-      return None
-
-    res = r.json()
-    # TODO may have to fuzzy match here, print job added may not be a standard
-    res['success'] = (res['success'] and
-                      'print job added' in res['message'].lower())
-    return res
+        if res['success']:
+          print 'Job submitted successfully'
+        else:
+          print 'success: %s, msg: %s' % (res['success'], res['message'])
+        return res
+      else:
+        # Try again if we get HTTP error code
+        print 'Bad status code from Submit(): %s' % r.status_code
+        if r.status_code == requests.codes.forbidden:
+          # This should not happen, calling code should manage token refresh
+          self.logger.info('Access token expired, need to refresh it')
+        print 'Trying again in %s secs' % Constants.SLEEP['POLL']
+        Sleep('POLL')
+    # Continuously gotten HTTP error codes to fall out of the while loop
+    return None
 
   # Not decorated with @InterfaceQuery since Update() uses 'requests'
   # instead of '_transport'
@@ -401,7 +422,7 @@ class GCPService(object):
       string, current job.
 
     """
-    print ('Waiting up to %s seconds for the printer to not have a status(es) '
+    print ('Waiting up to %s seconds for the job to not have a status(es) '
            'in the list: %s' % (timeout, job_status_list))
 
     end = time.time() + timeout
@@ -430,7 +451,7 @@ class GCPService(object):
       dict, current job.
 
     """
-    print ('Waiting up to %s seconds for the printer to have the status: %s' %
+    print ('Waiting up to %s seconds for the job to have the status: %s' %
            (timeout, job_status))
 
     end = time.time() + timeout
