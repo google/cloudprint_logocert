@@ -235,7 +235,7 @@ class GCPService(object):
         if r.status_code == requests.codes.forbidden:
           # This should not happen, calling code should manage token refresh
           self.logger.info('Access token expired, need to refresh it')
-        print 'Trying again in %s secs' % Constants.SLEEP['POLL']
+        print 'Trying again in %s sec(s)' % Constants.SLEEP['POLL']
         Sleep('POLL')
     # Continuously gotten HTTP error codes to fall out of the while loop
     return None

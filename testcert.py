@@ -916,7 +916,8 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        PromptUserAction('ACCEPT the registration request on the Printer UI.')
+        PromptUserAction('ACCEPT the registration request on the Printer UI '
+                         'and wait...')
         try:
           self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
@@ -950,7 +951,8 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        PromptUserAction('ACCEPT the registration request on the Printer UI.')
+        PromptUserAction('ACCEPT the registration request on the Printer UI '
+                         'and wait...')
         print 'Note: some printers may not show a registration request.'
         try:
           self.assertTrue(_device.GetPrivetClaimToken())
@@ -1846,8 +1848,8 @@ class PreRegistration(LogoCert):
     test_id = '984be779-3ca4-4bb7-a2e1-e1868f687905'
     test_name = 'testDeviceRegistrationNotLoggedIn'
 
-    success = _device.Register('ACCEPT the registration request on Printer UI.',
-                               use_token=False)
+    success = _device.Register('ACCEPT the registration request on Printer UI '
+                               'and wait...', use_token=False)
     try:
       self.assertFalse(success)
     except AssertionError:
@@ -1871,7 +1873,7 @@ class PreRegistration(LogoCert):
     print 'Do not accept printer registration request on printer panel.'
 
     registration_success = _device.Register('CANCEL the registration request on'
-                                            ' Printer UI.')
+                                            ' Printer UI and wait...')
     if not registration_success:
       # Confirm the user's account has no registered printers
       res = _gcp.Search(_device.model)
@@ -1950,7 +1952,7 @@ class Registration(LogoCert):
         raise
       else:
         PromptUserAction('ACCEPT the registration request from %s on the '
-                         'printer UI.' % Constants.USER['EMAIL'])
+                         'printer UI and wait...' % Constants.USER['EMAIL'])
         # Finish the registration process
         success = False
         if _device.GetPrivetClaimToken():
