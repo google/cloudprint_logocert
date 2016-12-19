@@ -558,7 +558,7 @@ class Device(object):
       info = self.Info()
       if info is not None:
         if info['device_state'] == state:
-          print 'Device state observed to be %s' % state
+          print 'Device state observed to be: %s' % state
           return True
       Sleep('POLL')
 

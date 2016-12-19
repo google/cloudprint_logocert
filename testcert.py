@@ -332,17 +332,17 @@ def getLocalPrintingRasterImages():
       machine, generate and store to disk if not
       """
   if not os.path.exists(Constants.IMAGES['PWG1']):
-    print '%s not found.'% (Constants.IMAGES['PWG1'])
+    print '\n%s not found.'% (Constants.IMAGES['PWG1'])
     print 'Likely that this is the first time LocalPrinting suite is run.'
     getRasterImageFromCloud(Constants.IMAGES['PWG1'], Constants.IMAGES['PNG7'])
 
   if not os.path.exists(Constants.IMAGES['PWG2']):
-    print '%s not found.' % (Constants.IMAGES['PWG2'])
+    print '\n%s not found.' % (Constants.IMAGES['PWG2'])
     print 'Likely that this is the first time LocalPrinting suite is run.'
     getRasterImageFromCloud(Constants.IMAGES['PWG2'], Constants.IMAGES['PDF10'])
 
   if not os.path.exists(Constants.IMAGES['PWG3']):
-    print '%s not found.' % (Constants.IMAGES['PWG3'])
+    print '\n%s not found.' % (Constants.IMAGES['PWG3'])
     print 'Likely that this is the first time LocalPrinting suite is run.'
     getRasterImageFromCloud(Constants.IMAGES['PWG3'], Constants.IMAGES['PNG2'])
 
