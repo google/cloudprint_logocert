@@ -2814,6 +2814,10 @@ class PrinterState(LogoCert):
         notes = 'No \'caption\' attribute found inside uiState'
         self.LogTest(test_id, test_name, 'Failed', notes)
         return False
+    else:
+      notes = 'No \'uiState\' attribute found inside cdd'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      return False
 
     found = False
     # check for keywords
@@ -2836,7 +2840,8 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Passed')
       return True
     else:
-      notes = 'required keyword(s) "%s" not in UI state message' % keywords
+      notes = ('required keyword(s) "%s" not in UI state message: %s' %
+               (keywords, _device.cdd['uiState']['caption']))
       self.LogTest(test_id, test_name, 'Failed', notes)
       return False
 
