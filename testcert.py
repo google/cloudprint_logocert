@@ -1138,7 +1138,7 @@ class Printer(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
-      self.assertEqual('2.0', _device.details['_gcpVersion'])
+      self.assertEqual('2.0', _device.details['gcpVersion'])
     except AssertionError:
       notes = 'Version 2.0 not found in GCP Version support. Found %s' % (
           _device.details['Google Cloud Print Version'])
