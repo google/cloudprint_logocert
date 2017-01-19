@@ -2828,22 +2828,21 @@ class PrinterState(LogoCert):
           found = True
           break
       if not found:
-        break
+        notes = ('required keyword(s) "%s" not in UI state message: %s' %
+                 (keywords, _device.cdd['uiState']['caption']))
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        return False
 
-    if found and suffixes is not None:
-      #check for suffixes
-      found = False
-      if uiMsg.endswith(suffixes):
-        found = True
+    if suffixes is not None:
+      # check for suffixes
+      if not uiMsg.endswith(suffixes):
+        notes = ('None of the required suffix(s) "%s" are found in the UI state'
+                 ' message: %s' % (keywords, _device.cdd['uiState']['caption']))
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        return False
 
-    if found:
-      self.LogTest(test_id, test_name, 'Passed')
-      return True
-    else:
-      notes = ('required keyword(s) "%s" not in UI state message: %s' %
-               (keywords, _device.cdd['uiState']['caption']))
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      return False
+    self.LogTest(test_id, test_name, 'Passed')
+    return True
 
   def VerifyUiStateHealthy(self, test_id, test_name):
     """Verify ui state has no error messages.
@@ -2981,7 +2980,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      if not self.VerifyUiStateMessage(test_id, test_name, ['int/toner'],
+      if not self.VerifyUiStateMessage(test_id, test_name, ['ink/toner'],
                                        ('is removed',
                                         'is empty',
                                         'is low',
@@ -3003,7 +3002,7 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      if not self.VerifyUiStateMessage(test_id2, test_name2, ['int/toner'],
+      if not self.VerifyUiStateMessage(test_id2, test_name2, ['ink/toner'],
                                        ('is removed',
                                         'is empty',
                                         'is low',
