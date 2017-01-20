@@ -3813,6 +3813,11 @@ class PostUnregistration(LogoCert):
     test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
 
+    if not Constants.CAPS['LOCAL_PRINT']:
+      notes = 'Printer does not support unregistered local printing.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
     if not os.path.exists(Constants.IMAGES['PWG1']):
       print '%s not found.' % (Constants.IMAGES['PWG1'])
       print 'LocalPrinting suite should be run before this suite'
