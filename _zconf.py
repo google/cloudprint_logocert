@@ -124,29 +124,39 @@ def Wait_for_privet_mdns_service(t_seconds, service, logger, wifi_interfaces=[])
   Args:
     t_seconds: Time to listen for mDNS records, in seconds.  Floating point ok.
     service: The service to wait for, if found, return early
-    is_add: If True, wait for service to be added - If False, wait for service to be removed
+    is_add: If True, wait for service to be added
+            If False, wait for service to be removed
     wifi_interfaces: The interfaces to listen on as strings, if empty listen on
       all interfaces.  For example: ['192.168.1.2'].
   Returns:
-    If Add event observed, return the Zeroconf information class; otherwise, return None
+    If Add event observed, return the Zeroconf information class;
+    otherwise, return None
   """
   l = _Listener(logger)
   if not wifi_interfaces:
     z = Zeroconf()
   else:
     z = Zeroconf(wifi_interfaces)
+
   sb = ServiceBrowser(zc=z, type_='_privet._tcp.local.', listener=l)
-
   service_info = wait_for_service_add(t_seconds, service, l)
-
   sb.cancel()
-  z._GLOBAL_DONE = True  # Only method available to kill all threads pylint: disable=protected-access
+
+  # Only method available to kill all threads pylint: disable=protected-access
+  z._GLOBAL_DONE = True
   zeroconf_threads = _find_zeroconf_threads()
-  while len(zeroconf_threads) > 1:
+
+  # Wait up to 30 seconds for zeroconf to terminate its threads
+  t_end = time.time() + 30
+  while len(zeroconf_threads) > 1 and time.time() < t_end:
     time.sleep(0.01)
     zeroconf_threads = _find_zeroconf_threads()
   z.close()
-  logger.info('All listeners have been stopped.')
+
+  if len(zeroconf_threads) > 1:
+    logger.info('Zeroconf failed to terminate its threads in 30 seconds.')
+  else:
+    logger.info('All listeners have been stopped.')
   return service_info
 # pylint: enable=dangerous-default-value
 
@@ -156,7 +166,7 @@ def wait_for_service_add(t_seconds, target_service, listener):
 
       Args:
         t_seconds: Time to listen for mDNS records, in seconds.  Floating point ok.
-        service: string, The service to wait for, if found, return early
+        service: string, The service to wait for
         listener: _Listener object, the listener to wait on
       Returns:
         If Add event observed, return the Zeroconf information class; otherwise, return None
