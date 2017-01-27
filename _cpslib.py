@@ -375,7 +375,8 @@ class GCPService(object):
     """
     url = '%s/search' % Constants.GCP['MGT']
     if printer:
-      url += '?q=%s' % printer
+      # replace all spaces with %20
+      url += '?q=%s' % printer.replace(' ','%20')
 
     return url
 
