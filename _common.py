@@ -63,15 +63,15 @@ def BlueText(str):
 
   return str if not _use_color_output else '\033[94m'+str+'\033[0m'
 
-def YellowText(str):
-  """Display text in yellow
+def PurpleText(str):
+  """Display text in purple
 
       Args:
         str: string, the str to display, cannot be None.
     """
   global _use_color_output
 
-  return str if not _use_color_output else '\033[93m' + str + '\033[0m'
+  return str if not _use_color_output else '\033[95m' + str + '\033[0m'
 
 def PromptUserAction(msg):
   """Display text in warning color and beep
@@ -81,7 +81,7 @@ def PromptUserAction(msg):
     Returns:
       string, prompt string
   """
-  print '\n', YellowText('[ACTION] '+msg)
+  print '\n', PurpleText('[ACTION] '+msg)
   print "\a" # Cross-platform beep
 
 def PromptAndWaitForUserAction(msg):
