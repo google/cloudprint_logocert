@@ -252,6 +252,6 @@ class MDNS_Browser:
     """
     for service in self.l.services():
       service_name = service.name.lower()
-      if service_name.startswith(name.lower()):
+      if name.lower() in service_name:
         return self.sb.services[service_name].get_remaining_ttl(time.time()* 1000)
     return None
