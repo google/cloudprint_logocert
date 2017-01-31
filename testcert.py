@@ -1998,6 +1998,28 @@ class LocalDiscovery(LogoCert):
     LogoCert.setUpClass(cls)
     LogoCert.GetDeviceDetails()
 
+  def toggleOnLocalPrinting(self):
+    """Turns on local printing"""
+    print ('Re-enabling local printing in case it turned off along with '
+           'local discovery')
+    setting = {'pending': {'printer/local_printing_enabled': True}}
+    res = _gcp.Update(_device.dev_id, setting=setting)
+
+    if not res['success']:
+      print ('Error turning on Local Printing. Please manually renable Local '
+             'Printing and continue testing')
+      return
+
+    # Give the printer time to update.
+    success = _gcp.WaitForUpdate(_device.dev_id,
+                                 'printer/local_printing_enabled', True)
+
+    if not success:
+      print 'Failed to detect update before timing out.'
+    else:
+      print 'Local printing toggled on successfully'
+
+
   def testLocalDiscoveryToggle(self):
     """Verify printer respects GCP Mgt page when local discovery toggled."""
     test_id = '54131136-9e03-4b17-acd2-7ca72e2ad732'
@@ -2036,7 +2058,7 @@ class LocalDiscovery(LogoCert):
           self.LogTest(test_id, test_name, 'Blocked', notes)
           raise
         else:
-          print 'No printer advertisements detected'
+          print 'Success, no printer advertisements detected'
 
     notes = 'Local Discovery successfully disabled'
     setting = {'pending': {'local_discovery': True}}
@@ -2055,12 +2077,13 @@ class LocalDiscovery(LogoCert):
       except AssertionError:
         notes2 = 'Local Discovery was not enabled within 60 seconds.'
         self.LogTest(test_id, test_name, 'Blocked', notes2)
+        self.toggleOnLocalPrinting()
         raise
       else:
         print  'Local Discovery successfully enabled'
-        print ('Listening for advertisements for up to 30 seconds, '
+        print ('Listening for advertisements for up to 60 seconds, '
                'there should be advertisements from the printer')
-        service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'],
+        service = Wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'],
                                                _logger)
         try:
           self.assertIsNotNone(service)
@@ -2071,6 +2094,8 @@ class LocalDiscovery(LogoCert):
           raise
         else:
           print 'Printer advertisements detected'
+        finally:
+          self.toggleOnLocalPrinting()
 
     notes2 = 'Local Discovery successfully enabled'
     notes = notes + '\n' + notes2
