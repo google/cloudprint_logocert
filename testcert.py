@@ -1876,7 +1876,7 @@ class PreRegistration(LogoCert):
                                             ' Printer UI and wait...')
     if not registration_success:
       # Confirm the user's account has no registered printers
-      res = _gcp.Search(_device.model)
+      res = _gcp.Search(_device.name)
       try:
         # Assert that 'printers' list is empty
         self.assertFalse(res['printers'])
@@ -1916,7 +1916,7 @@ class Registration(LogoCert):
       PromptAndWaitForUserAction('Press ENTER once the printer registration '
                                  'times out.')
       # Confirm the user's account has no registered printers
-      res = _gcp.Search(_device.model)
+      res = _gcp.Search(_device.name)
       try:
         self.assertFalse(res['printers'])
       except AssertionError:
@@ -1978,7 +1978,7 @@ class Registration(LogoCert):
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
-            res = _gcp.Search(_device.model)
+            res = _gcp.Search(_device.name)
             try:
               self.assertTrue(res['printers'])
             except AssertionError:

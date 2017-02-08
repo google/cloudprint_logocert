@@ -171,7 +171,17 @@ class Device(object):
     This will populate a Device object with device name, status, state messages,
     and device details.
     """
-    response = self.gcp.Search(self.model)
+    response = self.gcp.Search(self.name)
+    if not response['printers']:
+      print ('%s not found as registered printer under the /search gcp api' %
+             self.name)
+      print 'Update PRINTER["NAME"] in _config.py if misconfigured'
+      full_response = self.gcp.Search()
+      print "Below is the list of registered printers:"
+      for printer in full_response['printers']:
+        print printer['name']
+      raise
+
     self.__parseDeviceDetails(response['printers'][0])
     if self.dev_id:
       if self.GetDeviceCDD(self.dev_id):
@@ -260,7 +270,7 @@ class Device(object):
     Returns:
       boolean: True = success, False = errors.
     """
-    print ('Waiting up to 60 seconds for printer UI interfaction '
+    print ('Waiting up to 60 seconds for printer UI interaction '
            'then getting Privet Claim Token.')
     t_end = time.time() + 60;
 
