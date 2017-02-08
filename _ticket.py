@@ -24,7 +24,7 @@ class CloudJobTicket(object):
      job submission."""
 
 
-  def __init__(self, version, caps):
+  def __init__(self, version):
     """Get a reference to a logger object.
 
        Args:
@@ -34,8 +34,6 @@ class CloudJobTicket(object):
     self.val['print'] = {}
     self.val['version'] = version
 
-    self.caps = caps
-
 
   def AddColorOption(self, color_type):
     """
@@ -44,20 +42,7 @@ class CloudJobTicket(object):
       Args:
         color_type: string, STANDARD_COLOR or STANDARD_MONOCHROME
     """
-    color_option = {'type': color_type}
-
-    # set the vendor specific vendor id for the color type
-    for option in self.caps['color']['option']:
-      if color_type in option['type']:
-        color_option['vendor_id'] = option['vendor_id']
-        break
-
-    if 'vendor_id' not in color_option:
-      print ('Failed to find vendor id for %s in printer capabilities' %
-             color_type)
-      raise
-
-    self.val['print']['color'] = color_option
+    self.val['print']['color'] = {'type': color_type}
 
   def AddCopiesOption(self, num_copies):
     """

@@ -310,7 +310,7 @@ def getRasterImageFromCloud(pwg_path, img_path):
       """
 
   #
-  cjt = CloudJobTicket(_device.details['gcpVersion'], _device.cdd['caps'])
+  cjt = CloudJobTicket(_device.details['gcpVersion'])
 
   print 'Generating pwg-raster via cloud print'
   output = _gcp.Submit(_device.dev_id, img_path,
@@ -2269,8 +2269,7 @@ class LocalPrinting(LogoCert):
   """Tests of local printing functionality."""
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(_device.privet_info['version'],
-                              _device.cdd['caps'])
+    self.cjt = CloudJobTicket(_device.privet_info['version'])
 
   @classmethod
   def setUpClass(cls):
@@ -3134,8 +3133,7 @@ class JobState(LogoCert):
   """Test that print jobs are reported correctly from the printer."""
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(_device.details['gcpVersion'],
-                              _device.cdd['caps'])
+    self.cjt = CloudJobTicket(_device.details['gcpVersion'])
 
   @classmethod
   def setUpClass(cls):
@@ -3855,8 +3853,7 @@ class PostUnregistration(LogoCert):
     guest_device = Device(_logger, None, None, privet_port=_device.port)
     guest_device.GetDeviceCDDLocally()
 
-    cjt = CloudJobTicket(guest_device.privet_info['version'],
-                         guest_device.cdd['caps'])
+    cjt = CloudJobTicket(guest_device.privet_info['version'])
 
     job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], cjt)
     try:
@@ -3878,10 +3875,37 @@ class CloudPrinting(LogoCert):
   # class level variable for tracking token refreshes
   _prev_token_time = None
 
+  def submit(self, dev_id, content, test_id, test_name, cjt, is_url=False):
+    """Wrapper for submitting a print job to the printer for logging purposes
+
+      Args:
+        dev_id: string, target printer to print from.
+        content: string, url or absolute filepath of the item to print.
+        test_id: string, id of the testcase
+        test_name: string, title of the print job.
+        cjt: CloudJobTicket, object that defines the options of the print job
+        is_url: boolean, flag to identify between url's and files
+      Returns:
+        dictionary, response msg from the printer if successful;
+                    otherwise, raise an exception
+      """
+    try:
+      output = _gcp.Submit(dev_id, content, test_name, cjt, is_url)
+      return output
+    except AssertionError:
+      notes = 'Submit API failed'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+  def tearDownPrep(self, test_id, test_name, output):
+    # Populate instance variables for tearDown() to access
+    self.test_id = test_id
+    self.test_name = test_name
+    self.output = output
+
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(_device.details['gcpVersion'],
-                              _device.cdd['caps'])
+    self.cjt = CloudJobTicket(_device.details['gcpVersion'])
     self.output = None
     self.test_id = None
     self.test_name = None
@@ -3931,12 +3955,10 @@ class CloudPrinting(LogoCert):
     test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testPrintUrl'
 
-    output = _gcp.Submit(_device.dev_id, Constants.GOOGLE, test_name, self.cjt,
-                         is_url=True)
+    output = self.submit(_device.dev_id, Constants.GCP['MGT'], test_id,
+                         test_name, self.cjt, is_url=True)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3959,12 +3981,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddCopiesOption(2)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG12'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG12'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -3984,12 +4004,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting duplex to long edge...')
 
     self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4009,12 +4027,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting duplex to short edge...')
 
     self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4034,12 +4050,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing with color selected.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF13'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF13'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4057,8 +4071,8 @@ class CloudPrinting(LogoCert):
                                'Select return when ready.')
 
     self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG1'], test_id,
+                         test_name, self.cjt)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4090,12 +4104,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Print with reverse order flag set...')
 
     self.cjt.AddReverseOption()
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4110,12 +4122,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting page range to page 2 only')
 
     self.cjt.AddPageRangeOption(2, end = 2)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4131,12 +4141,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting page range to 4-6...')
 
     self.cjt.AddPageRangeOption(4, end = 6)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4153,12 +4161,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddPageRangeOption(2, end = 2)
     self.cjt.AddPageRangeOption(4, end = 6)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4179,8 +4185,8 @@ class CloudPrinting(LogoCert):
 
       self.cjt.AddDpiOption(dpi_option['horizontal_dpi'],
                             dpi_option['vertical_dpi'])
-      output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG8'], test_name,
-                           self.cjt)
+      output = self.Submit(_device.dev_id, Constants.IMAGES['PNG8'], test_id,
+                           test_name, self.cjt)
       try:
         self.assertTrue(output['success'])
       except AssertionError:
@@ -4208,12 +4214,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting print option to Fill Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.FILL)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4229,12 +4233,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting print option to Fit to Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.FIT)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4250,12 +4252,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting print option to Grow to Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.GROW)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4271,12 +4271,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting print option to Shrink to Page...')
 
     self.cjt.AddFitToPageOption(CjtConstants.SHRINK)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4292,12 +4290,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Setting print option to No Fitting...')
 
     self.cjt.AddFitToPageOption(CjtConstants.NO_FIT)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4314,12 +4310,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG14'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG14'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4336,12 +4330,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG7'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG7'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4357,12 +4349,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Print black and white JPG file.')
 
     self.cjt.AddColorOption(self.monochrome)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4379,12 +4369,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG2'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG2'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4401,12 +4389,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG5'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG5'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4423,12 +4409,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG7'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG7'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4445,12 +4429,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG8'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG8'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4467,12 +4449,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG9'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG9'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4488,12 +4468,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Print complex JPG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG10'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG10'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4510,12 +4488,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG11'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG11'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4532,12 +4508,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG13'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG13'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4554,12 +4528,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4576,12 +4548,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['JPG4'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG4'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4597,12 +4567,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing a black and white 1 page PDF file.')
 
     self.cjt.AddColorOption(self.monochrome)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF4'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF4'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4618,12 +4586,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing a color, 1 page PDF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF13'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF13'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4639,12 +4605,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing a 3 page, color PDF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4660,12 +4624,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing a 20 page, color PDF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4680,12 +4642,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfV1_2'
     _logger.info('Printing a PDF v1.2 file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.2'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.2'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4700,12 +4660,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfV1_3'
     _logger.info('Printing a PDF v1.3 file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4720,12 +4678,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfV1_4'
     _logger.info('Printing a PDF v1.4 file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.4'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.4'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4740,12 +4696,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfV1_5'
     _logger.info('Printing a PDF v1.5 file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.5'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.5'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4760,12 +4714,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfV1_6'
     _logger.info('Printing a PDF v1.6 file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.6'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.6'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4780,12 +4732,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfV1_7'
     _logger.info('Printing a PDF v1.7 file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4802,12 +4752,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF2'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF2'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4822,12 +4770,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfLetterMarginTest'
     _logger.info('Printing PDF Letter Margin Test.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4842,12 +4788,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfMarginTest2'
     _logger.info('Printing PDF Margin Test 2 file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF6'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF6'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4863,12 +4807,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing simple PDF file in landscape.')
 
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF8'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF8'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4884,12 +4826,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PDF CUPS test page.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF9'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF9'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4905,12 +4845,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PDF Color Test page.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF11'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF11'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4926,12 +4864,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PDF Bar coded ticket.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF12'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF12'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4947,12 +4883,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PDF of complex ticket.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF14'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF14'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4968,12 +4902,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing simple GIF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF2'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['GIF2'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -4989,12 +4921,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing small GIF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF4'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['GIF4'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5010,12 +4940,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing large GIF file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['GIF1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5031,12 +4959,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing black and white GIF file.')
 
     self.cjt.AddColorOption(self.monochrome)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['GIF3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['GIF3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5051,12 +4977,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFileHTML'
     _logger.info('Printing HTML file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['HTML1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['HTML1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5072,12 +4996,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing A4 Test PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5093,12 +5015,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PNG portrait file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG8'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG8'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5115,12 +5035,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG2'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG2'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5136,12 +5054,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing a small PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG3'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5158,12 +5074,10 @@ class CloudPrinting(LogoCert):
 
     self.cjt.AddColorOption(self.color)
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG4'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG4'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5179,12 +5093,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PNG Color Test file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG5'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG5'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5200,12 +5112,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing color images with text PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG6'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG6'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5221,12 +5131,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing Cups Test PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG7'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5242,12 +5150,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing large PNG file.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG9'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG9'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5262,12 +5168,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFileSvgSimple'
     _logger.info('Printing simple SVG file.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['SVG2'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['SVG2'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5283,12 +5187,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing SVG file with images.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['SVG1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['SVG1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5303,12 +5205,10 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFileTiffRegLink'
     _logger.info('Printing TIFF file of GCP registration link.')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['TIFF1'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['TIFF1'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
@@ -5324,12 +5224,10 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing TIFF file of photo.')
 
     self.cjt.AddColorOption(self.color)
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['TIFF2'], test_name,
-                         self.cjt)
+    output = self.submit(_device.dev_id, Constants.IMAGES['TIFF2'], test_id,
+                         test_name, self.cjt)
     # Prepare variables for tearDown()
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
+    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:

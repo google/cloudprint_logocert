@@ -216,6 +216,7 @@ class GCPService(object):
                         headers= {'Authorization':
                                   'Bearer %s' % self.auth_token})
       if r is None:
+        print 'ERROR! HTTP POST to /submit returned None type'
         return None
       elif r.status_code == requests.codes.ok:
         # Success
