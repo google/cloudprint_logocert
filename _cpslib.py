@@ -129,6 +129,11 @@ class GCPService(object):
                      headers={'Authorization': 'Bearer %s' % self.auth_token})
 
     if r is None or requests.codes.ok != r.status_code:
+      if r is None:
+        print 'ERROR! Request to /download returned None type'
+      else:
+        print ('ERROR! Bad HTTP status code received from /download: %s' %
+               r.status_code)
       return None
 
     return r.content

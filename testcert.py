@@ -320,10 +320,15 @@ def getRasterImageFromCloud(pwg_path, img_path):
   else:
     _device.WaitForPrinterState('processing')
 
-    res = _gcp.FetchRaster(output['job']['id'])
-    writeRasterToFile(pwg_path, res)
-
-    _device.WaitForPrinterState('idle')
+    try:
+      res = _gcp.FetchRaster(output['job']['id'])
+    except AssertionError:
+      print "ERROR: FetchRaster() failed."
+      print "ERROR: LocalPrinting suite cannot run without raster files."
+      raise
+    else:
+      writeRasterToFile(pwg_path, res)
+      _device.WaitForPrinterState('idle')
 
 
 
@@ -2922,8 +2927,8 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     print 'Open the paper tray to the printer.'
-    PromptAndWaitForUserAction('Press ENTER once the paper tray is open.')
-    Sleep('PRINTER_STATE')
+    #PromptAndWaitForUserAction('Press ENTER once the paper tray is open.')
+    #Sleep('PRINTER_STATE')
     _device.GetDeviceDetails()
     try:
       self.assertTrue(_device.error_state or _device.warning_state)
@@ -4185,7 +4190,7 @@ class CloudPrinting(LogoCert):
 
       self.cjt.AddDpiOption(dpi_option['horizontal_dpi'],
                             dpi_option['vertical_dpi'])
-      output = self.Submit(_device.dev_id, Constants.IMAGES['PNG8'], test_id,
+      output = self.submit(_device.dev_id, Constants.IMAGES['PNG8'], test_id,
                            test_name, self.cjt)
       try:
         self.assertTrue(output['success'])
