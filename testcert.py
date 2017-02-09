@@ -1051,7 +1051,7 @@ class Printer(LogoCert):
     try:
       self.assertIn(Constants.PRINTER['MODEL'], _device.details['model'])
     except AssertionError:
-      notes = 'Model incorrect, printer details: %s' % _device.details['Model']
+      notes = 'Model incorrect, printer details: %s' % _device.details['model']
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
@@ -1086,7 +1086,7 @@ class Printer(LogoCert):
                     _device.details['manufacturer'])
     except AssertionError:
       notes = 'Manufacturer is not in printer details. Found %s' % (
-          _device.details['Manufacturer'])
+          _device.details['manufacturer'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
@@ -1141,7 +1141,7 @@ class Printer(LogoCert):
       self.assertEqual('2.0', _device.details['gcpVersion'])
     except AssertionError:
       notes = 'Version 2.0 not found in GCP Version support. Found %s' % (
-          _device.details['Google Cloud Print Version'])
+          _device.details['gcpVersion'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
@@ -1207,7 +1207,7 @@ class Printer(LogoCert):
       self.assertIn('GOOGLE', _device.details['type'])
     except AssertionError:
       notes = 'Incorrect Printer Type in details. Found %s' % (
-          _device.details['PrinterType'])
+          _device.details['type'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
