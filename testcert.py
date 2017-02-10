@@ -298,6 +298,7 @@ def writeRasterToFile(file_path, content):
   f = open(file_path, 'wb')
   f.write(content)
   f.close()
+  print "Wrote Raster file:%s to disk" % file_path
 
 def getRasterImageFromCloud(pwg_path, img_path):
   """ Submit a GCP print job so that the image is coverted to a supported raster
@@ -316,19 +317,27 @@ def getRasterImageFromCloud(pwg_path, img_path):
   output = _gcp.Submit(_device.dev_id, img_path,
                        'LocalPrinting Raster Setup', cjt)
   if not output['success']:
-    print 'Cloud printing failed.'
+    print 'ERROR: Cloud printing failed.'
+    raise
   else:
-    _device.WaitForPrinterState('processing')
-
     try:
-      res = _gcp.FetchRaster(output['job']['id'])
+      _gcp.WaitJobStatus(output['job']['id'], _device.dev_id,
+                         CjtConstants.IN_PROGRESS)
     except AssertionError:
-      print "ERROR: FetchRaster() failed."
-      print "ERROR: LocalPrinting suite cannot run without raster files."
+      print 'GCP ERROR: Job not observed to be in progress.'
       raise
     else:
-      writeRasterToFile(pwg_path, res)
-      _device.WaitForPrinterState('idle')
+      try:
+        res = _gcp.FetchRaster(output['job']['id'])
+      except AssertionError:
+        print "ERROR: FetchRaster() failed."
+        print "LocalPrinting suite cannot run without raster files."
+        raise
+      else:
+        writeRasterToFile(pwg_path, res)
+        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id,
+                           CjtConstants.DONE)
+
 
 
 
