@@ -3035,25 +3035,30 @@ class PrinterState(LogoCert):
 
     test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
     test_name2 = 'testExhaustTonerCartridge'
-    print 'Insert an empty toner cartridge in printer.'
-    PromptAndWaitForUserAction('Press ENTER once an empty toner cartridge is '
-                               'in printer.')
-    Sleep('PRINTER_STATE')
-    _device.GetDeviceDetails()
-    try:
-      self.assertTrue(_device.error_state)
-    except AssertionError:
-      notes = 'Printer is not in error state with empty toner.'
-      self.LogTest(test_id2, test_name2, 'Failed', notes)
-      raise
+
+    if not Constants.CAPS['EMPTY_INK_SENSOR']:
+      notes = 'Printer does not support empty toner detection.'
+      self.LogTest(test_id2, test_name2, 'Skipped', notes)
     else:
-      if not self.VerifyUiStateMessage(test_id2, test_name2, ['ink/toner'],
-                                       ('is removed',
-                                        'is empty',
-                                        'is low',
-                                        'pages remaining',
-                                        '%')):
+      print 'Insert an empty toner cartridge in printer.'
+      PromptAndWaitForUserAction('Press ENTER once an empty toner cartridge is '
+                                 'in printer.')
+      Sleep('PRINTER_STATE')
+      _device.GetDeviceDetails()
+      try:
+        self.assertTrue(_device.error_state)
+      except AssertionError:
+        notes = 'Printer is not in error state with empty toner.'
+        self.LogTest(test_id2, test_name2, 'Failed', notes)
         raise
+      else:
+        if not self.VerifyUiStateMessage(test_id2, test_name2, ['ink/toner'],
+                                         ('is removed',
+                                          'is empty',
+                                          'is low',
+                                          'pages remaining',
+                                          '%')):
+          raise
 
     test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
     test_name3 = 'testReplaceMissingToner'

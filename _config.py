@@ -71,7 +71,9 @@ class Constants(object):
       'GOODBYE_PACKET': True  # Set this to True if a printer advertises sends
                               # a Privet goodbye packet when the device
                               # is shut off.
-      }
+      'EMPTY_INK_SENSOR': False, # Set this to True if a printer can sense
+                                 # when the ink/toner is empty
+  }
 
   # Sleep contains the various durations of time.sleep() in SECONDS
   # that are used in this suite of scripts
