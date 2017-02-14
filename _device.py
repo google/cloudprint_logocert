@@ -202,7 +202,8 @@ class Device(object):
     info = self.gcp.Printer(device_id)
     if 'printers' in info:
       self.__parseCDD(info['printers'][0])
-      if self.cdd['uiState']['num_issues'] > 0:
+      if ('num_issues' in self.cdd['uiState'] and
+              self.cdd['uiState']['num_issues'] > 0):
         self.error_state = True
       else:
         self.error_state = False

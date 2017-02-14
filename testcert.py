@@ -463,9 +463,9 @@ class LogoCert(unittest.TestCase):
   def GetDeviceDetails(cls):
     _device.GetDeviceDetails()
     if not _device.name:
-      _logger.error('Error finding device in GCP MGT page.')
+      _logger.error('Error finding device via privet.')
       _logger.error('Check printer model in _config file.')
-      raise unittest.SkipTest('Could not find device on GCP MGT page.')
+      raise unittest.SkipTest('Could not find device via privet.')
     else:
       _logger.debug('Printer name: %s', _device.name)
       _logger.debug('Printer status: %s', _device.status)
@@ -2035,7 +2035,7 @@ class LocalDiscovery(LogoCert):
 
 
   def testLocalDiscoveryToggle(self):
-    """Verify printer respects GCP Mgt page when local discovery toggled."""
+    """Verify printer behaves correctly when local discovery is toggled."""
     test_id = '54131136-9e03-4b17-acd2-7ca72e2ad732'
     test_name = 'testLocalDiscoveryToggle'
     notes = None
@@ -2061,15 +2061,22 @@ class LocalDiscovery(LogoCert):
       else:
         print 'Local Discovery successfully disabled'
         # Should not be any advertisements from the printer anymore
-        print ('Listening for advertisements for 30 seconds, there should not '
+        print ('Listening for advertisements for 60 seconds, there should not '
                'be any from the printer')
-        service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'],
+        service = Wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'],
                                                _logger)
         try:
           self.assertIsNone(service)
         except AssertionError:
           notes = 'Local Discovery disabled but privet advertisements detected.'
           self.LogTest(test_id, test_name, 'Blocked', notes)
+          print 'Attempting to toggle Local Discovery back on'
+          setting = {'pending': {'local_discovery': True}}
+          res = _gcp.Update(_device.dev_id, setting=setting)
+          if not res['success']:
+            print 'Update error, please manually re-enable Local Discovery'
+          else:
+            print 'Local Discovery successfully re-enabled'
           raise
         else:
           print 'Success, no printer advertisements detected'
@@ -2318,7 +2325,7 @@ class LocalPrinting(LogoCert):
       self.ManualPass(test_id, test_name)
 
   def testLocalPrintingToggle(self):
-    """Verify printer respects GCP Mgt page when local printing toggled."""
+    """Verify printer behaves correctly when local printing toggled."""
     test_id = '533d4ac6-5c1d-4c99-a91e-2bac7c31864f'
     test_name = 'testLocalPrintingToggle'
     notes = None
@@ -2719,12 +2726,12 @@ class PostRegistration(LogoCert):
     try:
       self.assertIsNotNone(_device.name)
     except AssertionError:
-      notes = 'Error finding device in GCP MGT Page.'
+      notes = 'Error finding device in via privet.'
       self._logger.error('Check your printer model in the _config file.')
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Found printer details on GCP MGT page.'
+      notes = 'Found printer details via privet.'
       _device.GetDeviceCDD(_device.dev_id)
       self.LogTest(test_id, test_name, 'Passed', notes)
 
