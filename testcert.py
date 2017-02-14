@@ -2943,8 +2943,8 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     print 'Open the paper tray to the printer.'
-    #PromptAndWaitForUserAction('Press ENTER once the paper tray is open.')
-    #Sleep('PRINTER_STATE')
+    PromptAndWaitForUserAction('Press ENTER once the paper tray is open.')
+    Sleep('PRINTER_STATE')
     _device.GetDeviceDetails()
     try:
       self.assertTrue(_device.error_state or _device.warning_state)
