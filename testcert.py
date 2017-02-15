@@ -2418,9 +2418,10 @@ class LocalPrinting(LogoCert):
     except AssertionError:
       notes = 'Error printing with duplex in local printing.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-
-    print 'Verify print job is printed in duplex.'
-    self.ManualPass(test_id, test_name)
+      raise
+    else:
+      print 'Verify print job is printed in duplex.'
+      self.ManualPass(test_id, test_name)
 
 
   def testLocalPrintMargins(self):
@@ -2439,7 +2440,7 @@ class LocalPrinting(LogoCert):
     except AssertionError:
       notes = 'Error local printing with no margins.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-
+      raise
     self.cjt.AddMarginOption(CjtConstants.STANDARD, 50, 50, 50, 50)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
@@ -2447,7 +2448,7 @@ class LocalPrinting(LogoCert):
     except AssertionError:
       notes = 'Error local printing with minimum margins.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-
+      raise
     print 'The 1st print job should have no margins.'
     print 'The 2nd print job should have minimum margins.'
     print 'If the margins are not correct, fail this test.'
@@ -2465,10 +2466,10 @@ class LocalPrinting(LogoCert):
     except AssertionError:
       notes = 'Error local printing with portrait layout.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-
-    print 'The print job should be printed in portrait layout.'
-    print 'If the layout is not correct, fail this test.'
-    self.ManualPass(test_id, test_name)
+    else:
+      print 'The print job should be printed in portrait layout.'
+      print 'If the layout is not correct, fail this test.'
+      self.ManualPass(test_id, test_name)
 
     test_id2 = '3be1b5e6-cc96-417c-a131-ef96b0576c21'
     test_name2 = 'testLocalPrintLayoutLandscape'
@@ -2480,10 +2481,10 @@ class LocalPrinting(LogoCert):
     except AssertionError:
       notes = 'Error local printing with landscape layout.'
       self.LogTest(test_id2, test_name2, 'Blocked', notes)
-
-    print 'The print job should be printed in landscape layout.'
-    print 'If the layout is not correct, fail this test.'
-    self.ManualPass(test_id2, test_name2)
+    else:
+      print 'The print job should be printed in landscape layout.'
+      print 'If the layout is not correct, fail this test.'
+      self.ManualPass(test_id2, test_name2)
 
   def testLocalPrintPageRange(self):
     """Verify printer respects page range in local print."""
