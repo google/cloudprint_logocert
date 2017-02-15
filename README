@@ -20,7 +20,7 @@ various print options for both cloud printing and local printing
 --> _gdocs.py - Methods to interact with Google Docs and Google Drive.
 --> _jsonparser.py - Methods to parse and handle JSON formatted docs and strings.
 --> _log.py - Provides a logger to ensure proper logging of all activities.
---> _mdns.py - Provides support for monitoring mdns advertisements.
+--> _zconf.py - Provides support for monitoring mdns advertisements.
 --> _oauth2.py - Provides support to get oauth2 tokens.
 --> _privet.py - Provides privet structures.
 --> _sheets.py - Uses _gdocs.py to create and populate a Google spreadsheet.

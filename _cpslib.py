@@ -131,6 +131,11 @@ class GCPService(object):
     if r is None or requests.codes.ok != r.status_code:
       if r is None:
         print 'ERROR! Request to /download returned None type'
+      elif r.status_code == 415:
+        print ('GCP failed to provide raster file conversion, either supply '
+               'your own raster files or capture the content via wireshark from'
+               ' manuall printing the following from Chrome: testpage.png, '
+               'rosemary.pdf, dna_overview.png')
       else:
         print ('ERROR! Bad HTTP status code received from /download: %s' %
                r.status_code)

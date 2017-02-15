@@ -3453,7 +3453,10 @@ class JobState(LogoCert):
     """Validate proper /control msg when there is network outage."""
     test_id = '52f25929-6970-400f-93b1-e1542309f31f'
     test_name = 'testJobStateNetworkOutage'
-    print 'Once the printer prints 1 page, disconnect printer from network.'
+    print ('This test requires the printer to be disconnected from the network '
+           'after the first page is printed.')
+    PromptAndWaitForUserAction('Press ENTER when you are prepared to disconnect '
+                               'the network to begin the printjob')
 
     output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name,
                          self.cjt)
