@@ -2580,7 +2580,7 @@ class LocalPrinting(LogoCert):
       raise
     else:
       # Give the printer time to complete the job and update the status.
-      PromptAndWaitForUserAction('Press ENTER once the document id printed')
+      PromptAndWaitForUserAction('Press ENTER once the document is printed')
       print 'Waiting 30 seconds for job to print and status to be updated.'
       # Determine if this sleep is needed after testing a printer that
       # supports Privet Info API
