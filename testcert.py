@@ -4166,7 +4166,7 @@ class CloudPrinting(LogoCert):
 
   def testPrintPdfPageRangePage4To6(self):
     """Verify cloud printing a pdf with the page range option set to 4-6."""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfe'
     test_name = 'testPrintPdfPageRangePage4To6'
     _logger.info('Setting page range to 4-6...')
 
@@ -4185,7 +4185,7 @@ class CloudPrinting(LogoCert):
 
   def testPrintPdfPageRangePage2And4to6(self):
     """Verify cloud printing a pdf with the page range option set to 2, 4-6"""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcff'
     test_name = 'testPrintPdfPageRangePage2And4to6'
     _logger.info('Setting page range to page 2 and 4-6...')
 
