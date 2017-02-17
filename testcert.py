@@ -2537,13 +2537,9 @@ class LocalPrinting(LogoCert):
     except AssertionError:
       notes = 'Error local printing with color selected.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-    else:
-      print 'Print job should be printed in color.'
-      print 'If not, fail this test.'
-      self.ManualPass(test_id, test_name)
+      raise
 
-    test_id2 = '553fbcb6-0d98-45a4-a0d7-308297852135'
-    test_name2 = 'testLocalPrintMonochromeSelect'
+    PromptAndWaitForUserAction('Press ENTER when page is printed')
 
     self.cjt.AddColorOption(CjtConstants.MONOCHROME)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
@@ -2551,11 +2547,13 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with monochrome selected.'
-      self.LogTest(test_id2, test_name2, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
     else:
-      print 'Print job should be printed in monochrome.'
+      print 'The 1st print job should be printed in color.'
+      print 'The 2nd print job should be printed in monochrome.'
       print 'If not, fail this test.'
-      self.ManualPass(test_id2, test_name2)
+      self.ManualPass(test_id, test_name)
 
   def testLocalPrintUpdateMgtPage(self):
     """Verify printer jobstate API is functional."""
