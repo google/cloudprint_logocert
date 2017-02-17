@@ -2555,47 +2555,6 @@ class LocalPrinting(LogoCert):
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def testLocalPrintUpdateMgtPage(self):
-    """Verify printer jobstate API is functional."""
-    test_id = '530c74f7-2764-405e-916b-21fc943ea1f8'
-    test_name = 'testLocalPrintUpdateMgtPage'
-    #TODO: not tested yet, need a printer that supports this
-    if '/privet/printer/jobstate' not in _device.privet_info['api']:
-      notes = 'Printer does not support the jobstate privet API.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing %s' % Constants.IMAGES['PWG1']
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-    else:
-      # Give the printer time to complete the job and update the status.
-      PromptAndWaitForUserAction('Press ENTER once the document is printed')
-      print 'Waiting 30 seconds for job to print and status to be updated.'
-      # Determine if this sleep is needed after testing a printer that
-      # supports Privet Info API
-      time.sleep(30)
-      job = _device.JobState(job_id)
-      try:
-        self.assertIsNotNone(job)
-      except AssertionError:
-        notes = 'Failed to retrieve status of the print job via privet'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        try:
-          self.assertIn('done', job['state'])
-        except AssertionError:
-          notes = 'Printjob was not updated as done.'
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          raise
-        else:
-          notes = 'Printjob was updated as completed.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testLocalPrintHTML(self):
     """Verify printer can local print HTML file."""
