@@ -2828,6 +2828,21 @@ class PrinterState(LogoCert):
     LogoCert.setUpClass(cls)
     LogoCert.GetDeviceDetails()
 
+  def GetErrorMsg(self, printer_states):
+    """Loop through printer messages and find the first error message.
+
+    Args:
+      printer_states: dictionary, contains varies printer state objects
+    Returns:
+      string: error message if found, else None
+    """
+    for key, val in printer_states.iteritems():
+      for state in val:
+        if state['severity'] != 'NONE':
+          return state['message'].lower()
+    return None
+
+
   def VerifyUiStateMessage(self, test_id, test_name, keywords_list,
                            suffixes = None):
     """Verify state messages.
@@ -2847,6 +2862,12 @@ class PrinterState(LogoCert):
     if 'uiState' in _device.cdd:
       if 'caption' in _device.cdd['uiState']:
         uiMsg = _device.cdd['uiState']['caption'].lower()
+        uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
+        uiMsg.strip()
+      elif 'printer' in _device.cdd['uiState']:
+        uiMsg = self.GetErrorMsg(_device.cdd['uiState']['printer'])
+        if uiMsg is None:
+          return False
         uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
         uiMsg.strip()
       else:
