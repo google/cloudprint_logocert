@@ -2457,7 +2457,7 @@ class LocalPrinting(LogoCert):
   def testLocalPrintLayout(self):
     """Verify printer respects layout settings in local print."""
     test_id = 'fb522a69-2454-40ab-9453-270553664fea'
-    test_name = 'testLocalPrintLayoutPortrait'
+    test_name = 'testLocalPrintLayout'
 
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
@@ -2466,25 +2466,20 @@ class LocalPrinting(LogoCert):
     except AssertionError:
       notes = 'Error local printing with portrait layout.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
-    else:
-      print 'The print job should be printed in portrait layout.'
-      print 'If the layout is not correct, fail this test.'
-      self.ManualPass(test_id, test_name)
-
-    test_id2 = '3be1b5e6-cc96-417c-a131-ef96b0576c21'
-    test_name2 = 'testLocalPrintLayoutLandscape'
+      raise
 
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    job_id = _device.LocalPrint(test_name2, Constants.IMAGES['PWG3'], self.cjt)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with landscape layout.'
-      self.LogTest(test_id2, test_name2, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Blocked', notes)
     else:
-      print 'The print job should be printed in landscape layout.'
+      print 'The 1st print job should be printed in portrait layout.'
+      print 'The 2nd print job should be printed in landscape layout.'
       print 'If the layout is not correct, fail this test.'
-      self.ManualPass(test_id2, test_name2)
+      self.ManualPass(test_id, test_name)
 
   def testLocalPrintPageRange(self):
     """Verify printer respects page range in local print."""
