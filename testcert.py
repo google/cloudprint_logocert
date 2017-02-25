@@ -3307,9 +3307,8 @@ class JobState(LogoCert):
             #TODO: Do we really want to fail here if 'tray' is not in the msg?
             self.assertIn('tray', job_state_msg)
           except AssertionError:
-            _logger.error('The Job State error message did not contain tray')
-            _logger.error(notes)
-            _logger.error('Note that the error message may be ok.')
+            notes += ('The Job State error message does not contain tray.')
+            notes += ('Note that the error message may be ok.')
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
