@@ -2729,7 +2729,7 @@ class PostRegistration(LogoCert):
           break
         # Not using Constant.SLEEP['POLL'] here since the status update
         # actually takes a while
-        time.sleep(30)
+        time.sleep(5)
       try:
         self.assertIsNotNone(_device.status)
       except AssertionError:
@@ -2746,6 +2746,7 @@ class PostRegistration(LogoCert):
         notes = 'Status: %s' % _device.status
         self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
+        PromptAndWaitForUserAction('Press ENTER to continue this testcase.')
         PromptUserAction('Power on the printer and wait...')
         service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'],
                                                _logger)
@@ -2826,6 +2827,9 @@ class PrinterState(LogoCert):
       elif 'printer' in _device.cdd['uiState']:
         uiMsg = self.GetErrorMsg(_device.cdd['uiState']['printer'])
         if uiMsg is None:
+          notes = ('No error messages found in uistate[caption] or '
+                   'uiState[printer]')
+          self.LogTest(test_id, test_name, 'Failed', notes)
           return False
         uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
         uiMsg.strip()
