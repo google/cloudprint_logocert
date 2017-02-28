@@ -1921,6 +1921,8 @@ class Registration(LogoCert):
     test_name = 'testDeviceRegistration'
     test_id2 = '64f31b27-0779-4c94-8f8a-ec9d44ce6171'
     test_name2 = 'testDeviceRegistrationNoAccept'
+    test_id3 = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
+    test_name3 = 'testDeviceRegistrationMultipleUsers'
     print 'Do not select accept/cancel registration from the printer U/I.'
     print 'Wait for the registration request to time out.'
 
@@ -1962,9 +1964,12 @@ class Registration(LogoCert):
         self.assertFalse(success)
       except AssertionError:
         notes = 'Simultaneous registration succeeded.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
+        self.LogTest(test_id3, test_name3, 'Failed', notes)
         raise
       else:
+        notes = 'Simultaneous registration failed.'
+        self.LogTest(test_id3, test_name3, 'Passed', notes)
+
         PromptUserAction('ACCEPT the registration request from %s on the '
                          'printer UI and wait...' % Constants.USER['EMAIL'])
         # Finish the registration process
