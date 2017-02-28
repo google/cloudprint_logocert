@@ -3958,7 +3958,7 @@ class CloudPrinting(LogoCert):
 
   def testPrintUrl(self):
     """Verify cloud printing simple 1 page url - google.com"""
-    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
+    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f39'
     test_name = 'testPrintUrl'
 
     output = self.submit(_device.dev_id, Constants.GCP['MGT'], test_id,
