@@ -2365,35 +2365,6 @@ class LocalPrinting(LogoCert):
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def testLocalPrintUpdateMgtPage(self):
-    """Verify printer updates GCP MGT page when Local Printing."""
-    test_id = '530c74f7-2764-405e-916b-21fc943ea1f8'
-    test_name = 'testLocalPrintUpdateMgtPage'
-    filepath = 'file://' + Constants.IMAGES['GIF4']
-
-    chromedriver.Get(filepath)
-    printed = chrome.PrintFromPrintDialog(self.printer, localprint=True)
-    try:
-      self.assertTrue(printed)
-    except AssertionError:
-      notes = 'Error local printing %s' % filepath
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-    else:
-      # Give the printer time to complete the job and update the status.
-      print 'Waiting 60 seconds for job to print and status to be updated.'
-      time.sleep(60)
-      job_state = gcpmgr.GetPrinterJobStatus(device.name, 'Google-Glass.gif')
-      try:
-        self.assertIsNotNone(job_state)
-      except AssertionError:
-        notes = 'Printjob was not found on Mgt Page.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        notes = 'Printjob was found on Mgt Page.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
-
   def testLocalPrintLongUrl(self):
     """Verify printer can local print a long URL."""
     test_id = '8b89286b-a5aa-4936-a7d8-e768962930d8'
