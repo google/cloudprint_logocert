@@ -1949,6 +1949,7 @@ class Registration(LogoCert):
       raise
 
     # Register user1
+    print 'Initiating a registration attempt for User1'
     success = _device.StartPrivetRegister(user=Constants.USER['EMAIL'])
     try:
       self.assertTrue(success)
@@ -1958,55 +1959,67 @@ class Registration(LogoCert):
       _device.CancelRegistration(user=Constants.USER['EMAIL'])
       raise
     else:
-      success = _device.Register('User2 Registration attempt',
-                                user=Constants.USER2['EMAIL'], no_wait=True)
       try:
-        self.assertFalse(success)
-      except AssertionError:
-        notes = 'Simultaneous registration succeeded.'
+        success = _device.Register('User2 simultaneous registration attempt',
+                                   user=Constants.USER2['EMAIL'], no_wait=True,
+                                   wait_for_user=False)
+      except EnvironmentError:
+        notes = ('Simultaneous registration failed. '
+                 'getClaimToken() from User2\'s registration attempt '
+                 'should not return the \'pending_user_action\' error msg. '
+                 'The printer should reject User2\'s attempt since User1\'s '
+                 'registration is already under way.')
         self.LogTest(test_id3, test_name3, 'Failed', notes)
+        _device.CancelRegistration()
         raise
       else:
-        notes = 'Simultaneous registration failed.'
-        self.LogTest(test_id3, test_name3, 'Passed', notes)
-
-        PromptUserAction('ACCEPT the registration request from %s on the '
-                         'printer UI and wait...' % Constants.USER['EMAIL'])
-        # Finish the registration process
-        success = False
-        if _device.GetPrivetClaimToken():
-          if _device.ConfirmRegistration(_device.auth_token):
-            _device.FinishPrivetRegister()
-            success = True
         try:
-          self.assertTrue(success)
+          self.assertFalse(success)
         except AssertionError:
-          notes = 'User1 failed to register.'
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          _device.CancelRegistration()
+          notes = 'Simultaneous registration succeeded.'
+          self.LogTest(test_id3, test_name3, 'Failed', notes)
           raise
         else:
-          print 'Waiting up to 2 minutes to complete the registration.'
-          success = waitForAdvertisementRegStatus(Constants.PRINTER['NAME'],
-                                                  True, 120)
+          notes = 'Simultaneous registration failed.'
+          self.LogTest(test_id3, test_name3, 'Passed', notes)
+
+          PromptUserAction('ACCEPT the registration request from %s on the '
+                           'printer UI and wait...' % Constants.USER['EMAIL'])
+          # Finish the registration process
+          success = False
+          if _device.GetPrivetClaimToken():
+            if _device.ConfirmRegistration(_device.auth_token):
+              _device.FinishPrivetRegister()
+              success = True
           try:
             self.assertTrue(success)
           except AssertionError:
-            notes = ('Registered device not found advertising '
-                     'or found advertising as unregistered')
+            notes = 'User1 failed to register.'
             self.LogTest(test_id, test_name, 'Failed', notes)
+            _device.CancelRegistration()
             raise
           else:
-            res = _gcp.Search(_device.name)
+            print 'Waiting up to 2 minutes to complete the registration.'
+            success = waitForAdvertisementRegStatus(Constants.PRINTER['NAME'],
+                                                    True, 120)
             try:
-              self.assertTrue(res['printers'])
+              self.assertTrue(success)
             except AssertionError:
-              notes = 'Not able to register printer under user.'
+              notes = ('Registered device not found advertising '
+                       'or found advertising as unregistered')
               self.LogTest(test_id, test_name, 'Failed', notes)
               raise
             else:
-              notes = 'Registered printer'
-              self.LogTest(test_id, test_name, 'Passed', notes)
+              res = _gcp.Search(_device.name)
+              try:
+                self.assertTrue(res['printers'])
+              except AssertionError:
+                notes = 'Not able to register printer under user.'
+                self.LogTest(test_id, test_name, 'Failed', notes)
+                raise
+              else:
+                notes = 'Registered printer'
+                self.LogTest(test_id, test_name, 'Passed', notes)
 
 
 class LocalDiscovery(LogoCert):

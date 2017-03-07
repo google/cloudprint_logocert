@@ -95,7 +95,7 @@ class Device(object):
 
 
   def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True,
-               no_wait=False):
+               no_wait=False, wait_for_user=True):
     """Register device using Privet.
     Args:
       msg: string, the instruction for the user about the registration
@@ -103,6 +103,7 @@ class Device(object):
       user: string, the user to register for
       use_token: boolean, use auth_token if True
       no_wait: boolean, if True, do not wait
+      wait_for_user: boolean, if True, wait for user to press UI button
     Returns:
       boolean: True = device registered, False = device not registered.
     Note, devices a required user input to accept or deny a registration
@@ -113,7 +114,7 @@ class Device(object):
         print msg
       else:
         PromptUserAction(msg)
-      if self.GetPrivetClaimToken(user=user):
+      if self.GetPrivetClaimToken(user=user, wait_for_user=wait_for_user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
           self.FinishPrivetRegister()
@@ -264,9 +265,15 @@ class Device(object):
 
     return response['code'] == 200
 
-  def GetPrivetClaimToken(self, user=Constants.USER['EMAIL']):
+  def GetPrivetClaimToken(self, user=Constants.USER['EMAIL'],
+                          wait_for_user=True):
     """Wait for user interaction with the Printer's UI and get a
        Privet Claim Token.
+       Raises EnvironmentError if the printer keeps returning
+       'pending_user_action'
+    Args:
+      user: string, email address to register under.
+      wait_for_user: boolean, True if user is expected to interact with printer
 
     Returns:
       boolean: True = success, False = errors.
@@ -290,13 +297,18 @@ class Device(object):
 
       if 'error' in response['data']:
         if 'pending_user_action' in response['data']:
-          # Still waiting for user input
-          continue
+          if wait_for_user:
+            # Still waiting for user input
+            continue
+          else:
+            print 'getClaimToken() should not return \'pending_user_action\''
+            raise EnvironmentError
         else:
           return False
       time.sleep(Constants.SLEEP['POLL'])
 
-    return False  # If here, means unexpected condition, so return False.
+    print 'GetPrivetClaimToken() timed out from waiting for printer interaction'
+    return False
 
   def SendClaimToken(self, auth_token=None):
     """Send a claim token to the Cloud Print service.
