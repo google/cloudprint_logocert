@@ -737,8 +737,9 @@ class Privet(LogoCert):
       try:
         self.assertEqual(response['code'], return_code)
       except AssertionError:
-        notes = ('Incorrect return code from %s, found %d' %
-                 (_device.privet_url[api],response['code']))
+        notes = ('Incorrect return code from %s, found %d. '
+                 'Please confirm LOCAL_PRINT is set properly in _config.py'
+                 % (_device.privet_url[api],response['code']))
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
