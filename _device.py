@@ -301,7 +301,7 @@ class Device(object):
             # Still waiting for user input
             continue
           else:
-            print 'getClaimToken() should not return \'pending_user_action\''
+            print 'ERROR: getClaimToken() should not return \'pending_user_action\''
             raise EnvironmentError
         else:
           return False
