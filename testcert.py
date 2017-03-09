@@ -1010,9 +1010,9 @@ class Printer(LogoCert):
     else:
       _logger.info('Printer name found in details.')
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], _device.name)
+      self.assertIn(Constants.PRINTER['NAME'], _device.name)
     except AssertionError:
-      notes = 'Model not in name. Found %s' % _device.name
+      notes = 'NAME in _config.py does not match. Found %s' % _device.name
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
@@ -1024,9 +1024,10 @@ class Printer(LogoCert):
     else:
       _logger.info('Printer name found in CDD.')
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], _device.cdd['name'])
+      self.assertIn(Constants.PRINTER['NAME'], _device.cdd['name'])
     except AssertionError:
-      notes = 'Model not in name. Found %s in CDD' % _device.cdd['name']
+      notes = ('NAME in _config.py does not match name in  CDD. Found %s in CDD'
+               % _device.cdd['name'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
