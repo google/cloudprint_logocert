@@ -3966,6 +3966,11 @@ class CloudPrinting(LogoCert):
       notes = ('Job status did not transition to %s within %s seconds.' %
                (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
       self.LogTest(self.test_id, self.test_name, 'Failed', notes)
+      print ('ERROR: Either TIMEOUT[PRINTING] is too small in _config.py or '
+             'Job is in error state.')
+      print 'Check the GCP management page to see if it is the latter.'
+      PromptAndWaitForUserAction('Press ENTER when problem is resolved to '
+                                 'continue testing.')
       raise
     else:
       self.ManualPass(self.test_id, self.test_name)
