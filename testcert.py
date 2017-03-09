@@ -1557,6 +1557,13 @@ class Printer(LogoCert):
     """Verify duplex is in printer capabilities."""
     test_id = '7bda6263-a629-4e1a-84e9-28e84fa2b014'
     test_name = 'testCapsDuplex'
+    if not Constants.CAPS['DUPLEX']:
+      if 'duplex' in _device.cdd['caps']:
+        notes = 'Error in _config file, DUPLEX should be True'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+      else:
+        self.LogTest(test_id, test_name, 'Skipped', 'Duplex not supported')
+      return
     try:
       self.assertIn('duplex', _device.cdd['caps'])
     except AssertionError:
@@ -1572,7 +1579,11 @@ class Printer(LogoCert):
     test_id = '9d1464d1-46fb-4d1c-a8fb-3fa0e7dc9509'
     test_name = 'testCapsCopies'
     if not Constants.CAPS['COPIES_CLOUD']:
-      self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
+      if 'copies' in _device.cdd['caps']:
+        notes = 'Error in _config file, COPIES_CLOUD should be True'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+      else:
+        self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
       return
     try:
       self.assertIn('copies', _device.cdd['caps'])
@@ -1617,8 +1628,12 @@ class Printer(LogoCert):
     test_id = '550f72b4-4eb0-4869-87bf-197a9ef1cf09'
     test_name = 'testCapsCollate'
     if not Constants.CAPS['COLLATE']:
-      notes = 'Printer does not support collate.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
+      if 'collate' in _device.cdd['caps']:
+        notes = 'Error in _config file, COLLATE should be True'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+      else:
+        notes = 'Printer does not support collate.'
+        self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     try:
       self.assertIn('collate', _device.cdd['caps'])
