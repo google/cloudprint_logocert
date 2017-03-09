@@ -41,6 +41,7 @@ import sys
 import time
 import unittest
 import os
+import traceback
 
 from _config import Constants
 from _device import Device
@@ -452,10 +453,18 @@ class LogoCert(unittest.TestCase):
       if failure:
         # If failed, generate the cmd that to rerun this testcase
         # Get module name - name of this python script
-        module = os.path.basename(sys.argv[0]).split('.')[0]
+        module = 'testcert'
         # Get the caller's class name
         testsuite = sys._getframe(1).f_locals['self'].__class__.__name__
-        row.append('python -m unittest %s.%s.%s' %(module,testsuite,test_name))
+        # Since some testcases contain multiple test ids, we cannot simply use
+        # test_name to invoke the testcase it belongs to
+        # Use traceback to get a list of functions in the callstack that begins
+        # with test, the current testcase is the last entry on the list
+        pattern = r', in (test.+)\s'
+        testcase = [re.search(pattern, x).group(1) for x in
+                    traceback.format_stack() if
+                    re.search(pattern, x) is not None][-1]
+        row.append('python -m unittest %s.%s.%s' %(module,testsuite,testcase))
       _sheet.AddRow(row)
 
 
