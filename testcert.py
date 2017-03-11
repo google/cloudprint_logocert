@@ -336,8 +336,10 @@ def getRasterImageFromCloud(pwg_path, img_path):
         raise
       else:
         writeRasterToFile(pwg_path, res)
+        print '[Configurable timeout] PRINTING'
         _gcp.WaitJobStatus(output['job']['id'], _device.dev_id,
-                           CjtConstants.DONE)
+                           CjtConstants.DONE,
+                           timeout=Constants.TIMEOUT['PRINTING'])
 
 
 
