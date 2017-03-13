@@ -41,6 +41,7 @@ import sys
 import time
 import unittest
 import os
+import traceback
 
 from _config import Constants
 from _device import Device
@@ -335,8 +336,10 @@ def getRasterImageFromCloud(pwg_path, img_path):
         raise
       else:
         writeRasterToFile(pwg_path, res)
+        print '[Configurable timeout] PRINTING'
         _gcp.WaitJobStatus(output['job']['id'], _device.dev_id,
-                           CjtConstants.DONE)
+                           CjtConstants.DONE,
+                           timeout=Constants.TIMEOUT['PRINTING'])
 
 
 
@@ -452,10 +455,18 @@ class LogoCert(unittest.TestCase):
       if failure:
         # If failed, generate the cmd that to rerun this testcase
         # Get module name - name of this python script
-        module = os.path.basename(sys.argv[0]).split('.')[0]
+        module = 'testcert'
         # Get the caller's class name
         testsuite = sys._getframe(1).f_locals['self'].__class__.__name__
-        row.append('python -m unittest %s.%s.%s' %(module,testsuite,test_name))
+        # Since some testcases contain multiple test ids, we cannot simply use
+        # test_name to invoke the testcase it belongs to
+        # Use traceback to get a list of functions in the callstack that begins
+        # with test, the current testcase is the last entry on the list
+        pattern = r', in (test.+)\s'
+        testcase = [re.search(pattern, x).group(1) for x in
+                    traceback.format_stack() if
+                    re.search(pattern, x) is not None][-1]
+        row.append('python -m unittest %s.%s.%s' %(module,testsuite,testcase))
       _sheet.AddRow(row)
 
 
@@ -737,8 +748,9 @@ class Privet(LogoCert):
       try:
         self.assertEqual(response['code'], return_code)
       except AssertionError:
-        notes = ('Incorrect return code from %s, found %d' %
-                 (_device.privet_url[api],response['code']))
+        notes = ('Incorrect return code from %s, found %d. '
+                 'Please confirm LOCAL_PRINT is set properly in _config.py'
+                 % (_device.privet_url[api],response['code']))
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -1009,9 +1021,9 @@ class Printer(LogoCert):
     else:
       _logger.info('Printer name found in details.')
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], _device.name)
+      self.assertIn(Constants.PRINTER['NAME'], _device.name)
     except AssertionError:
-      notes = 'Model not in name. Found %s' % _device.name
+      notes = 'NAME in _config.py does not match. Found %s' % _device.name
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     try:
@@ -1023,9 +1035,10 @@ class Printer(LogoCert):
     else:
       _logger.info('Printer name found in CDD.')
     try:
-      self.assertIn(Constants.PRINTER['MODEL'], _device.cdd['name'])
+      self.assertIn(Constants.PRINTER['NAME'], _device.cdd['name'])
     except AssertionError:
-      notes = 'Model not in name. Found %s in CDD' % _device.cdd['name']
+      notes = ('NAME in _config.py does not match name in  CDD. Found %s in CDD'
+               % _device.cdd['name'])
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -1546,6 +1559,13 @@ class Printer(LogoCert):
     """Verify duplex is in printer capabilities."""
     test_id = '7bda6263-a629-4e1a-84e9-28e84fa2b014'
     test_name = 'testCapsDuplex'
+    if not Constants.CAPS['DUPLEX']:
+      if 'duplex' in _device.cdd['caps']:
+        notes = 'Error in _config file, DUPLEX should be True'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+      else:
+        self.LogTest(test_id, test_name, 'Skipped', 'Duplex not supported')
+      return
     try:
       self.assertIn('duplex', _device.cdd['caps'])
     except AssertionError:
@@ -1561,7 +1581,11 @@ class Printer(LogoCert):
     test_id = '9d1464d1-46fb-4d1c-a8fb-3fa0e7dc9509'
     test_name = 'testCapsCopies'
     if not Constants.CAPS['COPIES_CLOUD']:
-      self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
+      if 'copies' in _device.cdd['caps']:
+        notes = 'Error in _config file, COPIES_CLOUD should be True'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+      else:
+        self.LogTest(test_id, test_name, 'Skipped', 'Copies not supported')
       return
     try:
       self.assertIn('copies', _device.cdd['caps'])
@@ -1606,8 +1630,12 @@ class Printer(LogoCert):
     test_id = '550f72b4-4eb0-4869-87bf-197a9ef1cf09'
     test_name = 'testCapsCollate'
     if not Constants.CAPS['COLLATE']:
-      notes = 'Printer does not support collate.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
+      if 'collate' in _device.cdd['caps']:
+        notes = 'Error in _config file, COLLATE should be True'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+      else:
+        notes = 'Printer does not support collate.'
+        self.LogTest(test_id, test_name, 'Skipped', notes)
       return
     try:
       self.assertIn('collate', _device.cdd['caps'])
@@ -1921,6 +1949,8 @@ class Registration(LogoCert):
     test_name = 'testDeviceRegistration'
     test_id2 = '64f31b27-0779-4c94-8f8a-ec9d44ce6171'
     test_name2 = 'testDeviceRegistrationNoAccept'
+    test_id3 = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
+    test_name3 = 'testDeviceRegistrationMultipleUsers'
     print 'Do not select accept/cancel registration from the printer U/I.'
     print 'Wait for the registration request to time out.'
 
@@ -1947,6 +1977,7 @@ class Registration(LogoCert):
       raise
 
     # Register user1
+    print 'Initiating a registration attempt for User1'
     success = _device.StartPrivetRegister(user=Constants.USER['EMAIL'])
     try:
       self.assertTrue(success)
@@ -1956,52 +1987,67 @@ class Registration(LogoCert):
       _device.CancelRegistration(user=Constants.USER['EMAIL'])
       raise
     else:
-      success = _device.Register('User2 Registration attempt',
-                                user=Constants.USER2['EMAIL'], no_wait=True)
       try:
-        self.assertFalse(success)
-      except AssertionError:
-        notes = 'Simultaneous registration succeeded.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
+        success = _device.Register('User2 simultaneous registration attempt',
+                                   user=Constants.USER2['EMAIL'], no_wait=True,
+                                   wait_for_user=False)
+      except EnvironmentError:
+        notes = ('Simultaneous registration failed. '
+                 'getClaimToken() from User2\'s registration attempt '
+                 'should not return the \'pending_user_action\' error msg. '
+                 'The printer should reject User2\'s attempt since User1\'s '
+                 'registration is already under way.')
+        self.LogTest(test_id3, test_name3, 'Failed', notes)
+        _device.CancelRegistration()
         raise
       else:
-        PromptUserAction('ACCEPT the registration request from %s on the '
-                         'printer UI and wait...' % Constants.USER['EMAIL'])
-        # Finish the registration process
-        success = False
-        if _device.GetPrivetClaimToken():
-          if _device.ConfirmRegistration(_device.auth_token):
-            _device.FinishPrivetRegister()
-            success = True
         try:
-          self.assertTrue(success)
+          self.assertFalse(success)
         except AssertionError:
-          notes = 'User1 failed to register.'
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          _device.CancelRegistration()
+          notes = 'Simultaneous registration succeeded.'
+          self.LogTest(test_id3, test_name3, 'Failed', notes)
           raise
         else:
-          print 'Waiting up to 2 minutes to complete the registration.'
-          success = waitForAdvertisementRegStatus(Constants.PRINTER['NAME'],
-                                                  True, 120)
+          notes = 'Simultaneous registration failed.'
+          self.LogTest(test_id3, test_name3, 'Passed', notes)
+
+          PromptUserAction('ACCEPT the registration request from %s on the '
+                           'printer UI and wait...' % Constants.USER['EMAIL'])
+          # Finish the registration process
+          success = False
+          if _device.GetPrivetClaimToken():
+            if _device.ConfirmRegistration(_device.auth_token):
+              _device.FinishPrivetRegister()
+              success = True
           try:
             self.assertTrue(success)
           except AssertionError:
-            notes = ('Registered device not found advertising '
-                     'or found advertising as unregistered')
+            notes = 'User1 failed to register.'
             self.LogTest(test_id, test_name, 'Failed', notes)
+            _device.CancelRegistration()
             raise
           else:
-            res = _gcp.Search(_device.name)
+            print 'Waiting up to 2 minutes to complete the registration.'
+            success = waitForAdvertisementRegStatus(Constants.PRINTER['NAME'],
+                                                    True, 120)
             try:
-              self.assertTrue(res['printers'])
+              self.assertTrue(success)
             except AssertionError:
-              notes = 'Not able to register printer under user.'
+              notes = ('Registered device not found advertising '
+                       'or found advertising as unregistered')
               self.LogTest(test_id, test_name, 'Failed', notes)
               raise
             else:
-              notes = 'Registered printer'
-              self.LogTest(test_id, test_name, 'Passed', notes)
+              res = _gcp.Search(_device.name)
+              try:
+                self.assertTrue(res['printers'])
+              except AssertionError:
+                notes = 'Not able to register printer under user.'
+                self.LogTest(test_id, test_name, 'Failed', notes)
+                raise
+              else:
+                notes = 'Registered printer'
+                self.LogTest(test_id, test_name, 'Passed', notes)
 
 
 class LocalDiscovery(LogoCert):
@@ -2729,7 +2775,7 @@ class PostRegistration(LogoCert):
           break
         # Not using Constant.SLEEP['POLL'] here since the status update
         # actually takes a while
-        time.sleep(30)
+        time.sleep(5)
       try:
         self.assertIsNotNone(_device.status)
       except AssertionError:
@@ -2746,6 +2792,7 @@ class PostRegistration(LogoCert):
         notes = 'Status: %s' % _device.status
         self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
+        PromptAndWaitForUserAction('Press ENTER to continue this testcase.')
         PromptUserAction('Power on the printer and wait...')
         service = Wait_for_privet_mdns_service(300, Constants.PRINTER['NAME'],
                                                _logger)
@@ -2826,6 +2873,9 @@ class PrinterState(LogoCert):
       elif 'printer' in _device.cdd['uiState']:
         uiMsg = self.GetErrorMsg(_device.cdd['uiState']['printer'])
         if uiMsg is None:
+          notes = ('No error messages found in uistate[caption] or '
+                   'uiState[printer]')
+          self.LogTest(test_id, test_name, 'Failed', notes)
           return False
         uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
         uiMsg.strip()
@@ -3303,9 +3353,8 @@ class JobState(LogoCert):
             #TODO: Do we really want to fail here if 'tray' is not in the msg?
             self.assertIn('tray', job_state_msg)
           except AssertionError:
-            _logger.error('The Job State error message did not contain tray')
-            _logger.error(notes)
-            _logger.error('Note that the error message may be ok.')
+            notes += ('The Job State error message does not contain tray.')
+            notes += ('Note that the error message may be ok.')
             self.LogTest(test_id, test_name, 'Failed', notes)
             raise
           else:
@@ -3943,6 +3992,11 @@ class CloudPrinting(LogoCert):
       notes = ('Job status did not transition to %s within %s seconds.' %
                (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
       self.LogTest(self.test_id, self.test_name, 'Failed', notes)
+      print ('ERROR: Either TIMEOUT[PRINTING] is too small in _config.py or '
+             'Job is in error state.')
+      print 'Check the GCP management page to see if it is the latter.'
+      PromptAndWaitForUserAction('Press ENTER when problem is resolved to '
+                                 'continue testing.')
       raise
     else:
       self.ManualPass(self.test_id, self.test_name)
@@ -3955,7 +4009,7 @@ class CloudPrinting(LogoCert):
 
   def testPrintUrl(self):
     """Verify cloud printing simple 1 page url - google.com"""
-    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
+    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f39'
     test_name = 'testPrintUrl'
 
     output = self.submit(_device.dev_id, Constants.GCP['MGT'], test_id,
