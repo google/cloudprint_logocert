@@ -358,10 +358,6 @@ def getLocalPrintingRasterImages():
     print 'Likely that this is the first time LocalPrinting suite is run.'
     getRasterImageFromCloud(Constants.IMAGES['PWG2'], Constants.IMAGES['PDF10'])
 
-  if not os.path.exists(Constants.IMAGES['PWG3']):
-    print '\n%s not found.' % (Constants.IMAGES['PWG3'])
-    print 'Likely that this is the first time LocalPrinting suite is run.'
-    getRasterImageFromCloud(Constants.IMAGES['PWG3'], Constants.IMAGES['PNG2'])
 
 class LogoCert(unittest.TestCase):
   """Base Class to drive Logo Certification tests."""
@@ -1937,20 +1933,11 @@ class PreRegistration(LogoCert):
 class Registration(LogoCert):
   """Test device registration."""
 
-  def testDeviceRegistration(self):
-    """Verify printer registration using Privet
+  def test_01_DeviceRegistrationTimeOut(self):
+    """Verify printer registration times out properly"""
+    test_id = '64f31b27-0779-4c94-8f8a-ec9d44ce6171'
+    test_name = 'testDeviceRegistrationNoAccept'
 
-    This test function actually executes three tests.
-    1- Printer UI timeout after registration results in cancellation
-    2- User2 cannot register after User1 has begun registration process
-    3- User1 successfully registers
-    """
-    test_id = 'b36f4085-f14f-49e0-adc0-cdbaae45bd9f'
-    test_name = 'testDeviceRegistration'
-    test_id2 = '64f31b27-0779-4c94-8f8a-ec9d44ce6171'
-    test_name2 = 'testDeviceRegistrationNoAccept'
-    test_id3 = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
-    test_name3 = 'testDeviceRegistrationMultipleUsers'
     print 'Do not select accept/cancel registration from the printer U/I.'
     print 'Wait for the registration request to time out.'
 
@@ -1966,15 +1953,48 @@ class Registration(LogoCert):
       except AssertionError:
         notes = ('Not able to cancel printer registration from '
                  'printer UI timeout.')
-        self.LogTest(test_id2, test_name2, 'Failed', notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         notes = 'Printer registration cancelled from printer UI timeout.'
-        self.LogTest(test_id2, test_name2, 'Passed', notes)
+        self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Not able to initiate printer registration.'
-      self.LogTest(test_id2, test_name2, 'Failed', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+
+  def test_02_DeviceRegistrationPanelUI(self):
+    """Verify printer panel UI shows registration prompt"""
+    test_id = '6968e44b-3c2d-4b14-8fd5-06c94f1e8c41'
+    test_name = 'testDeviceAcceptRegistration'
+
+    if Constants.CAPS['PRINTER_PANEL_UI']:
+      # Verify printer must accept registration requests on the printer panel
+      print 'Validate that the printer panel UI correctly showed a GCP '
+      print 'registration request during the previous "timeout" test'
+      print 'If printer does not have accept/cancel on printer panel,'
+      print 'Fail this test.'
+      self.ManualPass(test_id, test_name, print_test=False)
+    else:
+      notes = 'No printer panel UI support.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+
+  def test_03_DeviceRegistration(self):
+    """Verify printer registration using Privet
+
+    This test function actually executes three tests.
+    1- User1 successfully registers
+    2- User2 cannot register after User1 has begun registration process
+    3- Printer correctly advertises as registered after registration
+    """
+    test_id = 'b36f4085-f14f-49e0-adc0-cdbaae45bd9f'
+    test_name = 'testDeviceRegistration'
+
+    test_id2 = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
+    test_name2 = 'testDeviceRegistrationMultipleUsers'
+
+    test_id3 = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
+    test_name3 = 'testDeviceRegistrationAdvertise'
 
     # Register user1
     print 'Initiating a registration attempt for User1'
@@ -1982,7 +2002,7 @@ class Registration(LogoCert):
     try:
       self.assertTrue(success)
     except AssertionError:
-      notes = 'Not able to register user1.'
+      notes = 'Not able to register user1. Privet call /register/start failed'
       self.LogTest(test_id, test_name, 'Failed', notes)
       _device.CancelRegistration(user=Constants.USER['EMAIL'])
       raise
@@ -1997,7 +2017,7 @@ class Registration(LogoCert):
                  'should not return the \'pending_user_action\' error msg. '
                  'The printer should reject User2\'s attempt since User1\'s '
                  'registration is already under way.')
-        self.LogTest(test_id3, test_name3, 'Failed', notes)
+        self.LogTest(test_id2, test_name2, 'Failed', notes)
         _device.CancelRegistration()
         raise
       else:
@@ -2005,11 +2025,11 @@ class Registration(LogoCert):
           self.assertFalse(success)
         except AssertionError:
           notes = 'Simultaneous registration succeeded.'
-          self.LogTest(test_id3, test_name3, 'Failed', notes)
+          self.LogTest(test_id2, test_name2, 'Failed', notes)
           raise
         else:
           notes = 'Simultaneous registration failed.'
-          self.LogTest(test_id3, test_name3, 'Passed', notes)
+          self.LogTest(test_id2, test_name2, 'Passed', notes)
 
           PromptUserAction('ACCEPT the registration request from %s on the '
                            'printer UI and wait...' % Constants.USER['EMAIL'])
@@ -2035,19 +2055,22 @@ class Registration(LogoCert):
             except AssertionError:
               notes = ('Registered device not found advertising '
                        'or found advertising as unregistered')
+              self.LogTest(test_id3, test_name3, 'Failed', notes)
+            else:
+              notes = 'Registered device found advertising correctly'
+              self.LogTest(test_id3, test_name3, 'Passed', notes)
+
+            res = _gcp.Search(_device.name)
+            try:
+              self.assertTrue(res['printers'])
+            except AssertionError:
+              notes = 'Registered printer not found via the GCP Search API.'
               self.LogTest(test_id, test_name, 'Failed', notes)
               raise
             else:
-              res = _gcp.Search(_device.name)
-              try:
-                self.assertTrue(res['printers'])
-              except AssertionError:
-                notes = 'Not able to register printer under user.'
-                self.LogTest(test_id, test_name, 'Failed', notes)
-                raise
-              else:
-                notes = 'Registered printer'
-                self.LogTest(test_id, test_name, 'Passed', notes)
+              notes = ('Successfully found registered printer via the GCP '
+                       'Search API')
+              self.LogTest(test_id, test_name, 'Passed', notes)
 
 
 class LocalDiscovery(LogoCert):
@@ -2349,7 +2372,7 @@ class LocalPrinting(LogoCert):
     # GCP, then downloading the raster files and saving them to disk
     getLocalPrintingRasterImages()
 
-  def testLocalPrintGuestUser(self):
+  def test_01_LocalPrintGuestUser(self):
     """Verify local print on a registered printer is available to guest user."""
     test_id = '8ba6f1ba-66cc-4d9e-aa3c-1d2e611ddb38'
     test_name = 'testLocalPrintGuestUser'
@@ -2363,14 +2386,32 @@ class LocalPrinting(LogoCert):
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Guest failed to print a page via local printing.'
+      notes = 'Guest failed to print a pwg-raster image via local printing.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
     else:
-      print 'Guest successfully printed a page via local printing.'
+      print 'Guest successfully printed a pwg-raster image via local printing.'
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def testLocalPrintingToggle(self):
+
+  def test_02_LocalPrintOwner(self):
+    """Verify local print on a registered printer as the owner."""
+    test_id = 'a47b904c-d7a2-4112-832b-59035d117404'
+    test_name = 'testLocalPrintOwner'
+
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Owner failed to print a pwg-raster image via local printing.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+    else:
+      print 'Owner successfully printed a pwg-raster image via local printing.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+
+  def test_03_LocalPrintingToggle(self):
     """Verify printer behaves correctly when local printing toggled."""
     test_id = '533d4ac6-5c1d-4c99-a91e-2bac7c31864f'
     test_name = 'testLocalPrintingToggle'
@@ -2446,163 +2487,7 @@ class LocalPrinting(LogoCert):
       notes2 = 'Able to print via privet local printing when re-enabled.'
       self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
 
-
-
-  def testLocalPrintTwoSided(self):
-    """Verify printer respects two-sided option in local print."""
-    test_id = 'e235f70d-2f81-4ea4-9d0d-b56db2174a57'
-    test_name = 'testLocalPrintTwoSided'
-
-    if not Constants.CAPS['DUPLEX']:
-      self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
-      return
-
-    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error printing with duplex in local printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-    else:
-      print 'Verify print job is printed in duplex.'
-      self.ManualPass(test_id, test_name)
-
-
-  def testLocalPrintMargins(self):
-    """Verify printer respects margins selected in local print."""
-    test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0b8e'
-    test_name = 'testLocalPrintMargins'
-
-    if not Constants.CAPS['MARGIN']:
-      self.LogTest(test_id, test_name, 'Skipped', 'No Margin support')
-      return
-
-    self.cjt.AddMarginOption(CjtConstants.BORDERLESS, 0, 0, 0, 0)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with no margins.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-    self.cjt.AddMarginOption(CjtConstants.STANDARD, 50, 50, 50, 50)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with minimum margins.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-    print 'The 1st print job should have no margins.'
-    print 'The 2nd print job should have minimum margins.'
-    print 'If the margins are not correct, fail this test.'
-    self.ManualPass(test_id, test_name)
-
-  def testLocalPrintLayout(self):
-    """Verify printer respects layout settings in local print."""
-    test_id = 'fb522a69-2454-40ab-9453-270553664fea'
-    test_name = 'testLocalPrintLayout'
-
-    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with portrait layout.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG3'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with landscape layout.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-    else:
-      print 'The 1st print job should be printed in portrait layout.'
-      print 'The 2nd print job should be printed in landscape layout.'
-      print 'If the layout is not correct, fail this test.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintPageRange(self):
-    """Verify printer respects page range in local print."""
-    test_id = '1580f47d-4115-462d-b85e-bd4d5fd4d7e3'
-    test_name = 'testLocalPrintPageRange'
-
-    self.cjt.AddPageRangeOption(2,3)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with page range.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-    else:
-      print 'The print job should only print pages 2 and 3.'
-      print 'If this is not the case, fail this test.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintCopies(self):
-    """Verify printer respects copy option in local print."""
-    test_id = 'c849ce7a-07e0-488e-b266-e002bdbde4d6'
-    test_name = 'testLocalPrintCopies'
-
-    if not Constants.CAPS['COPIES_LOCAL']:
-      notes = 'Printer does not support copies option.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-
-    self.cjt.AddCopiesOption(2)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with copies option.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-    else:
-      print 'The print job should have printed 2 copies.'
-      print 'If 2 copies are not printed, fail this test.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintColorSelect(self):
-    """Verify printer respects color option in local print."""
-    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14684'
-    test_name = 'testLocalPrintColorSelect'
-
-    if not Constants.CAPS['COLOR']:
-      notes = 'Printer does not support color printing.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-
-    self.cjt.AddColorOption(CjtConstants.COLOR)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with color selected.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-
-    PromptAndWaitForUserAction('Press ENTER when page is printed')
-
-    self.cjt.AddColorOption(CjtConstants.MONOCHROME)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with monochrome selected.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-      raise
-    else:
-      print 'The 1st print job should be printed in color.'
-      print 'The 2nd print job should be printed in monochrome.'
-      print 'If not, fail this test.'
-      self.ManualPass(test_id, test_name)
-
-
-  def testLocalPrintHTML(self):
+  def test_04_LocalPrintHTML(self):
     """Verify printer can local print HTML file."""
     test_id = '8745d54b-045a-4378-a024-d331785ac62e'
     test_name = 'testLocalPrintHTML'
@@ -2623,7 +2508,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test is print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def testLocalPrintJPG(self):
+  def test_05_LocalPrintJPG(self):
     """Verify a 1 page JPG file prints using Local Printing."""
     test_id = '01a0aa7e-80e3-4336-8183-0c5cbf8e9f19'
     test_name = 'testLocalPrintJPG'
@@ -2645,7 +2530,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test is print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def testLocalPrintPNG(self):
+  def test_06_LocalPrintPNG(self):
     """Verify a 1 page PNG file prints using Local Printing."""
     test_id = 'a4588515-2c18-4f57-80c6-9c23cb57f074'
     test_name = 'testLocalPrintPNG'
@@ -2666,7 +2551,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test is print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def testLocalPrintGIF(self):
+  def test_07_LocalPrintGIF(self):
     """Verify a 1 page GIF file prints using Local Printing."""
     test_id = '7b61815b-5719-4114-bdf7-8fce6e0d8dc5'
     test_name = 'testLocalPrintGIF'
@@ -2687,7 +2572,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test is print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def testLocalPrintPDF(self):
+  def test_08_LocalPrintPDF(self):
     """Verify a 1 page PDF file prints using Local Printing."""
     test_id = '0a02c47a-32b0-47b4-af7a-810c002d282d'
     test_name = 'testLocalPrintPDF'
@@ -2707,6 +2592,267 @@ class LocalPrinting(LogoCert):
       print 'PDF file should be printed.'
       print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
+
+  def test_09_LocalPrintPDFDuplex(self):
+    """Verify printer respects duplex option for PDFs in local print."""
+    test_id = 'e235f70d-2f81-4ea4-9d0d-b56db2174a57'
+    test_name = 'testLocalPrintPDFDuplex'
+
+    if 'application/pdf' not in _device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
+      return
+
+    if not Constants.CAPS['DUPLEX']:
+      self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
+      return
+
+    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error printing with LONG_EDGE option in local printing.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    PromptAndWaitForUserAction('Press ENTER when the document is completely '
+                               'printed')
+
+    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error printing with SHORT_EDGE option in local printing.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      print 'The 1st print job should be printed 2-sided along the long edge.'
+      print 'The 2nd print job should be printed 2-sided along the short edge.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+
+  def test_10_LocalPrintPDFMargins(self):
+    """Verify printer respects margins option for PDFs in local print."""
+    test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0b8e'
+    test_name = 'testLocalPrintPDFMargins'
+
+    if 'application/pdf' not in _device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
+      return
+
+    if not Constants.CAPS['MARGIN']:
+      self.LogTest(test_id, test_name, 'Skipped', 'No Margin support')
+      return
+
+    self.cjt.AddMarginOption(CjtConstants.BORDERLESS, 0, 0, 0, 0)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF6'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with no margins.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+    self.cjt.AddMarginOption(CjtConstants.STANDARD, 50, 50, 50, 50)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF6'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with minimum margins.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+    print 'The 1st print job should have no margins.'
+    print 'The 2nd print job should have minimum margins.'
+    print 'If the margins are not correct, fail this test.'
+    self.ManualPass(test_id, test_name)
+
+  def test_11_LocalPrintPDFLayout(self):
+    """Verify printer respects layout settings for PDFs in local print."""
+    test_id = 'fb522a69-2454-40ab-9453-270553664fea'
+    test_name = 'testLocalPrintPDFLayout'
+
+    if 'application/pdf' not in _device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
+      return
+
+    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with portrait layout.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+
+    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with landscape layout.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+    else:
+      print 'The 1st print job should be printed in portrait layout.'
+      print 'The 2nd print job should be printed in landscape layout.'
+      print 'If the layout is not correct, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+  def test_12_LocalPrintPDFPageRange(self):
+    """Verify printer respects page range for PDFs in local print."""
+    test_id = '1580f47d-4115-462d-b85e-bd4d5fd4d7e3'
+    test_name = 'testLocalPrintPDFPageRange'
+
+    if 'application/pdf' not in _device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
+      return
+
+    self.cjt.AddPageRangeOption(2,3)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with page range.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+    else:
+      print 'The print job should only print pages 2 and 3.'
+      print 'If this is not the case, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+  def test_13_LocalPrintPDFCopies(self):
+    """Verify printer respects copy option for PDFs in local print."""
+    test_id = 'c849ce7a-07e0-488e-b266-e002bdbde4d6'
+    test_name = 'testLocalPrintPDFCopies'
+
+    if 'application/pdf' not in _device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
+      return
+
+    if not Constants.CAPS['COPIES_LOCAL']:
+      notes = 'Printer does not support copies option.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
+    self.cjt.AddCopiesOption(2)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with copies option.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+    else:
+      print 'The print job should have printed 2 copies.'
+      print 'If 2 copies are not printed, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+  def test_14_LocalPrintPDFColorSelect(self):
+    """Verify printer respects color option for PDFs in local print."""
+    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14684'
+    test_name = 'testLocalPrintPDFColorSelect'
+
+    if 'application/pdf' not in _device.supported_types:
+      self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
+      return
+
+    if not Constants.CAPS['COLOR']:
+      notes = 'Printer does not support color printing.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
+    self.cjt.AddColorOption(CjtConstants.COLOR)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with color selected.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    PromptAndWaitForUserAction('Press ENTER when page is printed')
+
+    self.cjt.AddColorOption(CjtConstants.MONOCHROME)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with monochrome selected.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+    else:
+      print 'The 1st print job should be printed in color.'
+      print 'The 2nd print job should be printed in monochrome.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+  def test_15_LocalPrintPWGDuplex(self):
+    """Verify printer respects duplex option for PWGs in local print."""
+    test_id = 'e235f70d-2f81-4ea4-9d0d-b56db2174a58'
+    test_name = 'testLocalPrintPWGDuplex'
+
+    if not Constants.CAPS['DUPLEX']:
+      self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
+      return
+
+    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error printing with LONG_EDGE option in local printing.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    PromptAndWaitForUserAction('Press ENTER when the document is completely '
+                               'printed')
+
+    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error printing with SHORT_EDGE option in local printing.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      print 'Both print jobs should be printed in duplex regardless of edge'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+  def test_16_LocalPrintPWGColorSelect(self):
+    """Verify printer respects color option for PWGs in local print."""
+    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14685'
+    test_name = 'testLocalPrintPWGColorSelect'
+
+    if not Constants.CAPS['COLOR']:
+      notes = 'Printer does not support color printing.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
+    self.cjt.AddColorOption(CjtConstants.COLOR)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with color selected.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    PromptAndWaitForUserAction('Press ENTER when page is printed')
+
+    self.cjt.AddColorOption(CjtConstants.MONOCHROME)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing with monochrome selected.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+      raise
+    else:
+      print 'The 1st print job should be printed in color.'
+      print 'The 2nd print job should be printed in monochrome.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
+
 
 
 class PostRegistration(LogoCert):
@@ -3834,8 +3980,12 @@ class Unregister(LogoCert):
     """Unregister printer."""
     test_id = 'bd9cdf91-431a-4534-a747-55ef8cbd8391'
     test_name = 'testUnregisterDevice'
-    test_id2 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
-    test_name2 = 'testOffDeviceIsDeleted'
+
+    test_id2 = '015c45ee-ba09-47b0-ab2d-53453410de4d'
+    test_name2 = 'testUnregisteredDevicePrivetAdvertise'
+
+    test_id3 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
+    test_name3 = 'testOffDeviceIsDeleted'
 
     print 'Printer needs to be registered at the beginning of this testcase'
     is_registered = _device.isPrinterRegistered()
@@ -3846,17 +3996,19 @@ class Unregister(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
+    PromptAndWaitForUserAction('Press ENTER once printer is powered off')
     success = _device.UnRegister(_device.auth_token)
     try:
       self.assertTrue(success)
     except AssertionError:
-      notes = 'Error while deleting registered printer.'
+      notes = 'Error deleting registered printer. GCP delete API call failed'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Registered printer was deleted.'
+      notes = 'GCP delete API returned success.'
       self.LogTest(test_id, test_name, 'Passed', notes)
 
+    PromptUserAction('Power on the printer and wait...')
     print ('Wait up to 2 minutes for the printer to advertise as '
            'an unregistered device')
     success = waitForAdvertisementRegStatus(Constants.PRINTER['NAME'],
@@ -3867,10 +4019,20 @@ class Unregister(LogoCert):
       notes = ('Deleted device not found advertising or found advertising as '
                'registered')
       self.LogTest(test_id2, test_name2, 'Failed', notes)
-      raise
     else:
       notes = 'Deleted device found advertising as unregistered device.'
       self.LogTest(test_id2, test_name2, 'Passed', notes)
+
+    res = _gcp.Search(_device.name)
+    try:
+      self.assertFalse(res['printers'])
+    except AssertionError:
+      notes = 'Unregistered printer found via the GCP Search API.'
+      self.LogTest(test_id3, test_name3, 'Failed', notes)
+      raise
+    else:
+      notes = ('Unregistered printer not found via the GCP Search API')
+      self.LogTest(test_id3, test_name3, 'Passed', notes)
 
 class PostUnregistration(LogoCert):
   """Test local printing on an unregistered device
