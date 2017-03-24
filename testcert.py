@@ -2505,7 +2505,7 @@ class LocalPrinting(LogoCert):
       raise
     else:
       print 'HTML file should be printed.'
-      print 'Fail this test is print out has errors or quality issues.'
+      print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
   def test_05_LocalPrintJPG(self):
@@ -2527,7 +2527,7 @@ class LocalPrinting(LogoCert):
       raise
     else:
       print 'JPG file should be printed.'
-      print 'Fail this test is print out has errors or quality issues.'
+      print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
   def test_06_LocalPrintPNG(self):
@@ -2548,7 +2548,7 @@ class LocalPrinting(LogoCert):
       raise
     else:
       print 'PNG file should be printed.'
-      print 'Fail this test is print out has errors or quality issues.'
+      print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
   def test_07_LocalPrintGIF(self):
@@ -2569,7 +2569,7 @@ class LocalPrinting(LogoCert):
       raise
     else:
       print 'GIF file should be printed.'
-      print 'Fail this test is print out has errors or quality issues.'
+      print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
   def test_08_LocalPrintPDF(self):
