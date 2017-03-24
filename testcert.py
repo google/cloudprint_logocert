@@ -3701,7 +3701,7 @@ class JobState(LogoCert):
                            CjtConstants.ERROR)
       except AssertionError:
         notes = ('Job status did not transition to %s within %s seconds.'
-                 % (CjtConstants.ERROR, 30))
+                 % (CjtConstants.ERROR, 60))
         _logger.error(notes)
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
@@ -3710,6 +3710,10 @@ class JobState(LogoCert):
         PromptAndWaitForUserAction('Press ENTER once printer is clear of jam.')
         print 'Verify print job prints after paper jam is cleared.'
         self.ManualPass(test_id, test_name)
+    finally:
+      # Make sure printer is no longer in an error state before continuing
+      print 'Before continuing, make sure printer is no longer in error state'
+      PromptAndWaitForUserAction('Press ENTER to continue testing.')
 
   def testJobStateIncorrectMediaSize(self):
     """Validate proper behavior when incorrect media size is selected."""
