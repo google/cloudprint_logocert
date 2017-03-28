@@ -3961,6 +3961,12 @@ class RunAfter24Hours(LogoCert):
     """validate printer has online status."""
     test_id = '5e0bf694-086a-4258-b23a-aa0d9a746dd7'
     test_name = 'testPrinterOnline'
+
+    # Tokens have expired since the 24 hr sleep, refresh them
+    RefreshToken()
+    _device.auth_token = Constants.AUTH['ACCESS']
+    _gcp.auth_token = Constants.AUTH['ACCESS']
+
     _device.GetDeviceDetails()
     try:
       self.assertIn('ONLINE', _device.status)
