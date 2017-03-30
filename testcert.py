@@ -432,7 +432,7 @@ class LogoCert(unittest.TestCase):
       result: string, ["Passed", "Failed", "Blocked", "Skipped", "Not Run"]
       notes: string, notes to include with the test result.
     """
-    failure = False if result.lower() in ['passed','skipped'] else True
+    failure = False if result.lower() in ['passed','skipped','n/a'] else True
 
     console_result = RedText(result) if failure else GreenText(result)
     console_test_name = RedText(test_name) if failure else GreenText(test_name)
@@ -491,53 +491,25 @@ class SystemUnderTest(LogoCert):
   """Record details about the system under test and test environment."""
 
   def testRecordTestEnv(self):
-    """Record test environment details."""
-    test_id = '5e5e44cd-4e37-4f16-b1ec-1874912c7449'
-    test_name = 'testRecordTestEnv'
+    """Record test environment details to Google Sheets."""
     notes = 'Android: %s\n' % Constants.TESTENV['ANDROID']
     notes += 'Tablet: %s\n' % Constants.TESTENV['TABLET']
+    self.LogTest('N/A', 'N/A', 'N/A', notes)
 
-    self.LogTest(test_id, test_name, 'Skipped', notes)
-
-  def testRecordManufacturer(self):
-    """Record device manufacturer."""
-    test_id = '9b9d158d-da11-4b6b-9181-dafcbd8b49c5'
-    test_name = 'testRecordManufacturer'
     notes = 'Manufacturer: %s' % Constants.PRINTER['MANUFACTURER']
+    self.LogTest('N/A', 'N/A', 'N/A', notes)
 
-    self.LogTest(test_id, test_name, 'Skipped', notes)
-
-  def testRecordModel(self):
-    """Record device model number."""
-    test_id = '9627ef75-0a15-422b-9d90-a1012d03b1dc'
-    test_name = 'testRecordModel'
     notes = 'Model: %s' % Constants.PRINTER['MODEL']
+    self.LogTest('N/A', 'N/A', 'N/A', notes)
 
-    self.LogTest(test_id, test_name, 'Skipped', notes)
-
-  def testRecordDeviceStatus(self):
-    """Record device status: released, internal, prototype, unknown."""
-    test_id = '62f0e328-52e2-4077-bffe-1bf67b160f7a'
-    test_name = 'testRecordDeviceStatus'
     notes = 'Device Status: %s' % Constants.PRINTER['STATUS']
+    self.LogTest('N/A', 'N/A', 'N/A', notes)
 
-    self.LogTest(test_id, test_name, 'Skipped', notes)
-
-  def testRecordFirmware(self):
-    """Record device firmware version reported by device UI."""
-    test_id = '74bd2b38-35ee-48fa-aa92-ffc93b1357fe'
-    test_name = 'testRecordFirmware'
     notes = 'Firmware: %s' % Constants.PRINTER['FIRMWARE']
+    self.LogTest('N/A', 'N/A', 'N/A', notes)
 
-    self.LogTest(test_id, test_name, 'Skipped', notes)
-
-  def testRecordSerialNumber(self):
-    """Record device serial number."""
-    test_id = '2feb2c3d-e02a-4c9e-b23a-9b9558591924'
-    test_name = 'testRecordSerialNumber'
     notes = 'Serial Number: %s' % Constants.PRINTER['SERIAL']
-
-    self.LogTest(test_id, test_name, 'Skipped', notes)
+    self.LogTest('N/A', 'N/A', 'N/A', notes)
 
 
 class Privet(LogoCert):
@@ -702,7 +674,10 @@ class Privet(LogoCert):
     test_id = '74b0548c-5932-4aaa-a363-56dd9d44268b'
     test_name = 'testPrivetAccessTokenAPI'
     api = 'accesstoken'
-    return_code = [200, 404]
+    if Constants.CAPS['LOCAL_PRINT']:
+      return_code = 200
+    else:
+      return_code = 404
     response = _transport.HTTPReq(_device.privet_url[api],
                                   headers=_device.headers)
     try:
@@ -713,15 +688,20 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertIn(response['code'], return_code)
+        self.assertEqual(response['code'], return_code)
       except AssertionError:
-        notes = 'Incorrect return code, found %d' % response['code']
+        notes = ('Incorrect return code from %s: Got %d, Expected %d.\n'
+                 % (_device.privet_url[api], response['code'], return_code))
+        notes += 'Please confirm LOCAL_PRINT is set correctly in _config.py\n'
+        if response['code'] == 404:
+          notes += 'Could also be fine since /privet/accesstoken is optional'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         notes = '%s returned response code %d' % (_device.privet_url[api],
                                                   response['code'])
         self.LogTest(test_id, test_name, 'Passed', notes)
+
 
   def testPrivetCapsAPI(self):
     """Verify unregistered device Privet Capabilities API returns correct rc."""
@@ -744,9 +724,11 @@ class Privet(LogoCert):
       try:
         self.assertEqual(response['code'], return_code)
       except AssertionError:
-        notes = ('Incorrect return code from %s, found %d. '
-                 'Please confirm LOCAL_PRINT is set properly in _config.py'
-                 % (_device.privet_url[api],response['code']))
+        notes = ('Incorrect return code from %s: Got %d, Expected %d.\n'
+                 % (_device.privet_url[api], response['code'], return_code))
+        notes += 'Please confirm LOCAL_PRINT is set correctly in _config.py\n'
+        if response['code'] == 404:
+          notes += 'Could also be fine since /privet/capabilities is optional'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -2646,16 +2628,16 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Margin support')
       return
 
-    self.cjt.AddMarginOption(CjtConstants.BORDERLESS, 0, 0, 0, 0)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF6'], self.cjt)
+    self.cjt.AddMarginOption(0, 0, 0, 0)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with no margins.'
       self.LogTest(test_id, test_name, 'Blocked', notes)
       raise
-    self.cjt.AddMarginOption(CjtConstants.STANDARD, 50, 50, 50, 50)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF6'], self.cjt)
+    self.cjt.AddMarginOption(50000, 50000, 50000, 50000)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -4179,9 +4161,44 @@ class CloudPrinting(LogoCert):
     LogoCert.setUpClass(cls)
     LogoCert.GetDeviceDetails()
 
+  def test_00_PrintMediaSizeSelect(self):
+    """Verify cloud printing with media size option."""
+    test_id = '14ee1e62-7b38-423c-8637-50a2ae460ddc'
+    test_name = 'testPrintMediaSizeSelect'
+    _logger.info('Testing the selection of A4 media size.')
+    PromptAndWaitForUserAction('Load printer with A4 size paper. '
+                               'Select return when ready.')
+
+    self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PNG1'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error selecting A4 media size.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      try:
+        print '[Configurable timeout] PRINTING'
+        _gcp.WaitJobStatus(output['job']['id'],
+                           _device.dev_id,
+                           CjtConstants.DONE,
+                           timeout=Constants.TIMEOUT['PRINTING'])
+      except AssertionError:
+        notes = ('Job status did not transition to %s within %s seconds.' %
+                 (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        self.ManualPass(test_id, test_name)
+    finally:
+      PromptAndWaitForUserAction('Load printer with letter size paper. '
+                                 'Select return when ready.')
+
   def testPrintUrl(self):
     """Verify cloud printing simple 1 page url - google.com"""
-    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f39'
+    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
     test_name = 'testPrintUrl'
 
     output = self.submit(_device.dev_id, Constants.GCP['MGT'], test_id,
@@ -4289,42 +4306,6 @@ class CloudPrinting(LogoCert):
       notes = 'Error printing color PDF with color selected.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
-
-
-  def testPrintMediaSizeSelect(self):
-    """Verify cloud printing with media size option."""
-    test_id = '14ee1e62-7b38-423c-8637-50a2ae460ddc'
-    test_name = 'testPrintMediaSizeSelect'
-    _logger.info('Testing the selection of A4 media size.')
-    PromptAndWaitForUserAction('Load printer with A4 size paper. '
-                               'Select return when ready.')
-
-    self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PNG1'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error selecting A4 media size.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      try:
-        print '[Configurable timeout] PRINTING'
-        _gcp.WaitJobStatus(output['job']['id'],
-                           _device.dev_id,
-                           CjtConstants.DONE,
-                           timeout=Constants.TIMEOUT['PRINTING'])
-      except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.' %
-                 (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        self.ManualPass(test_id, test_name)
-    finally:
-      PromptAndWaitForUserAction('Load printer with letter size paper. '
-                                 'Select return when ready.')
 
   def testPrintPdfReverseOrder(self):
     """Verify cloud printing a pdf with reverse order option."""
@@ -5463,6 +5444,41 @@ class CloudPrinting(LogoCert):
       notes = 'Error printing TIFF file of photo.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+
+  def testPrintMarginsOptions(self):
+    """Test cloud printing with margins option."""
+    test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0eee'
+    test_name = 'testPrintMarginsOptions'
+
+    if not Constants.CAPS['MARGIN']:
+      self.LogTest(test_id, test_name, 'Skipped', 'No Margin support')
+      return
+
+    self.cjt.AddMarginOption(0, 0, 0, 0)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF9'], test_id,
+                         test_name, self.cjt)
+    # Prepare variables for tearDown()
+    self.tearDownPrep(test_id, test_name, output)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing with margins set to 0.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    self.cjt.AddMarginOption(50000, 50000, 50000, 50000)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF9'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error local printing with margins set to 5cm.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    print 'The 1st print job should have no margins.'
+    print 'The 2nd print job should have 5cm margins for all sides.'
+    print 'If the margins are not correct, fail this test.'
+    self.ManualPass(test_id, test_name)
 
 
 

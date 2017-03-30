@@ -82,19 +82,17 @@ class CloudJobTicket(object):
     self.val['print']['dpi'] = {'horizontal_dpi': horizontal_dpi,
                                 'vertical_dpi': vertical_dpi}
 
-  def AddMarginOption(self, type, top, right, bottom, left):
+  def AddMarginOption(self, top, right, bottom, left):
     """
       Specify the margins for the print job
 
       Args:
-        type: string, type of margins
         top, int, top margin in microns
         right, int, right margin in microns
         bottom, int, bottom margin in microns
         left, int, left margin in microns
     """
-    self.val['print']['margins'] = {'type': type,
-                                    'top_microns': top,
+    self.val['print']['margins'] = {'top_microns': top,
                                     'right_microns': right,
                                     'bottom_microns': bottom,
                                     'left_microns': left}
@@ -185,8 +183,3 @@ class CjtConstants(object):
   DONE = 'DONE'
   ABORTED = 'ABORTED'
   ERROR = 'ERROR'
-
-  # Margins
-  BORDERLESS = 'BORDERLESS'
-  STANDARD = 'STANDARD'
-  CUSTOM = 'CUSTOM'
