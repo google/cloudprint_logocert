@@ -208,10 +208,9 @@ Example:
 
 Known Issues
 
-There are a number of conditions that might cause the automation to fail.
-Here are some known conditions that might cause failures:
+1. Mac OSX
 
-1. If running on Mac OSX, you may come across this error - 'AttributeError:
+If running on Mac OSX, you may come across this error - 'AttributeError:
 'Module_six_moves_urllib_parse' object has no attribute 'urlparse'' This occurs
 due to OSX comes with an out-of-date six.py. To fix this, simply run the
 following command each time you open a new terminal or add to bash profile:
@@ -219,4 +218,19 @@ following command each time you open a new terminal or add to bash profile:
      export PYTHONPATH=/Library/Python/2.7/site-packages
 
 This will make python to check site-packages before the OSX system dirs
+
+2. Windows
+
+If running on Windows, you may not be able to detect any printers on start
+up. This is due to an existing zeroconf issue:
+https://github.com/jstasiak/python-zeroconf/issues/84
+
+There are two workarounds for this:
+
+  a) Comment out the line "if addr.get('netmask') != HOST_ONLY_NETWORK_MASK" in
+  zeroconf.py (Note: This requires editing a python dependency)
+
+  OR
+
+  b) Downgrading zeroconf.py's dependency, netifaces, to 0.10.4
 

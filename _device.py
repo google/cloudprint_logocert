@@ -287,6 +287,7 @@ class Device(object):
           self.privet_url['register']['getClaimToken'], data='',
           headers=self.headers, user=user)
       self.transport.LogData(response)
+
       if 'token' in response['data']:
         self.claim_token = self.jparser.GetValue(response['data'], key='token')
         self.automated_claim_url = self.jparser.GetValue(
@@ -297,14 +298,15 @@ class Device(object):
 
       if 'error' in response['data']:
         if 'pending_user_action' in response['data']:
-          if wait_for_user:
-            # Still waiting for user input
-            continue
-          else:
-            print 'ERROR: getClaimToken() should not return \'pending_user_action\''
+          if not wait_for_user:
+            # Should not return 'pending_user_action' when printer is not
+            # waiting for user interaction
+            print ('ERROR: getClaimToken() should not return '
+                   '\'pending_user_action\'')
             raise EnvironmentError
         else:
           return False
+      # Keep polling for user interaction at a configurable interval
       time.sleep(Constants.SLEEP['POLL'])
 
     print 'GetPrivetClaimToken() timed out from waiting for printer interaction'
