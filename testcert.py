@@ -429,7 +429,7 @@ class LogoCert(unittest.TestCase):
     Args:
       test_id: integer, test id in the TestTracker application.
       test_name: string, name of the test.
-      result: string, ["Passed", "Failed", "Blocked", "Skipped", "Not Run"]
+      result: string, ["Passed", "Failed", "Skipped", "Not Run"]
       notes: string, notes to include with the test result.
     """
     failure = False if result.lower() in ['passed','skipped','n/a'] else True
@@ -795,7 +795,7 @@ class Privet(LogoCert):
       self.assertTrue(success)
     except AssertionError:
       notes = 'Error starting privet registration.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       notes = 'Privet registration API working correctly'
@@ -916,7 +916,7 @@ class Privet(LogoCert):
       self.assertTrue(_device.StartPrivetRegister())
     except AssertionError:
       notes = 'Error starting privet registration.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
@@ -926,7 +926,7 @@ class Privet(LogoCert):
           self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
           notes = 'Error getting claim token.'
-          self.LogTest(test_id, test_name, 'Blocked', notes)
+          self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
           _device.automated_claim_url = (
@@ -951,7 +951,7 @@ class Privet(LogoCert):
       self.assertTrue(_device.StartPrivetRegister())
     except AssertionError:
       notes = 'Error starting privet registration.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
@@ -962,7 +962,7 @@ class Privet(LogoCert):
           self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
           notes = 'Error getting claim token.'
-          self.LogTest(test_id, test_name, 'Blocked', notes)
+          self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
           try:
@@ -1909,7 +1909,7 @@ class PreRegistration(LogoCert):
         self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Error cancelling registration process.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       _device.CancelRegistration()
 
 class Registration(LogoCert):
@@ -2098,7 +2098,7 @@ class LocalDiscovery(LogoCert):
 
     if not res['success']:
       notes = 'Error turning off Local Discovery.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       # Give printer time to update.
@@ -2107,7 +2107,7 @@ class LocalDiscovery(LogoCert):
         self.assertTrue(success)
       except AssertionError:
         notes = 'Local Discovery was not disabled within 60 seconds.'
-        self.LogTest(test_id, test_name, 'Blocked', notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         print 'Local Discovery successfully disabled'
@@ -2120,7 +2120,7 @@ class LocalDiscovery(LogoCert):
           self.assertIsNone(service)
         except AssertionError:
           notes = 'Local Discovery disabled but privet advertisements detected.'
-          self.LogTest(test_id, test_name, 'Blocked', notes)
+          self.LogTest(test_id, test_name, 'Failed', notes)
           print 'Attempting to toggle Local Discovery back on'
           setting = {'pending': {'local_discovery': True}}
           res = _gcp.Update(_device.dev_id, setting=setting)
@@ -2139,7 +2139,7 @@ class LocalDiscovery(LogoCert):
 
     if not res['success']:
       notes2 = 'Error turning on Local Discovery.'
-      self.LogTest(test_id, test_name, 'Blocked', notes + '\n' + notes2)
+      self.LogTest(test_id, test_name, 'Failed', notes + '\n' + notes2)
       raise
     else:
       # Give printer time to update.
@@ -2148,7 +2148,7 @@ class LocalDiscovery(LogoCert):
         self.assertTrue(success)
       except AssertionError:
         notes2 = 'Local Discovery was not enabled within 60 seconds.'
-        self.LogTest(test_id, test_name, 'Blocked', notes2)
+        self.LogTest(test_id, test_name, 'Failed', notes2)
         self.toggleOnLocalPrinting()
         raise
       else:
@@ -2162,7 +2162,7 @@ class LocalDiscovery(LogoCert):
         except AssertionError:
           notes2 = ('Local Discovery enabled, '
                     'but no privet advertisements detected.')
-          self.LogTest(test_id, test_name, 'Blocked', notes2)
+          self.LogTest(test_id, test_name, 'Failed', notes2)
           raise
         else:
           print 'Printer advertisements detected'
@@ -2303,7 +2303,7 @@ class LocalDiscovery(LogoCert):
 
     if not res['success']:
       notes = 'Error sending Update of local settings.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
     print 'Successfully updated'
@@ -2369,7 +2369,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Guest failed to print a pwg-raster image via local printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
     else:
       print 'Guest successfully printed a pwg-raster image via local printing.'
       print 'If not, fail this test.'
@@ -2386,7 +2386,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Owner failed to print a pwg-raster image via local printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
     else:
       print 'Owner successfully printed a pwg-raster image via local printing.'
       print 'If not, fail this test.'
@@ -2406,7 +2406,7 @@ class LocalPrinting(LogoCert):
 
     if not res['success']:
       notes = 'Error turning off Local Printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
     # Give the printer time to update.
@@ -2425,7 +2425,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNone(job_id)
     except AssertionError:
       notes = 'Able to print via privet local printing when disabled.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       notes = 'Not able to print locally when disabled.'
@@ -2436,7 +2436,7 @@ class LocalPrinting(LogoCert):
 
     if not res['success']:
       notes2 = 'Error turning on Local Printing.'
-      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
 
     # Give the printer time to update.
@@ -2455,7 +2455,7 @@ class LocalPrinting(LogoCert):
       self.assertTrue(success)
     except AssertionError:
       notes2 = 'Printer not in idle state after updates.'
-      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
@@ -2463,7 +2463,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes2 = 'Not able to print locally when enabled.'
-      self.LogTest(test_id, test_name, 'Blocked', notes2)
+      self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
     else:
       notes2 = 'Able to print via privet local printing when re-enabled.'
@@ -2634,7 +2634,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with no margins.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     self.cjt.AddMarginOption(50000, 50000, 50000, 50000)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
@@ -2642,7 +2642,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with minimum margins.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     print 'The 1st print job should have no margins.'
     print 'The 2nd print job should have minimum margins.'
@@ -2664,7 +2664,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with portrait layout.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
@@ -2673,7 +2673,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with landscape layout.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
     else:
       print 'The 1st print job should be printed in portrait layout.'
       print 'The 2nd print job should be printed in landscape layout.'
@@ -2695,7 +2695,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with page range.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
     else:
       print 'The print job should only print pages 2 and 3.'
       print 'If this is not the case, fail this test.'
@@ -2721,7 +2721,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with copies option.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
     else:
       print 'The print job should have printed 2 copies.'
       print 'If 2 copies are not printed, fail this test.'
@@ -2758,7 +2758,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with monochrome selected.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       print 'The 1st print job should be printed in color.'
@@ -2827,7 +2827,7 @@ class LocalPrinting(LogoCert):
       self.assertIsNotNone(job_id)
     except AssertionError:
       notes = 'Error local printing with monochrome selected.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       print 'The 1st print job should be printed in color.'
@@ -3330,7 +3330,7 @@ class JobState(LogoCert):
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing one page JPG file.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
@@ -3367,7 +3367,7 @@ class JobState(LogoCert):
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error while printing 7 page PDF file.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       print ('When printer starts printing, '
@@ -3436,12 +3436,12 @@ class JobState(LogoCert):
       else:
         notes = 'Error deleting IN_PROGRESS job.'
         _logger.error(notes)
-        self.LogTest(test_id, test_name, 'Blocked', notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
     else:
       notes = 'Error printing multi-page PDF file.'
       _logger.error(notes)
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
   def testJobStateEmptyInputTray(self):
@@ -3517,7 +3517,7 @@ class JobState(LogoCert):
                 self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Error printing PDF file.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
   def testJobStateMissingToner(self):
@@ -3597,7 +3597,7 @@ class JobState(LogoCert):
                 self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Error printing PDF file.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
   def testJobStateNetworkOutage(self):
@@ -3654,7 +3654,7 @@ class JobState(LogoCert):
             self.LogTest(test_id, test_name, 'Passed', notes)
     else:
       notes = 'Error printing PDF file.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
   def testJobStateWithPaperJam(self):
@@ -3673,7 +3673,7 @@ class JobState(LogoCert):
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing %s' % Constants.IMAGES['PDF9']
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       print 'Verifying job is reported in error state.'
@@ -3719,7 +3719,7 @@ class JobState(LogoCert):
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing %s' % Constants.IMAGES['PNG7']
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       PromptAndWaitForUserAction('Verify printer status, then press ENTER')
@@ -3753,7 +3753,7 @@ class JobState(LogoCert):
         self.assertTrue(output['success'])
       except AssertionError:
         notes = 'Error printing %s' % Constants.IMAGES['PNG7']
-        self.LogTest(test_id, test_name, 'Blocked', notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
 
     print 'Verify all 3 job printed correctly.'
@@ -3777,7 +3777,7 @@ class JobState(LogoCert):
         self.assertTrue(output['success'])
       except AssertionError:
         notes = 'Error printing %s' % Constants.IMAGES['PNG7']
-        self.LogTest(test_id, test_name, 'Blocked', notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       try:
         _gcp.WaitJobStatus(output['job']['id'],
@@ -3785,7 +3785,7 @@ class JobState(LogoCert):
                            CjtConstants.QUEUED)
       except AssertionError:
         notes = 'Print job %s is not in Queued state.' %(_)
-        self.LogTest(test_id, test_name, 'Blocked', notes)
+        self.LogTest(test_id, test_name, 'Failed', notes)
         raise
 
     PromptUserAction('Power on the printer and wait...')
@@ -3819,7 +3819,7 @@ class JobState(LogoCert):
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing %s' % doc_to_print
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
     try:
@@ -3828,7 +3828,7 @@ class JobState(LogoCert):
                          CjtConstants.QUEUED)
     except AssertionError:
       notes = 'Print job is not in queued state.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
     print 'Attempting to delete job in queued state.'
@@ -3837,7 +3837,7 @@ class JobState(LogoCert):
       self.assertTrue(job_delete['success'])
     except AssertionError:
       notes = 'Queued job not deleted.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       PromptUserAction('Power on the printer and wait...')
@@ -3903,7 +3903,7 @@ class JobState(LogoCert):
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 3 page PDF file.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
@@ -4052,7 +4052,7 @@ class PostUnregistration(LogoCert):
       print 'LocalPrinting suite should be run before this suite'
       print 'LocalPrinting will produce the raster file needed for this test'
       notes = 'Run LocalPrinting suite before PostUnregistration suite'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
     # New instance of device that is not authenticated - contains no auth-token
@@ -4067,7 +4067,7 @@ class PostUnregistration(LogoCert):
     except AssertionError:
       notes = ('Guest failed to print a page via local printing '
                'on the unregistered printer.')
-      self.LogTest(test_id, test_name, 'Blocked', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       print ('Guest successfully printed a page via local printing '
