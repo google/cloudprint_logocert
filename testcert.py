@@ -4084,17 +4084,17 @@ class CloudPrinting(LogoCert):
   def submit(self, dev_id, content, test_id, test_name, cjt, is_url=False):
     """Wrapper for submitting a print job to the printer for logging purposes
 
-      Args:
-        dev_id: string, target printer to print from.
-        content: string, url or absolute filepath of the item to print.
-        test_id: string, id of the testcase
-        test_name: string, title of the print job.
-        cjt: CloudJobTicket, object that defines the options of the print job
-        is_url: boolean, flag to identify between url's and files
-      Returns:
-        dictionary, response msg from the printer if successful;
-                    otherwise, raise an exception
-      """
+    Args:
+      dev_id: string, target printer to print from.
+      content: string, url or absolute filepath of the item to print.
+      test_id: string, id of the testcase
+      test_name: string, title of the print job.
+      cjt: CloudJobTicket, object that defines the options of the print job
+      is_url: boolean, flag to identify between url's and files
+    Returns:
+      dictionary, response msg from the GCP server if successful;
+                  otherwise, raise an exception
+    """
     try:
       output = _gcp.Submit(dev_id, content, test_name, cjt, is_url)
       return output
@@ -4103,18 +4103,10 @@ class CloudPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-  def tearDownPrep(self, test_id, test_name, output):
-    # Populate instance variables for tearDown() to access
-    self.test_id = test_id
-    self.test_name = test_name
-    self.output = output
 
   def setUp(self):
     # Create a fresh CJT for each test case
     self.cjt = CloudJobTicket(_device.details['gcpVersion'])
-    self.output = None
-    self.test_id = None
-    self.test_name = None
 
     # Refresh tokens if it's been more than 30 minutes (1800 seconds)
     # If Access tokens expire, GCP calls will fail
@@ -4125,35 +4117,50 @@ class CloudPrinting(LogoCert):
       CloudPrinting._prev_token_time = time.time()
 
 
-  def tearDown(self):
-    # All but 2 testcases in this suite do the following after submitting a
-    # cloud print job. Wait for job completion and manual confirmation.
-    # Any changes made here should be considered for the 2 other testcases:
-    # testPrintMediaSizeSelect and testPrintJpgDpiSetting
-    if (self.output is None or
-        self.test_id is None or
-        self.test_name is None):
-      # The test case handled status polling and  manual confirmation itself
-      return
+  def waitForCloudPrintJobCompletion(self, test_id, test_name, output):
+    """Wait for cloudprint job to complete within configured time.
 
+    If job does not complete within configured time, log the error and
+    raise an exception.
+
+    Args:
+      test_id: string, id of the testcase
+      test_name: string, title of the print job
+      output: dictionary, submit response from GCP server
+    """
     print '[Configurable timeout] PRINTING'
     try:
-      _gcp.WaitJobStatus(self.output['job']['id'],
+      _gcp.WaitJobStatus(output['job']['id'],
                          _device.dev_id,
                          CjtConstants.DONE,
                          timeout=Constants.TIMEOUT['PRINTING'])
     except AssertionError:
       notes = ('Job status did not transition to %s within %s seconds.' %
                (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
-      self.LogTest(self.test_id, self.test_name, 'Failed', notes)
+      self.LogTest(test_id, test_name, 'Failed', notes)
       print ('ERROR: Either TIMEOUT[PRINTING] is too small in _config.py or '
              'Job is in error state.')
       print 'Check the GCP management page to see if it is the latter.'
       PromptAndWaitForUserAction('Press ENTER when problem is resolved to '
                                  'continue testing.')
       raise
-    else:
-      self.ManualPass(self.test_id, self.test_name)
+
+
+  def waitAndManualPass(self, test_id, test_name, output, manual_prompt=None):
+    """Wait for cloudprint job completion then prompt for manual verification.
+
+    Args:
+      test_id: string, id of the testcase
+      test_name: string, title of the print job
+      output: dictionary, submit response from GCP server
+      manual_prompt: string, manual verification prompt message
+    """
+    self.waitForCloudPrintJobCompletion(test_id, test_name, output)
+
+    if manual_prompt:
+      print manual_prompt
+    self.ManualPass(test_id, test_name)
+
 
   @classmethod
   def setUpClass(cls):
@@ -4179,211 +4186,12 @@ class CloudPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      try:
-        print '[Configurable timeout] PRINTING'
-        _gcp.WaitJobStatus(output['job']['id'],
-                           _device.dev_id,
-                           CjtConstants.DONE,
-                           timeout=Constants.TIMEOUT['PRINTING'])
-      except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.' %
-                 (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
-      else:
-        self.ManualPass(test_id, test_name)
+      self.waitAndManualPass(test_id, test_name, output)
     finally:
       PromptAndWaitForUserAction('Load printer with letter size paper. '
                                  'Select return when ready.')
 
-  def test_01_CloudPrintUrl(self):
-    """Verify cloud printing simple 1 page url - google.com"""
-    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
-    test_name = 'testPrintUrl'
-
-    output = self.submit(_device.dev_id, Constants.GCP['MGT'], test_id,
-                         test_name, self.cjt, is_url=True)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing simple 1 page URL.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      print 'Google front page should print without errors.'
-      print 'Fail this test if there are errors or quality issues.'
-
-  def test_02_CloudPrintJpg2Copies(self):
-    """Verify cloud printing Jpg with copies option set to 2."""
-    test_id = '734537e6-c075-4d38-bc4b-dd1b6ad1a7ca'
-    test_name = 'testPrintJpg2Copies'
-    if not Constants.CAPS['COPIES_CLOUD']:
-      notes = 'Copies not supported.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    _logger.info('Setting copies to 2...')
-
-    self.cjt.AddColorOption(self.color)
-    self.cjt.AddCopiesOption(2)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG12'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing with copies = 2.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-
-  def test_03_CloudPrintPdfDuplexLongEdge(self):
-    """Verify cloud printing a pdf with the duplex option set to long edge."""
-    test_id = 'cb86137b-943d-47fc-adcd-663ad9f0dce8'
-    test_name = 'testPrintPdfDuplexLongEdge'
-    if not Constants.CAPS['DUPLEX']:
-      notes = 'Duplex not supported.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    _logger.info('Setting duplex to long edge...')
-
-    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing in duplex long edge.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-
-  def test_04_CloudPrintPdfDuplexShortEdge(self):
-    """Verify cloud printing a pdf with the duplex option set to short edge."""
-    test_id = '651588ca-c4aa-4710-b203-64085834dd17'
-    test_name = 'testPrintPdfDuplexShortEdge'
-    if not Constants.CAPS['DUPLEX']:
-      notes = 'Duplex not supported.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    _logger.info('Setting duplex to short edge...')
-
-    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing in duplex short edge.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-
-  def test_05_CloudPrintColorSelect(self):
-    """Verify cloud printing with color options."""
-    test_id = '52686084-5ae2-4bda-b715-aba6a8972268'
-    test_name = 'testPrintColorSelect'
-    if not Constants.CAPS['COLOR']:
-      notes = 'Color is not supported.'
-      self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
-    _logger.info('Printing with color selected.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF13'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing color PDF with color selected.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-  def test_06_CloudPrintPdfReverseOrder(self):
-    """Verify cloud printing a pdf with reverse order option."""
-    test_id = '1c2610c9-4f16-42ca-9d4a-018f127c4b58'
-    test_name = 'testPrintPdfReverseOrder'
-    _logger.info('Print with reverse order flag set...')
-
-    self.cjt.AddReverseOption()
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing in reverse order.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-  def test_07_CloudPrintPdfPageRangePage2(self):
-    """Verify cloud printing a pdf with the page range option set to 2."""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
-    test_name = 'testPrintPdfPageRangePage2'
-    _logger.info('Setting page range to page 2 only')
-
-    self.cjt.AddPageRangeOption(2, end = 2)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing with page range set to page 2 only.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-
-  def test_08_CloudPrintPdfPageRangePage4To6(self):
-    """Verify cloud printing a pdf with the page range option set to 4-6."""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfe'
-    test_name = 'testPrintPdfPageRangePage4To6'
-    _logger.info('Setting page range to 4-6...')
-
-    self.cjt.AddPageRangeOption(4, end = 6)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing with page range set to page 4-6.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-
-  def test_09_CloudPrintPdfPageRangePage2And4to6(self):
-    """Verify cloud printing a pdf with the page range option set to 2, 4-6"""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcff'
-    test_name = 'testPrintPdfPageRangePage2And4to6'
-    _logger.info('Setting page range to page 2 and 4-6...')
-
-    self.cjt.AddPageRangeOption(2, end = 2)
-    self.cjt.AddPageRangeOption(4, end = 6)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
-                         test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing with page range set to page 2 and 4-6.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-
-  def test_10_CloudPrintJpgDpiSetting(self):
+  def test_01_CloudPrintJpgDpiSetting(self):
     """Verify cloud printing a jpg with DPI option."""
     test_id = '93c42b61-30e9-407c-bcd5-df50f418c53b'
     test_name = 'testPrintJpgDpiSetting'
@@ -4404,18 +4212,196 @@ class CloudPrinting(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        try:
-          print '[Configurable timeout] PRINTING'
-          _gcp.WaitJobStatus(output['job']['id'],
-                             _device.dev_id,
-                             CjtConstants.DONE,
-                             timeout=Constants.TIMEOUT['PRINTING'])
-        except AssertionError:
-          notes = ('Job status did not transition to %s within %s seconds.' %
-                   (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          raise
+        self.waitForCloudPrintJobCompletion(test_id, test_name, output)
     self.ManualPass(test_id, test_name)
+
+
+  def test_02_CloudPrintJpg2Copies(self):
+    """Verify cloud printing Jpg with copies option set to 2."""
+    test_id = '734537e6-c075-4d38-bc4b-dd1b6ad1a7ca'
+    test_name = 'testPrintJpg2Copies'
+    if not Constants.CAPS['COPIES_CLOUD']:
+      notes = 'Copies not supported.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    _logger.info('Setting copies to 2...')
+
+    self.cjt.AddColorOption(self.color)
+    self.cjt.AddCopiesOption(2)
+    output = self.submit(_device.dev_id, Constants.IMAGES['JPG12'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing with copies = 2.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+
+  def test_03_CloudPrintPdfDuplexLongEdge(self):
+    """Verify cloud printing a pdf with the duplex option set to long edge."""
+    test_id = 'cb86137b-943d-47fc-adcd-663ad9f0dce8'
+    test_name = 'testPrintPdfDuplexLongEdge'
+    if not Constants.CAPS['DUPLEX']:
+      notes = 'Duplex not supported.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    _logger.info('Setting duplex to long edge...')
+
+    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing in duplex long edge.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+
+  def test_04_CloudPrintPdfDuplexShortEdge(self):
+    """Verify cloud printing a pdf with the duplex option set to short edge."""
+    test_id = '651588ca-c4aa-4710-b203-64085834dd17'
+    test_name = 'testPrintPdfDuplexShortEdge'
+    if not Constants.CAPS['DUPLEX']:
+      notes = 'Duplex not supported.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    _logger.info('Setting duplex to short edge...')
+
+    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing in duplex short edge.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+
+  def test_05_CloudPrintColorSelect(self):
+    """Verify cloud printing with color options."""
+    test_id = '52686084-5ae2-4bda-b715-aba6a8972268'
+    test_name = 'testPrintColorSelect'
+    if not Constants.CAPS['COLOR']:
+      notes = 'Color is not supported.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+    _logger.info('Printing with color selected.')
+
+    self.cjt.AddColorOption(self.color)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF13'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing color PDF with color selected.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+  def test_06_CloudPrintPdfReverseOrder(self):
+    """Verify cloud printing a pdf with reverse order option."""
+    test_id = '1c2610c9-4f16-42ca-9d4a-018f127c4b58'
+    test_name = 'testPrintPdfReverseOrder'
+    _logger.info('Print with reverse order flag set...')
+
+    self.cjt.AddReverseOption()
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing in reverse order.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+  def test_07_CloudPrintPdfPageRangePage2(self):
+    """Verify cloud printing a pdf with the page range option set to 2."""
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
+    test_name = 'testPrintPdfPageRangePage2'
+    _logger.info('Setting page range to page 2 only')
+
+    self.cjt.AddPageRangeOption(2, end = 2)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing with page range set to page 2 only.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+
+  def test_08_CloudPrintPdfPageRangePage4To6(self):
+    """Verify cloud printing a pdf with the page range option set to 4-6."""
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfe'
+    test_name = 'testPrintPdfPageRangePage4To6'
+    _logger.info('Setting page range to 4-6...')
+
+    self.cjt.AddPageRangeOption(4, end = 6)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing with page range set to page 4-6.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+
+  def test_09_CloudPrintPdfPageRangePage2And4to6(self):
+    """Verify cloud printing a pdf with the page range option set to 2, 4-6"""
+    test_id = '4f274ec1-28f0-4201-b769-65467f7abcff'
+    test_name = 'testPrintPdfPageRangePage2And4to6'
+    _logger.info('Setting page range to page 2 and 4-6...')
+
+    self.cjt.AddPageRangeOption(2, end = 2)
+    self.cjt.AddPageRangeOption(4, end = 6)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing with page range set to page 2 and 4-6.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+
+  def test_10_CloudPrintUrl(self):
+    """Verify cloud printing simple 1 page url - google.com"""
+    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
+    test_name = 'testPrintUrl'
+
+    output = self.submit(_device.dev_id, Constants.GCP['MGT'], test_id,
+                         test_name, self.cjt, is_url=True)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing simple 1 page URL.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      prompt = 'Google log-in page should print without errors.\n'
+      prompt += 'Fail this test if there are errors or quality issues.'
+      self.waitAndManualPass(test_id, test_name, output, manual_prompt=prompt)
+
 
   def test_11_CloudPrintPngFillPage(self):
     """Verify cloud printing a png with the fill page option."""
@@ -4426,14 +4412,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddFitToPageOption(CjtConstants.FILL)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Fill Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_12_CloudPrintPngFitToPage(self):
@@ -4445,14 +4431,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddFitToPageOption(CjtConstants.FIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Fit to Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_13_CloudPrintPngGrowToPage(self):
@@ -4464,14 +4450,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddFitToPageOption(CjtConstants.GROW)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Grow To Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_14_CloudPrintPngShrinkToPage(self):
@@ -4483,14 +4469,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddFitToPageOption(CjtConstants.SHRINK)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with Shrink To Page option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_15_CloudPrintPngNoFitting(self):
@@ -4502,14 +4488,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddFitToPageOption(CjtConstants.NO_FIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with No Fitting option.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_16_CloudPrintJpgPortrait(self):
@@ -4522,14 +4508,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG14'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing JPG file in portrait orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_17_CloudPrintJpgLandscape(self):
@@ -4542,14 +4528,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG7'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing JPG file with landscape orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_18_CloudPrintJpgBlacknWhite(self):
@@ -4561,14 +4547,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.monochrome)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG1'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing black and white JPG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_19_CloudPrintJpgColorTestLandscape(self):
@@ -4581,14 +4567,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG2'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing color test JPG file with landscape orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_20_CloudPrintJpgPhoto(self):
@@ -4601,14 +4587,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG5'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing JPG photo in landscape orientation.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_21_CloudPrintJpgSingleObject(self):
@@ -4621,14 +4607,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG7'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing single object JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_22_CloudPrintJpgProgressive(self):
@@ -4641,14 +4627,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG8'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing progressive JPEG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_23_CloudPrintJpgMultiImageWithText(self):
@@ -4661,14 +4647,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG9'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing multi-image with text JPG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_24_CloudPrintJpgMaxComplex(self):
@@ -4680,14 +4666,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG10'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing complex JPG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_25_CloudPrintJpgMultiTargetPortrait(self):
@@ -4700,14 +4686,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG11'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing multi-target JPG file in portrait.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_26_CloudPrintJpgStepChartLandscape(self):
@@ -4720,14 +4706,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG13'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing step chart JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_27_CloudPrintJpgLarge(self):
@@ -4740,14 +4726,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_28_CloudPrintJpgLargePhoto(self):
@@ -4760,14 +4746,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG4'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large photo JPG file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_29_CloudPrintFilePdf(self):
@@ -4779,14 +4765,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.monochrome)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF4'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 1 page, black and white PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_30_CloudPrintFileColorPdf(self):
@@ -4798,14 +4784,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF13'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 1 page, color PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_31_CloudPrintFileMultiPagePdf(self):
@@ -4817,14 +4803,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 3 page, color PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_32_CloudPrintFileLargeColorPdf(self):
@@ -4836,14 +4822,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing 20 page, color PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_33_CloudPrintFilePdfV1_2(self):
@@ -4854,14 +4840,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.2'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.2 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_34_CloudPrintFilePdfV1_3(self):
@@ -4872,14 +4858,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.3 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_35_CloudPrintFilePdfV1_4(self):
@@ -4890,14 +4876,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.4'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.4 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_36_CloudPrintFilePdfV1_5(self):
@@ -4908,14 +4894,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.5'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.5 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_37_CloudPrintFilePdfV1_6(self):
@@ -4926,14 +4912,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.6'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.6 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_38_CloudPrintFilePdfV1_7(self):
@@ -4944,14 +4930,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PDF v1.7 file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_39_CloudPrintFilePdfColorTicket(self):
@@ -4964,14 +4950,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF2'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing color boarding ticket PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_40_CloudPrintFilePdfLetterMarginTest(self):
@@ -4982,14 +4968,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing letter margin test PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_41_CloudPrintFilePdfMarginTest2(self):
@@ -5000,14 +4986,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF6'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing margin test 2 PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_42_CloudPrintFilePdfSimpleLandscape(self):
@@ -5019,14 +5005,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF8'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing simple PDF file in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_43_CloudPrintFilePdfCupsTestPage(self):
@@ -5038,14 +5024,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF9'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing CUPS print test PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_44_CloudPrintFilePdfColorTest(self):
@@ -5057,14 +5043,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF11'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Color Test PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_45_CloudPrintFilePdfBarCodeTicket(self):
@@ -5076,14 +5062,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF12'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing bar coded ticket PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_46_CloudPrintFilePdfComplexTicket(self):
@@ -5095,14 +5081,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF14'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing complex ticket that is PDF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_47_CloudPrintFileSimpleGIF(self):
@@ -5114,14 +5100,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['GIF2'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing simple GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_48_CloudPrintFileSmallGIF(self):
@@ -5133,14 +5119,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['GIF4'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing small GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_49_CloudPrintFileLargeGIF(self):
@@ -5152,14 +5138,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['GIF1'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_50_CloudPrintFileBlackNWhiteGIF(self):
@@ -5171,14 +5157,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.monochrome)
     output = self.submit(_device.dev_id, Constants.IMAGES['GIF3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing black and white GIF file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_51_CloudPrintFileHTML(self):
@@ -5189,14 +5175,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['HTML1'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing HTML file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_52_CloudPrintFilePngA4Test(self):
@@ -5208,14 +5194,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG1'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing A4 Test PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_53_CloudPrintFilePngPortrait(self):
@@ -5227,14 +5213,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG8'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PNG portrait file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_54_CloudPrintFileColorPngLandscape(self):
@@ -5247,14 +5233,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG2'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Color PNG in landscape.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_55_CloudPrintFileSmallPng(self):
@@ -5266,14 +5252,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing small PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_56_CloudPrintFilePngWithLetters(self):
@@ -5286,14 +5272,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG4'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing PNG file containing letters.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_57_CloudPrintFilePngColorTest(self):
@@ -5305,14 +5291,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG5'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Color Test PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_58_CloudPrintFilePngColorImageWithText(self):
@@ -5324,14 +5310,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG6'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing color images with text PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_59_CloudPrintFilePngCupsTest(self):
@@ -5343,14 +5329,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG7'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing Cups Test PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_60_CloudPrintFileLargePng(self):
@@ -5362,14 +5348,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG9'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing large PNG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_61_CloudPrintFileSvgSimple(self):
@@ -5380,14 +5366,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['SVG2'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing simple SVG file.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_62_CloudPrintFileSvgWithImages(self):
@@ -5399,14 +5385,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['SVG1'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing SVG file with images.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_63_CloudPrintFileTiffRegLink(self):
@@ -5417,14 +5403,14 @@ class CloudPrinting(LogoCert):
 
     output = self.submit(_device.dev_id, Constants.IMAGES['TIFF1'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing TIFF file of GCP registration link.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
 
   def test_64_CloudPrintFileTiffPhoto(self):
@@ -5436,14 +5422,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddColorOption(self.color)
     output = self.submit(_device.dev_id, Constants.IMAGES['TIFF2'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing TIFF file of photo.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
 
   def test_65_CloudPrintMarginsOptions(self):
     """Test cloud printing with margins option."""
@@ -5457,14 +5443,14 @@ class CloudPrinting(LogoCert):
     self.cjt.AddMarginOption(0, 0, 0, 0)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF9'], test_id,
                          test_name, self.cjt)
-    # Prepare variables for tearDown()
-    self.tearDownPrep(test_id, test_name, output)
     try:
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with margins set to 0.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
+    else:
+      self.waitForCloudPrintJobCompletion(test_id, test_name, output)
 
     self.cjt.AddMarginOption(50000, 50000, 50000, 50000)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF9'], test_id,
@@ -5475,11 +5461,11 @@ class CloudPrinting(LogoCert):
       notes = 'Error local printing with margins set to 5cm.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
-    print 'The 1st print job should have no margins.'
-    print 'The 2nd print job should have 5cm margins for all sides.'
-    print 'If the margins are not correct, fail this test.'
-    self.ManualPass(test_id, test_name)
-
+    else:
+      prompt = 'The 1st print job should have no margins.\n'
+      prompt += 'The 2nd print job should have 5cm margins for all sides.\n'
+      prompt += 'If the margins are not correct, fail this test.'
+      self.waitAndManualPass(test_id, test_name, output, manual_prompt=prompt)
 
 
 if __name__ == '__main__':

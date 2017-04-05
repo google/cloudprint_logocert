@@ -435,7 +435,7 @@ class GCPService(object):
 
     """
     print ('Waiting up to %s seconds for the job to not have a status(es) '
-           'in the list: %s' % (timeout, job_status_list))
+           'in the list: %s\n' % (timeout, job_status_list))
 
     end = time.time() + timeout
 
@@ -463,7 +463,7 @@ class GCPService(object):
       dict, current job.
 
     """
-    print ('Waiting up to %s seconds for the job to have the status: %s' %
+    print ('Waiting up to %s seconds for the job to have the status: %s\n' %
            (timeout, job_status))
 
     end = time.time() + timeout

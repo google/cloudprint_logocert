@@ -81,8 +81,8 @@ def PromptUserAction(msg):
     Returns:
       string, prompt string
   """
-  print '\n', PurpleText('[ACTION] '+msg)
-  print "\a" # Cross-platform beep
+  print "\a"  # Cross-platform beep
+  print PurpleText('[ACTION] '+msg)
 
 def PromptAndWaitForUserAction(msg):
   """Display text in green and beep - cross-platform, then wait for user to
