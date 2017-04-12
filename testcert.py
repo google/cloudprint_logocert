@@ -3739,6 +3739,9 @@ class JobState(LogoCert):
         raise
       else:
         self.ManualPass(test_id, test_name)
+    finally:
+      PromptAndWaitForUserAction('Press ENTER once printer is loaded with '
+                                 'letter size paper to continue testing. ')
       
   def testMultipleJobsPrint(self):
     """Verify multiple jobs in queue are all printed."""
