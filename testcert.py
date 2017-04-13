@@ -313,6 +313,8 @@ def getRasterImageFromCloud(pwg_path, img_path):
 
   #
   cjt = CloudJobTicket(_device.details['gcpVersion'])
+  if Constants.CAPS['COLOR']:
+    cjt.AddColorOption(CjtConstants.COLOR)
 
   print 'Generating pwg-raster via cloud print'
   output = _gcp.Submit(_device.dev_id, img_path,
