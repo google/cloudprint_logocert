@@ -3707,7 +3707,7 @@ class JobState(LogoCert):
     print 'The printer should prompt the user to enter the requested size.'
     print 'Load input tray with letter sized paper.'
 
-    PromptAndWaitForUserAction('Press ENTER once paper tray loaded with '
+    PromptAndWaitForUserAction('Press ENTER once paper tray loaded with ONLY '
                                'letter sized paper.')
 
     self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
