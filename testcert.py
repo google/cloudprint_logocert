@@ -2838,6 +2838,23 @@ class LocalPrinting(LogoCert):
       self.ManualPass(test_id, test_name)
 
 
+  def test_17_LocalPrintPWG(self):
+    """Verify printer can successfully print PWGs in local print."""
+    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14688'
+    test_name = 'testLocalPrintPWG'
+
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing PWG raster file.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      print 'PWG Raster file should print successfully.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
+
 
 class PostRegistration(LogoCert):
   """Tests to run after _device is registered."""
