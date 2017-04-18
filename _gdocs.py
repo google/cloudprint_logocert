@@ -20,7 +20,7 @@ Google Spreadsheets. It is dependent on the external module gdata:
 
 https://github.com/google/gdata-python-client
 """
-import time
+from _config import Constants
 
 import gdata.gauth
 import gdata.service
@@ -30,6 +30,9 @@ import gdata.spreadsheets.data
 
 from googleapiclient import discovery
 from httplib2 import Http
+import requests
+import json
+import sys
 
 class GoogleDataMgr(object):
   """An object to interact with Google Drive and Docs."""
@@ -69,10 +72,58 @@ class GoogleDataMgr(object):
     res = SHEETS.spreadsheets().create(body=data).execute()
     if res is not None and 'spreadsheetId' in res:
       self.logger.info('Created a new google spreadsheet with sheets API.')
+      if Constants.TEST['SHARE_SHEET_WITH_GOOGLE']:
+        self.logger.info('Attempting to share newly created sheet with Google')
+        self.ShareSheet(res['spreadsheetId'])
     else:
       self.logger.info('Failed to create a new google spreadhseet with '
                        'sheets API')
 
+  def ShareSheet(self, id):
+    """Share a Google Spreadsheet with Google's GCP certification team.
+
+    Args:
+      id: string, Google Sheet id.
+    """
+    url = 'https://www.googleapis.com/drive/v2/files/%s/permissions' % id
+
+    data = {
+      'value': Constants.TEST['GCP_TEAM_EMAIL'],
+      'type': 'user',
+      'role': 'reader',
+    }
+
+    params = {
+      'sendNotificationEmails': True,
+      'emailMessage': ('New Logocert google sheet shared with you by %s' %
+                       Constants.PRINTER['MANUFACTURER'])
+    }
+
+    headers = {'Content-Type': 'application/json',
+               'Authorization': 'Bearer %s' % self.token.access_token}
+
+    r = requests.post(url, data=json.dumps(data), params=params, headers=headers)
+
+    if r is None:
+      self.logger.error('Google Drive API returned None response')
+      raise
+
+    if r.status_code == 200:
+      self.logger.info('Successfully sharing sheet (read-only) with Google: %s'
+                       % Constants.TEST['GCP_TEAM_EMAIL'])
+      return
+
+    if r.status_code == 403:
+      print r.json()['error']['message']
+      self.logger.error('API Disabled. Follow the steps below to fix')
+      self.logger.error('1) Enable Drive API via link above.')
+      self.logger.error('2) Delete the newly created spreadsheet and '
+                        're-run this tool.')
+    else:
+      self.logger.error('ERROR: Google Drive Permission API failed with '
+                        'status: %s' % r.status_code)
+      print r.text;
+    sys.exit()
 
   def GetSpreadSheetID(self, name):
     """Return the spreadsheet id that has the matching name.

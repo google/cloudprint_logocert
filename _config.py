@@ -32,7 +32,8 @@ class Constants(object):
       'CRED_FILE': 'credentials.txt',
       'REDIRECT': 'urn:ietf:wg:oauth:2.0:oob',
       'SCOPE': ('https://www.googleapis.com/auth/cloudprint '
-                'https://spreadsheets.google.com/feeds/'),
+                'https://spreadsheets.google.com/feeds/ '
+                'https://www.googleapis.com/auth/drive'),
       'USER_AGENT': 'CloudPrint_Client',
       }
 
@@ -108,17 +109,7 @@ class Constants(object):
                               # printing a job
   }
 
-  # Carriage return.
-  CRLF = '\r\n'
-
-  GCP = {
-      'LEARN': 'http://www.google.com/cloudprint/learn/',
-      'MGT': 'https://www.google.com/cloudprint',
-      'PRINTERS': 'https://www.google.com/cloudprint#printers',
-      'SIMULATE': 'https://www.google.com/cloudprint/simulate.html',
-      }
-
-  GOOGLE = 'https://www.google.com'
+  GCP = {'MGT': 'https://www.google.com/cloudprint'}
 
   PRINTER = {
     'CERTID': '<certification_id>',
@@ -202,10 +193,17 @@ class Constants(object):
   OAUTH_TOKEN = 'https://www.googleapis.com/oauth2/v3/token'
 
   TEST = {
-      'NAME': 'LogoCertification_Results',
+      # Please use descriptive names for sheets shared with Google
+      # (e.g. Model-PrinterName, or PrinterName-FirmwareVersion)
+      'NAME': '-'.join([PRINTER['MODEL'], PRINTER['NAME']]),
       'RESULTS': ['Test Case ID', 'Test Case Name', 'Status', 'Notes',
                   '','','','Re-run Cmd line'],
       'SPREADSHEET': True,
+      # It is recommended that you set the below to True so that Google's
+      # GCP certification team can better debug issues relating to your printer
+      # This only enables READ access
+      'SHARE_SHEET_WITH_GOOGLE': True,
+      'GCP_TEAM_EMAIL': 'cloud-print-certification-team@google.com',
       # Set the following to True if you wish to enable console output coloring
       # on Windows. Note that you would need an ANSI color supporting console
       # for this or else strange characters would be printed
