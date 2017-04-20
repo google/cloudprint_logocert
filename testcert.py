@@ -34,29 +34,18 @@ those IDs. These IDs are used when submitting test results to our database.
 """
 __version__ = '2.0'
 
+import _log
+import _sheets
+
+
 import optparse
+import os
 import platform
 import re
 import sys
 import time
-import unittest
-import os
 import traceback
-
-from _config import Constants
-from _device import Device
-import _log
-import _oauth2
-import _sheets
-from _transport import Transport
-
-import httplib2
-from oauth2client.client import OAuth2WebServerFlow
-from oauth2client.file import Storage
-from oauth2client.tools import run_flow
-from oauth2client.tools import argparser
-from _cpslib import GCPService
-from _ticket import CloudJobTicket, CjtConstants
+import unittest
 
 from _common import Sleep
 from _common import BlueText
@@ -64,16 +53,21 @@ from _common import GreenText
 from _common import RedText
 from _common import PromptAndWaitForUserAction
 from _common import PromptUserAction
-
-from _zconf import Wait_for_privet_mdns_service
+from _config import Constants
+from _cpslib import GCPService
+from _device import Device
+from _oauth2 import Oauth2
+from _ticket import CloudJobTicket, CjtConstants
+from _transport import Transport
 from _zconf import MDNS_Browser
+from _zconf import Wait_for_privet_mdns_service
 
 
 # Module level variables
 _logger = None
 _transport = None
 _device = None
-_storage = None
+_oauth2 = None
 _gcp = None
 _sheet = None
 
@@ -132,11 +126,11 @@ def _ParseArgs():
 # these objects. This approach is used to eliminate the need for initializing
 # all of these objects for each and every test class.
 def setUpModule():
-  global _logger
-  global _transport
   global _device
-  global _storage
   global _gcp
+  global _logger
+  global _oauth2
+  global _transport
 
   # Initialize globals and constants
   options, unused_args = _ParseArgs()
@@ -145,9 +139,9 @@ def setUpModule():
   os_type = '%s %s' % (platform.system(), platform.release())
   Constants.TESTENV['OS'] = os_type
   Constants.TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
-  _storage = Storage(Constants.AUTH['CRED_FILE'])
+  _oauth2 = Oauth2(_logger)
   # Retrieve access + refresh tokens
-  getTokens()
+  _oauth2.GetTokens()
 
   # Wait to receive Privet printer advertisements. Timeout in 30 seconds
   printer_service = Wait_for_privet_mdns_service(30, Constants.PRINTER['NAME'],
@@ -171,7 +165,7 @@ def setUpModule():
 
   if Constants.TEST['SPREADSHEET']:
     global _sheet
-    _sheet = _sheets.SheetMgr(_logger, _storage.get(), Constants)
+    _sheet = _sheets.SheetMgr(_logger, _oauth2.storage.get(), Constants)
     _sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
 
@@ -232,63 +226,6 @@ def waitForAdvertisementRegStatus(name, is_wait_for_reg, timeout):
   return False
 
 
-def getTokens():
-  """Retrieve credentials."""
-  if 'REFRESH' in Constants.AUTH:
-    RefreshToken()
-  else:
-    creds = _storage.get()
-    if creds:
-      Constants.AUTH['REFRESH'] = creds.refresh_token
-      Constants.AUTH['ACCESS'] = creds.access_token
-      RefreshToken()
-    else:
-      GetNewTokens()
-
-
-def RefreshToken():
-  """Get a new access token with an existing refresh token."""
-  response = _oauth2.RefreshToken()
-  # If there is an error in the response, it means the current access token
-  # has not yet expired.
-  if 'access_token' in response:
-    _logger.info('Got new access token.')
-    Constants.AUTH['ACCESS'] = response['access_token']
-  else:
-    _logger.info('Using current access token.')
-
-
-def GetNewTokens():
-  """Get all new tokens for this user account.
-
-  This process is described in detail here:
-  https://developers.google.com/api-client-library/python/guide/aaa_oauth
-
-  If there is a problem with the automation authorizing access, then you
-  may need to manually access the permit_url while logged in as the test user
-  you are using for this automation.
-  """
-  flow = OAuth2WebServerFlow( client_id = Constants.USER['CLIENT_ID'],
-                              client_secret = Constants.USER['CLIENT_SECRET'],
-                              login_hint= Constants.USER['EMAIL'],
-                              redirect_uri= Constants.AUTH['REDIRECT'],
-                              scope = Constants.AUTH['SCOPE'],
-                              user_agent = Constants.AUTH['USER_AGENT'],
-                              approval_prompt = 'force')
-
-  http = httplib2.Http()
-  flags = argparser.parse_args(args=[])
-
-  # retrieves creds and stores it into storage
-  creds = run_flow(flow, _storage, flags=flags,http=http)
-
-  if creds:
-    Constants.AUTH['REFRESH'] = creds.refresh_token
-    Constants.AUTH['ACCESS'] = creds.access_token
-    RefreshToken()
-  else:
-    _logger.error('Error getting authorization code.')
-
 def writeRasterToFile(file_path, content):
   """ Save a raster image to file
 
@@ -300,6 +237,7 @@ def writeRasterToFile(file_path, content):
   f.write(content)
   f.close()
   print "Wrote Raster file:%s to disk" % file_path
+
 
 def getRasterImageFromCloud(pwg_path, img_path):
   """ Submit a GCP print job so that the image is coverted to a supported raster
@@ -384,7 +322,7 @@ class LogoCert(unittest.TestCase):
     cls.color = (CjtConstants.COLOR if Constants.CAPS['COLOR']
                  else cls.monochrome)
     # Refresh access token in case it has expired
-    RefreshToken()
+    _oauth2.RefreshToken()
     _device.auth_token = Constants.AUTH['ACCESS']
     _gcp.auth_token = Constants.AUTH['ACCESS']
 
@@ -677,31 +615,32 @@ class Privet(LogoCert):
     test_name = 'testPrivetAccessTokenAPI'
     api = 'accesstoken'
     if Constants.CAPS['LOCAL_PRINT']:
-      return_code = 200
+      expected_return_code = 200
     else:
-      return_code = 404
-    response = _transport.HTTPReq(_device.privet_url[api],
+      expected_return_code = 404
+    response = _transport.HTTPGet(_device.privet_url[api],
                                   headers=_device.headers)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response received from %s' % _device.privet_url[api]
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertEqual(response['code'], return_code)
+        self.assertEqual(response.status_code, expected_return_code)
       except AssertionError:
         notes = ('Incorrect return code from %s: Got %d, Expected %d.\n'
-                 % (_device.privet_url[api], response['code'], return_code))
+                 % (_device.privet_url[api], response.status_code,
+                    expected_return_code))
         notes += 'Please confirm LOCAL_PRINT is set correctly in _config.py\n'
-        if response['code'] == 404:
+        if response.status_code == 404:
           notes += 'Could also be fine since /privet/accesstoken is optional'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         notes = '%s returned response code %d' % (_device.privet_url[api],
-                                                  response['code'])
+                                                  response.status_code)
         self.LogTest(test_id, test_name, 'Passed', notes)
 
 
@@ -711,31 +650,32 @@ class Privet(LogoCert):
     test_name = 'testPrivetCapsAPI'
     api = 'capabilities'
     if Constants.CAPS['LOCAL_PRINT']:
-      return_code = 200
+      expected_return_code = 200
     else:
-      return_code = 404
-    response = _transport.HTTPReq(_device.privet_url[api],
+      expected_return_code = 404
+    response = _transport.HTTPGet(_device.privet_url[api],
                                   headers=_device.headers)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response received from %s' % _device.privet_url[api]
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertEqual(response['code'], return_code)
+        self.assertEqual(response.status_code, expected_return_code)
       except AssertionError:
         notes = ('Incorrect return code from %s: Got %d, Expected %d.\n'
-                 % (_device.privet_url[api], response['code'], return_code))
+                 % (_device.privet_url[api], response.status_code,
+                    expected_return_code))
         notes += 'Please confirm LOCAL_PRINT is set correctly in _config.py\n'
-        if response['code'] == 404:
+        if response.status_code == 404:
           notes += 'Could also be fine since /privet/capabilities is optional'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         notes = '%s returned code %d' % (_device.privet_url[api],
-                                         response['code'])
+                                         response.status_code)
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetPrinterAPI(self):
@@ -743,48 +683,48 @@ class Privet(LogoCert):
     test_id = 'c6e56ee1-eb55-478b-a495-dbdfeb7fe1ae'
     test_name = 'testPrivetPrinterAPI'
     api = 'printer'
-    return_code = [200, 404]
-    response = _transport.HTTPReq(_device.privet_url[api],
+    expected_return_codes = [200, 404]
+    response = _transport.HTTPGet(_device.privet_url[api],
                                   headers=_device.headers)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response received from %s' % _device.privet_url[api]
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertIn(response['code'], return_code)
+        self.assertIn(response.status_code, expected_return_codes)
       except AssertionError:
-        notes = 'Incorrect return code, found %d' % response['code']
+        notes = 'Incorrect return code, found %d' % response.status_code
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         notes = '%s returned code %d' % (_device.privet_url[api],
-                                         response['code'])
+                                         response.status_code)
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetUnknownURL(self):
     """Verify device returns 404 return code for unknown url requests."""
     test_id = 'caf2f4e7-df0d-4093-8303-73eff5ab9024'
     test_name = 'testPrivetUnknownURL'
-    response = _transport.HTTPReq(_device.privet_url['INVALID'],
+    response = _transport.HTTPGet(_device.privet_url['INVALID'],
                                  headers=_device.headers)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response code received.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertEqual(response['code'], 404)
+        self.assertEqual(response.status_code, 404)
       except AssertionError:
-        notes = 'Wrong return code received. Received %d' % response['code']
+        notes = 'Wrong return code received. Received %d' % response.status_code
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Received correct return code: %d' % response['code']
+        notes = 'Received correct return code: %d' % response.status_code
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetRegisterAPI(self):
@@ -809,34 +749,36 @@ class Privet(LogoCert):
     """Verify device return error if invalid registration param given."""
     test_id = 'fec798b2-ed5f-44ac-8752-e44fd47462e2'
     test_name = 'testPrivetRegistrationInvalidParam'
-    response = _transport.HTTPReq(
-        _device.privet_url['register']['invalid'], data='',
-        headers=_device.headers, user=Constants.USER['EMAIL'])
+
+    url = _device.privet_url['register']['invalid']
+    params = {'user': Constants.USER['EMAIL']}
+    response = _transport.HTTPPost(url, headers=_device.headers, params=params)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response received.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertEqual(response['code'], 200)
+        self.assertEqual(response.status_code, 200)
       except AssertionError:
         notes = 'Response code from invalid registration params: %d' % (
-            response['code'])
+            response.status_code)
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
+        info = response.json()
         try:
-          self.assertIn('error', response['data'])
+          self.assertIn('error', info)
         except AssertionError:
           notes = 'Did not find error message. Error message: %s' % (
-            response['data'])
+            info)
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
           notes = 'Received correct error code and response: %d\n%s' % (
-            response['code'], response['data'])
+            response.status_code, info)
           self.LogTest(test_id, test_name, 'Passed', notes)
         finally:
           _device.CancelRegistration()
@@ -845,69 +787,69 @@ class Privet(LogoCert):
     """Verify device returns code 200 if Privet Token is empty."""
     test_id = '9cce6158-7b68-42b3-94b2-9bacadac07c9'
     test_name = 'testPrivetInfoAPIEmptyToken'
-    response = _transport.HTTPReq(_device.privet_url['info'],
+    response = _transport.HTTPGet(_device.privet_url['info'],
                                  headers=_device.privet.headers_empty)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response code received.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertEqual(response['code'], 200)
+        self.assertEqual(response.status_code, 200)
       except AssertionError:
-        notes = 'Return code received: %d' % response['code']
+        notes = 'Return code received: %d' % response.status_code
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Return code: %d' % response['code']
+        notes = 'Return code: %d' % response.status_code
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIInvalidToken(self):
     """Verify device returns code 200 if Privet Token is invalid."""
     test_id = 'f568feee-4693-4643-a61a-73a705288808'
     test_name = 'testPrivetInfoAPIInvalidToken'
-    response = _transport.HTTPReq(_device.privet_url['info'],
+    response = _transport.HTTPGet(_device.privet_url['info'],
                                  headers=_device.privet.headers_invalid)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response code received.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertEqual(response['code'], 200)
+        self.assertEqual(response.status_code, 200)
       except AssertionError:
-        notes = 'Return code received: %d' % response['code']
+        notes = 'Return code received: %d' % response.status_code
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Return code: %d' % response['code']
+        notes = 'Return code: %d' % response.status_code
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrivetInfoAPIMissingToken(self):
     """Verify device returns code 400 if Privet Token is missing."""
     test_id = '271a2089-be2e-4237-b0c1-e64f4e636c35'
     test_name = 'testPrivetInfoAPIMissingToken'
-    response = _transport.HTTPReq(_device.privet_url['info'],
+    response = _transport.HTTPGet(_device.privet_url['info'],
                                  headers=_device.privet.headers_missing)
     try:
-      self.assertIsNotNone(response['code'])
+      self.assertIsNotNone(response)
     except AssertionError:
       notes = 'No response code received.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
       try:
-        self.assertEqual(response['code'], 400)
+        self.assertEqual(response.status_code, 400)
       except AssertionError:
-        notes = 'Return code received: %d' % response['code']
+        notes = 'Return code received: %d' % response.status_code
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Return code: %d' % response['code']
+        notes = 'Return code: %d' % response.status_code
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testDeviceRegistrationInvalidClaimToken(self):
@@ -1993,8 +1935,8 @@ class Registration(LogoCert):
     else:
       try:
         success = _device.Register('User2 simultaneous registration attempt',
-                                   user=Constants.USER2['EMAIL'], no_wait=True,
-                                   wait_for_user=False)
+                                   user=Constants.USER2['EMAIL'],
+                                   no_action=True, wait_for_user=False)
       except EnvironmentError:
         notes = ('Simultaneous registration failed. '
                  'getClaimToken() from User2\'s registration attempt '
@@ -2021,8 +1963,7 @@ class Registration(LogoCert):
           success = False
           if _device.GetPrivetClaimToken():
             if _device.ConfirmRegistration(_device.auth_token):
-              _device.FinishPrivetRegister()
-              success = True
+              success = _device.FinishPrivetRegister()
           try:
             self.assertTrue(success)
           except AssertionError:
@@ -2114,7 +2055,7 @@ class LocalDiscovery(LogoCert):
       else:
         print 'Local Discovery successfully disabled'
         # Should not be any advertisements from the printer anymore
-        print ('Listening for advertisements for 60 seconds, there should not '
+        print ('Listening for advertisements for 60 seconds, there should NOT '
                'be any from the printer')
         service = Wait_for_privet_mdns_service(60, Constants.PRINTER['NAME'],
                                                _logger)
@@ -2176,8 +2117,7 @@ class LocalDiscovery(LogoCert):
     self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterOnAdvertiseLocally(self):
-    """Verify printer sends start up advertisement packets using
-       Privet when turned on.
+    """Verify printer sends start up advertisement packets when turned on.
        """
     test_id = 'e979119e-5a35-4065-89cf-1c4ef795c5b9'
     test_name = 'testPrinterOnAdvertiseLocally'
@@ -3977,7 +3917,7 @@ class RunAfter24Hours(LogoCert):
     test_name = 'testPrinterOnline'
 
     # Tokens have expired since the 24 hr sleep, refresh them
-    RefreshToken()
+    _oauth2.RefreshToken()
     _device.auth_token = Constants.AUTH['ACCESS']
     _gcp.auth_token = Constants.AUTH['ACCESS']
 
@@ -4143,7 +4083,7 @@ class CloudPrinting(LogoCert):
     # Refresh tokens if it's been more than 30 minutes (1800 seconds)
     # If Access tokens expire, GCP calls will fail
     if time.time() > CloudPrinting._prev_token_time + 1800:
-      RefreshToken()
+      _oauth2.RefreshToken()
       _device.auth_token = Constants.AUTH['ACCESS']
       _gcp.auth_token = Constants.AUTH['ACCESS']
       CloudPrinting._prev_token_time = time.time()
@@ -4364,7 +4304,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPdfPageRangePage2'
     _logger.info('Setting page range to page 2 only')
 
-    self.cjt.AddPageRangeOption(2, end = 2)
+    self.cjt.AddPageRangeOption(2, end=2)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
                          test_name, self.cjt)
     try:
@@ -4383,7 +4323,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPdfPageRangePage4To6'
     _logger.info('Setting page range to 4-6...')
 
-    self.cjt.AddPageRangeOption(4, end = 6)
+    self.cjt.AddPageRangeOption(4, end=6)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
                          test_name, self.cjt)
     try:
@@ -4402,8 +4342,8 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPdfPageRangePage2And4to6'
     _logger.info('Setting page range to page 2 and 4-6...')
 
-    self.cjt.AddPageRangeOption(2, end = 2)
-    self.cjt.AddPageRangeOption(4, end = 6)
+    self.cjt.AddPageRangeOption(2, end=2)
+    self.cjt.AddPageRangeOption(4, end=6)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
                          test_name, self.cjt)
     try:

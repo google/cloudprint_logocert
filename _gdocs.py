@@ -102,7 +102,8 @@ class GoogleDataMgr(object):
     headers = {'Content-Type': 'application/json',
                'Authorization': 'Bearer %s' % self.token.access_token}
 
-    r = requests.post(url, data=json.dumps(data), params=params, headers=headers)
+    r = requests.post(url, data=json.dumps(data), params=params,
+                      headers=headers)
 
     if r is None:
       self.logger.error('Google Drive API returned None response')

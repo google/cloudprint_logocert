@@ -21,7 +21,6 @@ the methods GetDeviceDetails and GetDeviceCDD must be run.
 """
 
 from _config import Constants
-from _jsonparser import JsonParser
 from _privet import Privet
 from _transport import Transport
 
@@ -54,6 +53,7 @@ class Device(object):
 
     self.auth_token = auth_token
     self.logger = logger
+    self.transport = Transport(logger)
     self.ipv4 = Constants.PRINTER['IP']
     if privet_port:
       self.port = privet_port
@@ -74,7 +74,6 @@ class Device(object):
     self.url = 'http://%s:%s' % (self.ipv4, self.port)
     self.logger.info('Device URL: %s', self.url)
     self.transport = Transport(logger)
-    self.jparser = JsonParser(logger)
     self.headers = None
     self.privet = Privet(logger)
     self.privet_url = self.privet.SetPrivetUrls(self.ipv4, self.port)
@@ -95,14 +94,14 @@ class Device(object):
 
 
   def Register(self, msg, user=Constants.USER['EMAIL'], use_token=True,
-               no_wait=False, wait_for_user=True):
+               no_action=False, wait_for_user=True):
     """Register device using Privet.
     Args:
       msg: string, the instruction for the user about the registration
                    confirmation dialog on the printer
       user: string, the user to register for
       use_token: boolean, use auth_token if True
-      no_wait: boolean, if True, do not wait
+      no_action: boolean, if True, do not wait
       wait_for_user: boolean, if True, wait for user to press UI button
     Returns:
       boolean: True = device registered, False = device not registered.
@@ -110,7 +109,7 @@ class Device(object):
     request, so manual intervention is required.
     """
     if self.StartPrivetRegister(user=user):
-      if no_wait:
+      if no_action:
         print msg
       else:
         PromptUserAction(msg)
@@ -131,7 +130,8 @@ class Device(object):
     Returns:
       boolean: True = cdd details populated, False = cdd details not populated.
     """
-    r = requests.get(self.privet_url['capabilities'], headers=self.headers)
+    r = self.transport.HTTPGet(self.privet_url['capabilities'],
+                               headers=self.headers)
     if r is None:
       return False
     response = r.json()
@@ -238,13 +238,17 @@ class Device(object):
     Returns:
       return code from HTTP request.
     """
-    cancel_url = self.privet_url['register']['cancel']
     self.logger.debug('Sending request to cancel Privet Registration.')
-    response = self.transport.HTTPReq(cancel_url, data='',
-                                      headers=self.headers,
-                                      user=Constants.USER['EMAIL'])
+    url = self.privet_url['register']['cancel']
+    params = {'user': Constants.USER['EMAIL']}
+    r = self.transport.HTTPPost(url, headers=self.headers, params=params)
+
+    if r is None:
+      raise
+
     Sleep('REG_CANCEL')
-    return response['code']
+
+    return r.status_code
 
   def StartPrivetRegister(self, user=Constants.USER['EMAIL']):
     """Start a device registration using the Privet protocol.
@@ -254,16 +258,14 @@ class Device(object):
     """
 
     self.logger.debug('Registering device %s with Privet', self.ipv4)
-    response = self.transport.HTTPReq(
-        self.privet_url['register']['start'], data='',
-        headers=self.headers, user=user)
+    url = self.privet_url['register']['start']
+    params = {'user': user}
+    r = self.transport.HTTPPost(url, headers=self.headers, params=params)
 
-    if response is None:
+    if r is None:
       return False
 
-    self.transport.LogData(response)
-
-    return response['code'] == 200
+    return r.status_code == requests.codes.ok
 
   def GetPrivetClaimToken(self, user=Constants.USER['EMAIL'],
                           wait_for_user=True):
@@ -281,28 +283,28 @@ class Device(object):
     print ('Waiting up to 60 seconds for printer UI interaction '
            'then getting Privet Claim Token.')
     t_end = time.time() + 60;
-
     while time.time()<t_end:
-      response = self.transport.HTTPReq(
-          self.privet_url['register']['getClaimToken'], data='',
-          headers=self.headers, user=user)
-      self.transport.LogData(response)
+      url = self.privet_url['register']['getClaimToken']
+      params = {'user': user}
+      r = self.transport.HTTPPost(url, headers=self.headers, params=params)
 
-      if 'token' in response['data']:
-        self.claim_token = self.jparser.GetValue(response['data'], key='token')
-        self.automated_claim_url = self.jparser.GetValue(
-            response['data'], key='automated_claim_url')
-        self.claim_url = self.jparser.GetValue(
-            response['data'], key='claim_url')
+      if r is None:
+        raise
+      response = r.json()
+
+      if 'token' in response:
+        self.claim_token = response['token']
+        self.automated_claim_url = response['automated_claim_url']
+        self.claim_url = response['claim_url']
         return True
 
-      if 'error' in response['data']:
-        if 'pending_user_action' in response['data']:
+      if 'error' in response:
+        if response['error'] == 'pending_user_action':
           if not wait_for_user:
             # Should not return 'pending_user_action' when printer is not
             # waiting for user interaction
-            print ('ERROR: getClaimToken() should not return '
-                   '\'pending_user_action\'')
+            print ("ERROR: getClaimToken() should not return "
+                   "'pending_user_action when user input is not expected'")
             raise EnvironmentError
         else:
           return False
@@ -330,18 +332,19 @@ class Device(object):
       self.logger.error('Error: expected automated_claim_url.')
       self.logger.error('Aborting SendClaimToken()')
       return False
-    response = self.transport.HTTPReq(self.automated_claim_url,
-                                      auth_token=auth_token, data='',
-                                      user=Constants.USER['EMAIL'])
-    self.transport.LogData(response)
-    info = self.jparser.Read(response['data'])
-    if info['json']:
-      if info['success']:
-        return True
-      else:
-        return False
-    else:
+
+    url = self.automated_claim_url
+    params = {'user': Constants.USER['EMAIL']}
+    headers = {'Authorization': 'Bearer %s' % auth_token}
+    r = self.transport.HTTPPost(url, headers=headers, params=params)
+
+    if r is None:
       return False
+
+    if r.status_code == requests.codes.ok and r.json()['success']:
+       return True
+
+    return False
 
   def ConfirmRegistration(self, auth_token):
     """Register printer with GCP Service using claim token.
@@ -355,12 +358,16 @@ class Device(object):
       self.logger.error('Execute GetClaimToken() before this method.')
       return False
     url = '%s/confirm?token=%s' % (Constants.GCP['MGT'], self.claim_token)
-    response = self.transport.HTTPReq(url, data='', headers=self.headers,
-                                      auth_token=auth_token)
-    info = self.jparser.Read(response['data'])
-    if 'success' in info and info['success']:
-      return True
+    params = {'user': Constants.USER['EMAIL']}
+    headers = self.headers
+    headers['Authorization'] = 'Bearer %s' % auth_token
+    r = self.transport.HTTPPost(url, headers=headers, params=params)
 
+    if r is None:
+      return False
+
+    if r.status_code == requests.codes.ok and r.json()['success']:
+      return True
     return False
 
   def FinishPrivetRegister(self):
@@ -371,43 +378,23 @@ class Device(object):
     """
 
     self.logger.debug('Finishing printer registration.')
-    response = self.transport.HTTPReq(
-        self.privet_url['register']['complete'], data='',
-        headers=self.headers, user=Constants.USER['EMAIL'])
+    url = self.privet_url['register']['complete']
+    params = {'user': Constants.USER['EMAIL']}
+    r = self.transport.HTTPPost(url, headers=self.headers, params=params)
+
+    if r is None:
+      return False
+
     # Add the device id from the Cloud Print Service.
-    info = self.jparser.Read(response['data'])
-    if info['json']:
-      for k in info:
-        if 'device_id' in k:
-          self.dev_id = info[k]
-          self.logger.debug('Registered with device id: %s', self.dev_id)
-    return self.transport.LogData(response)
-
-  def UnRegister(self, auth_token):
-    """Remove device from Google Cloud Service.
-
-    Args:
-      auth_token: string, auth token of device owner.
-    Returns:
-      boolean: True = success, False = errors.
-    """
-    if self.dev_id:
-      delete_url = '%s/delete?printerid=%s' % (Constants.GCP['MGT'],
-                                               self.dev_id)
-      response = self.transport.HTTPReq(delete_url, auth_token=auth_token,
-                                        data='')
+    try:
+      info = r.json()
+    except ValueError:
+      self.logger.info('No JSON object in response')
     else:
-      self.logger.warning('Cannot delete device, not registered.')
-      return False
-
-    result = self.jparser.Validate(response['data'])
-    if result:
-      self.logger.debug('Successfully deleted printer from service.')
-      self.dev_id = None
-      return True
-    else:
-      self.logger.error('Unable to delete printer from service.')
-      return False
+      if 'device_id' in info:
+        self.dev_id = info['device_id']
+        self.logger.debug('Registered with device id: %s', self.dev_id)
+    return r.status_code == requests.codes.ok
 
   def LocalPrint(self, title, content, cjt):
     """Submit a local print job to the printer
@@ -464,7 +451,7 @@ class Device(object):
     t_end = time.time() + 30
 
     while time.time() < t_end:
-      r = requests.post(url, data=dumps(cjt), headers=self.headers)
+      r = self.transport.HTTPPost(url, data=dumps(cjt), headers=self.headers)
 
       if r is None or requests.codes.ok != r.status_code:
         return None
@@ -512,7 +499,7 @@ class Device(object):
     headers = self.headers  # Get X-Privet_Token
     headers['Content-Type'] = content_type
 
-    r = requests.post(url, data=content, headers=headers)
+    r = self.transport.HTTPPost(url, data=content, headers=headers)
 
     if r is None:
       return None
@@ -532,7 +519,7 @@ class Device(object):
         """
     url = self.privet_url['jobstate'] + '?job_id=%s' % job_id
 
-    r = requests.get(url, headers=self.headers)
+    r = self.transport.HTTPGet(url, headers=self.headers)
 
     if r is None or requests.codes.ok != r.status_code:
       return None
@@ -546,18 +533,19 @@ class Device(object):
       Returns:
         dict, the info object if successful, else None
         """
-    response = self.transport.HTTPReq(self.privet_url['info'],
+    response = self.transport.HTTPGet(self.privet_url['info'],
                                       headers=self.privet.headers_empty)
-    info = self.jparser.Read(response['data'])
-    if not info['json']:
-      if response['code']:
-        self.logger.debug('HTTP device return code: %s', response['code'])
-      if response['headers']:
-        self.logger.debug('HTTP Headers:  ')
-        for key in response['headers']:
-          self.logger.debug('%s: %s', key, response['headers'][key])
-      if response['data']:
-        self.logger.debug('Data from response: %s', response['data'])
+    if response is None:
+      return None
+
+    try:
+      info = response.json()
+    except ValueError:
+      self.logger.error('Privet Info response does not contain JSON object')
+      self.logger.debug('HTTP device return code: %s', response.status_code)
+      self.logger.debug('HTTP Headers:  ')
+      for key in response.headers:
+        self.logger.debug('%s: %s', key, response.headers[key])
       return None
     else:
       return info
@@ -611,4 +599,5 @@ class Device(object):
     headers = self.headers
     headers['Content-Type'] = 'image/pwg-raster'
 
-    requests.post(url, data=Constants.IMAGES['PDF13'], headers=headers)
+    self.transport.HTTPPost(url, data=Constants.IMAGES['PDF13'],
+                            headers=headers)
