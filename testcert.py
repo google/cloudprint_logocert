@@ -3610,7 +3610,7 @@ class JobState(LogoCert):
           try:
             job = _gcp.WaitJobStatus(output['job']['id'],
                                      _device.dev_id,
-                                     CjtConstants.DONE,
+                                     [CjtConstants.DONE, CjtConstants.ABORTED],
                                      timeout=Constants.TIMEOUT['PRINTING'])
           except AssertionError:
             notes = ('Job status did not transition to Done within %s seconds '

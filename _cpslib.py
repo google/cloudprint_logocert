@@ -379,7 +379,7 @@ class GCPService(object):
     Args:
       job_id: string, id of the print job.
       printer_id: string, id of the printer
-      job_status_list: string, list of job status.
+      job_status_list: list, list of job status.
       timeout: integer, number of seconds to wait.
     Returns:
       string, current job.
@@ -408,7 +408,7 @@ class GCPService(object):
     Args:
       job_id: string, id of the print job.
       printer_id: string, id of the printer
-      job_status: string, list of job status.
+      job_status: string or list, job status to wait for.
       timeout: integer, number of seconds to wait.
     Returns:
       dict, current job.
@@ -423,7 +423,7 @@ class GCPService(object):
       job = self.GetJobInfo(job_id, printer_id)
 
       if job is not None:
-        if job['status'] == job_status:
+        if job['status'] in job_status:
           return job
 
       Sleep('POLL')
