@@ -273,7 +273,7 @@ class GCPService(object):
       status: string, filter jobs that match this status.
     Returns:
       string, url to be used by HTTPGetQuery method.
-    Valid Job Status strings are: QUEUED, IN_PROGRESS, DONE, ERROR, SUBMITTED,
+    Valid Job state strings are: QUEUED, IN_PROGRESS, DONE, ERROR, SUBMITTED,
     and HELD.
     """
     args = '?'
@@ -373,20 +373,20 @@ class GCPService(object):
       return job
 
   @VerifyNotNone
-  def WaitJobStatusNotIn(self, job_id, printer_id, job_status_list, timeout=60):
-    """Wait until the job status becomes a status which is not in the list.
+  def WaitJobStateNotIn(self, job_id, printer_id, job_state, timeout=60):
+    """Wait until the job state is not the specified state.
 
     Args:
       job_id: string, id of the print job.
       printer_id: string, id of the printer
-      job_status_list: list, list of job status.
+      job_state: string or list, job state(s) that should not be observed.
       timeout: integer, number of seconds to wait.
     Returns:
       string, current job.
 
     """
-    print ('Waiting up to %s seconds for the job to not have a status(es) '
-           'in the list: %s\n' % (timeout, job_status_list))
+    print ('Waiting up to %s seconds for the job to not have any of the '
+           'following job state(s): %s\n' % (timeout, job_state))
 
     end = time.time() + timeout
 
@@ -394,7 +394,7 @@ class GCPService(object):
       job = self.GetJobInfo(job_id, printer_id)
 
       if job is not None:
-        if job['status'] not in job_status_list:
+        if job['semanticState']['state']['type'] not in job_state:
           return job
 
       Sleep('POLL')
@@ -402,20 +402,20 @@ class GCPService(object):
     return None
 
   @VerifyNotNone
-  def WaitJobStatus(self, job_id, printer_id, job_status, timeout=60):
-    """Wait until the job status becomes the specified status
+  def WaitJobStateIn(self, job_id, printer_id, job_state, timeout=60):
+    """Wait until the job state becomes the specified state(s)
 
     Args:
       job_id: string, id of the print job.
       printer_id: string, id of the printer
-      job_status: string or list, job status to wait for.
+      job_state: string or list, job state(s) to wait for.
       timeout: integer, number of seconds to wait.
     Returns:
       dict, current job.
 
     """
-    print ('Waiting up to %s seconds for the job to have the status: %s\n' %
-           (timeout, job_status))
+    print ('Waiting up to %s seconds for the job to have one of the following '
+           'job state(s): %s\n' % (timeout, job_state))
 
     end = time.time() + timeout
 
@@ -423,7 +423,7 @@ class GCPService(object):
       job = self.GetJobInfo(job_id, printer_id)
 
       if job is not None:
-        if job['status'] in job_status:
+        if job['semanticState']['state']['type'] in job_state:
           return job
 
       Sleep('POLL')

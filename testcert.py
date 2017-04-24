@@ -57,7 +57,7 @@ from _config import Constants
 from _cpslib import GCPService
 from _device import Device
 from _oauth2 import Oauth2
-from _ticket import CloudJobTicket, CjtConstants
+from _ticket import CloudJobTicket, GCPConstants
 from _transport import Transport
 from _zconf import MDNS_Browser
 from _zconf import Wait_for_privet_mdns_service
@@ -252,7 +252,7 @@ def getRasterImageFromCloud(pwg_path, img_path):
   #
   cjt = CloudJobTicket(_device.details['gcpVersion'])
   if Constants.CAPS['COLOR']:
-    cjt.AddColorOption(CjtConstants.COLOR)
+    cjt.AddColorOption(GCPConstants.COLOR)
 
   print 'Generating pwg-raster via cloud print'
   output = _gcp.Submit(_device.dev_id, img_path,
@@ -262,8 +262,8 @@ def getRasterImageFromCloud(pwg_path, img_path):
     raise
   else:
     try:
-      _gcp.WaitJobStatus(output['job']['id'], _device.dev_id,
-                         CjtConstants.IN_PROGRESS)
+      _gcp.WaitJobStateIn(output['job']['id'], _device.dev_id,
+                          GCPConstants.IN_PROGRESS)
     except AssertionError:
       print 'GCP ERROR: Job not observed to be in progress.'
       raise
@@ -277,9 +277,9 @@ def getRasterImageFromCloud(pwg_path, img_path):
       else:
         writeRasterToFile(pwg_path, res)
         print '[Configurable timeout] PRINTING'
-        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id,
-                           CjtConstants.DONE,
-                           timeout=Constants.TIMEOUT['PRINTING'])
+        _gcp.WaitJobStateIn(output['job']['id'], _device.dev_id,
+                           GCPConstants.DONE,
+                            timeout=Constants.TIMEOUT['PRINTING'])
 
 
 
@@ -318,8 +318,8 @@ class LogoCert(unittest.TestCase):
     cls.autorun = options.autorun
     cls.printer = options.printer
 
-    cls.monochrome = CjtConstants.MONOCHROME
-    cls.color = (CjtConstants.COLOR if Constants.CAPS['COLOR']
+    cls.monochrome = GCPConstants.MONOCHROME
+    cls.color = (GCPConstants.COLOR if Constants.CAPS['COLOR']
                  else cls.monochrome)
     # Refresh access token in case it has expired
     _oauth2.RefreshToken()
@@ -350,7 +350,9 @@ class LogoCert(unittest.TestCase):
       Sleep('AUTO_RUN')
       return True
     print 'Did the test produce the expected result?'
-    result = PromptAndWaitForUserAction('Enter "y" or "n"')
+    result = ''
+    while result.lower() not in ['y','n']:
+      result = PromptAndWaitForUserAction('Enter "y" or "n"')
     try:
       self.assertEqual(result.lower(), 'y')
     except AssertionError:
@@ -2530,7 +2532,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
       return
 
-    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
+    self.cjt.AddDuplexOption(GCPConstants.LONG_EDGE)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2542,7 +2544,7 @@ class LocalPrinting(LogoCert):
     PromptAndWaitForUserAction('Press ENTER when the document is completely '
                                'printed')
 
-    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
+    self.cjt.AddDuplexOption(GCPConstants.SHORT_EDGE)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2600,7 +2602,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
       return
 
-    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
+    self.cjt.AddPageOrientationOption(GCPConstants.PORTRAIT)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2609,7 +2611,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2683,7 +2685,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    self.cjt.AddColorOption(CjtConstants.COLOR)
+    self.cjt.AddColorOption(GCPConstants.COLOR)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2694,7 +2696,7 @@ class LocalPrinting(LogoCert):
 
     PromptAndWaitForUserAction('Press ENTER when page is printed')
 
-    self.cjt.AddColorOption(CjtConstants.MONOCHROME)
+    self.cjt.AddColorOption(GCPConstants.MONOCHROME)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2717,7 +2719,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Duplex support')
       return
 
-    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
+    self.cjt.AddDuplexOption(GCPConstants.LONG_EDGE)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2729,7 +2731,7 @@ class LocalPrinting(LogoCert):
     PromptAndWaitForUserAction('Press ENTER when the document is completely '
                                'printed')
 
-    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
+    self.cjt.AddDuplexOption(GCPConstants.SHORT_EDGE)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2752,7 +2754,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
-    self.cjt.AddColorOption(CjtConstants.COLOR)
+    self.cjt.AddColorOption(GCPConstants.COLOR)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2763,7 +2765,7 @@ class LocalPrinting(LogoCert):
 
     PromptAndWaitForUserAction('Press ENTER when page is printed')
 
-    self.cjt.AddColorOption(CjtConstants.MONOCHROME)
+    self.cjt.AddColorOption(GCPConstants.MONOCHROME)
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
       self.assertIsNotNone(job_id)
@@ -2893,7 +2895,7 @@ class PostRegistration(LogoCert):
         _device.GetPrivetInfo()
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
-    """Verify power cycled registered device does not advertise using Privet."""
+    """Verify power cycled registered device advertises as registered."""
     test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
 
@@ -3303,13 +3305,13 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        job = _gcp.WaitJobStatus(output['job']['id'],
-                                 _device.dev_id,
-                                 CjtConstants.DONE,
+        job = _gcp.WaitJobStateIn(output['job']['id'],
+                                  _device.dev_id,
+                                 GCPConstants.DONE,
                                  timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.' %
-                 (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+        notes = ('Job state did not transition to %s within %s seconds.' %
+                 (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3342,21 +3344,21 @@ class JobState(LogoCert):
       print ('When printer starts printing, '
              'Job State should transition to in progress.')
       try:
-        _gcp.WaitJobStatus(output['job']['id'], _device.dev_id,
-                           CjtConstants.IN_PROGRESS)
+        _gcp.WaitJobStateIn(output['job']['id'], _device.dev_id,
+                            GCPConstants.IN_PROGRESS)
       except AssertionError:
         notes = 'Job is not "In progress" while job is still printing.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
         try:
-          job = _gcp.WaitJobStatus(output['job']['id'],
-                                   _device.dev_id,
-                                   CjtConstants.DONE,
+          job = _gcp.WaitJobStateIn(output['job']['id'],
+                                    _device.dev_id,
+                                    GCPConstants.DONE,
                                    timeout=Constants.TIMEOUT['PRINTING'])
         except AssertionError:
-          notes = ('Job status did not transition to %s within %s seconds.' %
-                   (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+          notes = ('Job state did not transition to %s within %s seconds.' %
+                   (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
@@ -3426,9 +3428,9 @@ class JobState(LogoCert):
 
     if output['success']:
       try:
-        job = _gcp.WaitJobStatusNotIn(output['job']['id'], _device.dev_id,
-                                     [CjtConstants.QUEUED,
-                                      CjtConstants.IN_PROGRESS],
+        job = _gcp.WaitJobStateNotIn(output['job']['id'], _device.dev_id,
+                                    [GCPConstants.QUEUED,
+                                     GCPConstants.IN_PROGRESS],
                                      timeout = Constants.TIMEOUT['PRINTING'])
       except AssertionError:
         notes = ('Job not found or status transitioned into Queued or '
@@ -3438,9 +3440,10 @@ class JobState(LogoCert):
         raise
       else:
         try:
-          self.assertEqual(job['status'], CjtConstants.ERROR)
+          self.assertEqual(job['semanticState']['state']['type'],
+                           GCPConstants.STOPPED)
         except AssertionError:
-          notes = 'Print Job is not in Error state.'
+          notes = 'Print Job is not in Stopped state.'
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
@@ -3460,9 +3463,9 @@ class JobState(LogoCert):
             print ('After placing the paper back, Job State should transition '
                    'to in progress.')
             try:
-              job = _gcp.WaitJobStatus(output['job']['id'],
-                                       _device.dev_id,
-                                       CjtConstants.IN_PROGRESS)
+              job = _gcp.WaitJobStateIn(output['job']['id'],
+                                        _device.dev_id,
+                                        GCPConstants.IN_PROGRESS)
             except AssertionError:
               notes = 'Job is not in progress: %s' % job['status']
               _logger.error(notes)
@@ -3471,14 +3474,14 @@ class JobState(LogoCert):
             else:
               print 'Wait for the print job to finish.'
               try:
-                job = _gcp.WaitJobStatus(output['job']['id'],
-                                         _device.dev_id,
-                                         CjtConstants.DONE,
-                                         timeout=Constants.TIMEOUT['PRINTING'])
+                job = _gcp.WaitJobStateIn(output['job']['id'],
+                                          _device.dev_id,
+                                          GCPConstants.DONE,
+                                          timeout= Constants.TIMEOUT['PRINTING'])
               except AssertionError:
-                notes = ('Job status did not transition to %s within '
+                notes = ('Job state did not transition to %s within '
                          '%s seconds.' %
-                         (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+                         (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
                 self.LogTest(test_id, test_name, 'Failed', notes)
                 raise
               else:
@@ -3505,9 +3508,9 @@ class JobState(LogoCert):
                          self.cjt)
     if output['success']:
       try:
-        job = _gcp.WaitJobStatusNotIn(output['job']['id'], _device.dev_id,
-                                     [CjtConstants.QUEUED,
-                                      CjtConstants.IN_PROGRESS],
+        job = _gcp.WaitJobStateNotIn(output['job']['id'], _device.dev_id,
+                                    [GCPConstants.QUEUED,
+                                     GCPConstants.IN_PROGRESS],
                                      timeout = Constants.TIMEOUT['PRINTING'])
       except AssertionError:
         notes = ('Job not found or status transitioned into Queued or '
@@ -3517,9 +3520,10 @@ class JobState(LogoCert):
         raise
       else:
         try:
-          self.assertEqual(job['status'], CjtConstants.ERROR)
+          self.assertEqual(job['semanticState']['state']['type'],
+                           GCPConstants.STOPPED)
         except AssertionError:
-          notes = 'Print Job is not in Error state.'
+          notes = 'Print Job is not in Stopped state.'
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
@@ -3540,9 +3544,9 @@ class JobState(LogoCert):
             print ('After placing the toner back, Job State should transition '
                    'to in progress.')
             try:
-              job = _gcp.WaitJobStatus(output['job']['id'],
-                                       _device.dev_id,
-                                       CjtConstants.IN_PROGRESS)
+              job = _gcp.WaitJobStateIn(output['job']['id'],
+                                        _device.dev_id,
+                                        GCPConstants.IN_PROGRESS)
             except AssertionError:
               notes = 'Job is not in progress: %s' % job['status']
               _logger.error(notes)
@@ -3551,14 +3555,15 @@ class JobState(LogoCert):
             else:
               print 'Wait for the print job to finish.'
               try:
-                job = _gcp.WaitJobStatus(output['job']['id'],
-                                         _device.dev_id,
-                                         CjtConstants.DONE,
-                                         timeout=Constants.TIMEOUT['PRINTING'])
+                job = _gcp.WaitJobStateIn(output['job']['id'],
+                                          _device.dev_id,
+                                          GCPConstants.DONE,
+                                          timeout=
+                                          Constants.TIMEOUT['PRINTING'])
               except AssertionError:
-                notes = ('Job status did not transition to '
+                notes = ('Job state did not transition to '
                          '%s within %s seconds.' %
-                         (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+                         (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
                 self.LogTest(test_id, test_name, 'Failed', notes)
                 raise
               else:
@@ -3587,10 +3592,10 @@ class JobState(LogoCert):
       PromptAndWaitForUserAction('Press ENTER once network is disconnected.')
 
       try:
-        _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS)
+        _gcp.WaitJobStateIn(job_id, _device.dev_id, GCPConstants.IN_PROGRESS)
       except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.' %
-                 (CjtConstants.IN_PROGRESS, 30))
+        notes = ('Job state did not transition to %s within %s seconds.' %
+                 (GCPConstants.IN_PROGRESS, 30))
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3599,21 +3604,22 @@ class JobState(LogoCert):
         print ('Once network is reconnected, '
                'Job state should transition to in progress.')
         try:
-          _gcp.WaitJobStatus(job_id, _device.dev_id, CjtConstants.IN_PROGRESS)
+          _gcp.WaitJobStateIn(job_id, _device.dev_id, GCPConstants.IN_PROGRESS)
         except AssertionError:
-          notes = ('Job status did not transition to %s within %s seconds.' %
-                   (CjtConstants.IN_PROGRESS, 30))
+          notes = ('Job state did not transition to %s within %s seconds.' %
+                   (GCPConstants.IN_PROGRESS, 30))
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
           print 'Wait for the print job to finish.'
           try:
-            job = _gcp.WaitJobStatus(output['job']['id'],
-                                     _device.dev_id,
-                                     [CjtConstants.DONE, CjtConstants.ABORTED],
-                                     timeout=Constants.TIMEOUT['PRINTING'])
+            job = _gcp.WaitJobStateIn(output['job']['id'],
+                                      _device.dev_id,
+                                     [GCPConstants.DONE,
+                                      GCPConstants.ABORTED],
+                                      timeout=Constants.TIMEOUT['PRINTING'])
           except AssertionError:
-            notes = ('Job status did not transition to Done within %s seconds '
+            notes = ('Job state did not transition to Done within %s seconds '
                      'of starting print job.'
                      % (Constants.TIMEOUT['PRINTING']))
             self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3647,12 +3653,12 @@ class JobState(LogoCert):
     else:
       print 'Verifying job is reported in error state.'
       try:
-        _gcp.WaitJobStatus(output['job']['id'],
-                           _device.dev_id,
-                           CjtConstants.ERROR)
+        _gcp.WaitJobStateIn(output['job']['id'],
+                            _device.dev_id,
+                            GCPConstants.STOPPED)
       except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.'
-                 % (CjtConstants.ERROR, 60))
+        notes = ('Job state did not transition to %s within %s seconds.'
+                 % (GCPConstants.STOPPED, 60))
         _logger.error(notes)
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
@@ -3677,7 +3683,7 @@ class JobState(LogoCert):
     PromptAndWaitForUserAction('Press ENTER once paper tray loaded with ONLY '
                                'letter sized paper.')
 
-    self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
+    self.cjt.AddSizeOption(GCPConstants.A4_HEIGHT, GCPConstants.A4_WIDTH)
 
     output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PNG7'], test_name,
                          self.cjt)
@@ -3697,13 +3703,13 @@ class JobState(LogoCert):
                                  'press ENTER')
       print 'Printer should continue printing and complete the print job.'
       try:
-        _gcp.WaitJobStatus(output['job']['id'],
-                           _device.dev_id,
-                           CjtConstants.DONE,
-                           timeout=Constants.TIMEOUT['PRINTING'])
+        _gcp.WaitJobStateIn(output['job']['id'],
+                            _device.dev_id,
+                            GCPConstants.DONE,
+                            timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.'
-                 % (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+        notes = ('Job state did not transition to %s within %s seconds.'
+                 % (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3752,9 +3758,9 @@ class JobState(LogoCert):
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       try:
-        _gcp.WaitJobStatus(output['job']['id'],
-                           _device.dev_id,
-                           CjtConstants.QUEUED)
+        _gcp.WaitJobStateIn(output['job']['id'],
+                            _device.dev_id,
+                            GCPConstants.QUEUED)
       except AssertionError:
         notes = 'Print job %s is not in Queued state.' %(_)
         self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3795,9 +3801,9 @@ class JobState(LogoCert):
       raise
 
     try:
-      _gcp.WaitJobStatus(output['job']['id'],
-                         _device.dev_id,
-                         CjtConstants.QUEUED)
+      _gcp.WaitJobStateIn(output['job']['id'],
+                          _device.dev_id,
+                          GCPConstants.QUEUED)
     except AssertionError:
       notes = 'Print job is not in queued state.'
       self.LogTest(test_id, test_name, 'Failed', notes)
@@ -3848,13 +3854,13 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        _gcp.WaitJobStatus(output['job']['id'],
-                           _device.dev_id,
-                           CjtConstants.DONE,
-                           timeout=Constants.TIMEOUT['PRINTING'])
+        _gcp.WaitJobStateIn(output['job']['id'],
+                            _device.dev_id,
+                            GCPConstants.DONE,
+                            timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.' %
-                 (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+        notes = ('Job state did not transition to %s within %s seconds.' %
+                 (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -3879,13 +3885,13 @@ class JobState(LogoCert):
       raise
     else:
       try:
-        job = _gcp.WaitJobStatus(output['job']['id'],
-                                 _device.dev_id,
-                                 CjtConstants.DONE,
-                                 timeout=Constants.TIMEOUT['PRINTING'])
+        job = _gcp.WaitJobStateIn(output['job']['id'],
+                                  _device.dev_id,
+                                  GCPConstants.DONE,
+                                  timeout=Constants.TIMEOUT['PRINTING'])
       except AssertionError:
-        notes = ('Job status did not transition to %s within %s seconds.' %
-                 (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+        notes = ('Job state did not transition to %s within %s seconds.' %
+                 (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -4102,13 +4108,13 @@ class CloudPrinting(LogoCert):
     """
     print '[Configurable timeout] PRINTING'
     try:
-      _gcp.WaitJobStatus(output['job']['id'],
-                         _device.dev_id,
-                         CjtConstants.DONE,
-                         timeout=Constants.TIMEOUT['PRINTING'])
+      _gcp.WaitJobStateIn(output['job']['id'],
+                          _device.dev_id,
+                          GCPConstants.DONE,
+                          timeout=Constants.TIMEOUT['PRINTING'])
     except AssertionError:
-      notes = ('Job status did not transition to %s within %s seconds.' %
-               (CjtConstants.DONE, Constants.TIMEOUT['PRINTING']))
+      notes = ('Job state did not transition to %s within %s seconds.' %
+               (GCPConstants.DONE, Constants.TIMEOUT['PRINTING']))
       self.LogTest(test_id, test_name, 'Failed', notes)
       print ('ERROR: Either TIMEOUT[PRINTING] is too small in _config.py or '
              'Job is in error state.')
@@ -4148,7 +4154,7 @@ class CloudPrinting(LogoCert):
     PromptAndWaitForUserAction('Load printer with A4 size paper. '
                                'Select return when ready.')
 
-    self.cjt.AddSizeOption(CjtConstants.A4_HEIGHT, CjtConstants.A4_WIDTH)
+    self.cjt.AddSizeOption(GCPConstants.A4_HEIGHT, GCPConstants.A4_WIDTH)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG1'], test_id,
                          test_name, self.cjt)
     try:
@@ -4222,7 +4228,7 @@ class CloudPrinting(LogoCert):
       return
     _logger.info('Setting duplex to long edge...')
 
-    self.cjt.AddDuplexOption(CjtConstants.LONG_EDGE)
+    self.cjt.AddDuplexOption(GCPConstants.LONG_EDGE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
                          test_name, self.cjt)
     try:
@@ -4245,7 +4251,7 @@ class CloudPrinting(LogoCert):
       return
     _logger.info('Setting duplex to short edge...')
 
-    self.cjt.AddDuplexOption(CjtConstants.SHORT_EDGE)
+    self.cjt.AddDuplexOption(GCPConstants.SHORT_EDGE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF10'], test_id,
                          test_name, self.cjt)
     try:
@@ -4381,7 +4387,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPngFillPage'
     _logger.info('Setting print option to Fill Page...')
 
-    self.cjt.AddFitToPageOption(CjtConstants.FILL)
+    self.cjt.AddFitToPageOption(GCPConstants.FILL)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
     try:
@@ -4400,7 +4406,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPngFitToPage'
     _logger.info('Setting print option to Fit to Page...')
 
-    self.cjt.AddFitToPageOption(CjtConstants.FIT)
+    self.cjt.AddFitToPageOption(GCPConstants.FIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
     try:
@@ -4419,7 +4425,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPngGrowToPage'
     _logger.info('Setting print option to Grow to Page...')
 
-    self.cjt.AddFitToPageOption(CjtConstants.GROW)
+    self.cjt.AddFitToPageOption(GCPConstants.GROW)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
     try:
@@ -4438,7 +4444,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPngShrinkToPage'
     _logger.info('Setting print option to Shrink to Page...')
 
-    self.cjt.AddFitToPageOption(CjtConstants.SHRINK)
+    self.cjt.AddFitToPageOption(GCPConstants.SHRINK)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
     try:
@@ -4457,7 +4463,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintPngNoFitting'
     _logger.info('Setting print option to No Fitting...')
 
-    self.cjt.AddFitToPageOption(CjtConstants.NO_FIT)
+    self.cjt.AddFitToPageOption(GCPConstants.NO_FIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
                          test_name, self.cjt)
     try:
@@ -4477,7 +4483,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print simple JPG file with portrait orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
+    self.cjt.AddPageOrientationOption(GCPConstants.PORTRAIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG14'], test_id,
                          test_name, self.cjt)
     try:
@@ -4497,7 +4503,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print simple JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG7'], test_id,
                          test_name, self.cjt)
     try:
@@ -4536,7 +4542,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print color test JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG2'], test_id,
                          test_name, self.cjt)
     try:
@@ -4556,7 +4562,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print JPG photo in landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG5'], test_id,
                          test_name, self.cjt)
     try:
@@ -4576,7 +4582,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print JPG file single object in landscape.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG7'], test_id,
                          test_name, self.cjt)
     try:
@@ -4596,7 +4602,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print a Progressive JPG file.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG8'], test_id,
                          test_name, self.cjt)
     try:
@@ -4616,7 +4622,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print multi image with text JPG file.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG9'], test_id,
                          test_name, self.cjt)
     try:
@@ -4655,7 +4661,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print multi-target JPG file with portrait orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.PORTRAIT)
+    self.cjt.AddPageOrientationOption(GCPConstants.PORTRAIT)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG11'], test_id,
                          test_name, self.cjt)
     try:
@@ -4675,7 +4681,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print step chart JPG file in landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG13'], test_id,
                          test_name, self.cjt)
     try:
@@ -4695,7 +4701,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print large JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG3'], test_id,
                          test_name, self.cjt)
     try:
@@ -4715,7 +4721,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Print large photo JPG file with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['JPG4'], test_id,
                          test_name, self.cjt)
     try:
@@ -4919,7 +4925,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PDF Color ticket in with landscape orientation.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF2'], test_id,
                          test_name, self.cjt)
     try:
@@ -4974,7 +4980,7 @@ class CloudPrinting(LogoCert):
     test_name = 'testPrintFilePdfSimpleLandscape'
     _logger.info('Printing simple PDF file in landscape.')
 
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PDF8'], test_id,
                          test_name, self.cjt)
     try:
@@ -5202,7 +5208,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing Color PNG file in landscape.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG2'], test_id,
                          test_name, self.cjt)
     try:
@@ -5241,7 +5247,7 @@ class CloudPrinting(LogoCert):
     _logger.info('Printing PNG file with letters.')
 
     self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(CjtConstants.LANDSCAPE)
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
     output = self.submit(_device.dev_id, Constants.IMAGES['PNG4'], test_id,
                          test_name, self.cjt)
     try:
