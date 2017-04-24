@@ -1849,6 +1849,8 @@ class PreRegistration(LogoCert):
       except AssertionError:
         notes = 'Unable to cancel registration request.'
         self.LogTest(test_id, test_name, 'Failed', notes)
+        PromptAndWaitForUserAction('Make sure printer is unregistered before '
+                                   'proceeding. Press ENTER to continue')
         raise
       else:
         notes = 'Cancelled registration attempt from printer panel.'

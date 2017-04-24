@@ -296,6 +296,7 @@ class Device(object):
         self.claim_token = response['token']
         self.automated_claim_url = response['automated_claim_url']
         self.claim_url = response['claim_url']
+        print 'Successfully got Claim Token for %s' % user
         return True
 
       if 'error' in response:
@@ -395,6 +396,33 @@ class Device(object):
         self.dev_id = info['device_id']
         self.logger.debug('Registered with device id: %s', self.dev_id)
     return r.status_code == requests.codes.ok
+
+  def UnRegister(self, auth_token):
+    """Remove device from Google Cloud Service.
+    Args:
+      auth_token: string, auth token of device owner.
+    Returns:
+      boolean: True = success, False = errors.
+    """
+    if self.dev_id:
+      delete_url = '%s/delete?printerid=%s' % (Constants.GCP['MGT'],
+                                               self.dev_id)
+      headers = {'Authorization': 'Bearer %s' % auth_token}
+      r = self.transport.HTTPPost(delete_url, headers=headers)
+    else:
+      self.logger.warning('Cannot delete device, not registered.')
+      return False
+
+    if r is None:
+      return False
+
+    if r.status_code == requests.codes.ok and r.json()['success']:
+      self.logger.debug('Successfully deleted printer from service.')
+      self.dev_id = None
+      return True
+
+    self.logger.error('Unable to delete printer from service.')
+    return False
 
   def LocalPrint(self, title, content, cjt):
     """Submit a local print job to the printer
