@@ -7,14 +7,14 @@ the python UnitTest module to actually execute the tests.
 
 List of modules and their purpose:
 
---> testcert.py - the entry point and driver of the tests. All of the actual tests
-are located in this file.
+--> testcert.py - the entry point and driver of the tests. All of the actual
+tests are located in this file.
 --> _common.py - some shared functions within the package.
 --> _config.py - configuration information. This needs to be updated for each
 specific device under test. This file needs to be edited by the user executing
 the test
---> _ticket.py - Provides the Cloud Job Ticket (CJT) object and methods to specify 
-various print options for both cloud printing and local printing
+--> _ticket.py - Provides the Cloud Job Ticket (CJT) object and methods to
+specify various print options for both cloud printing and local printing
 --> _cpslib.py - Methods to access GCP API's
 --> _device.py - Methods to support populating the device attributes.
 --> _gdocs.py - Methods to interact with Google Docs and Google Drive.
@@ -107,40 +107,62 @@ credentials.
 
 The following sections should be edited:
 
-- AUTOMODE --> You should probably set this to False, as this will cause each
-print test to wait for user input to determine if it passed or failed. If
-AUTOMODE = True, then all jobs will be printed out and regardless of how they
-look, the test will pass.
-- CAPS --> this should reflect the actual capabilities of the printer. Set the
-following values to True or False, depending on if the printer supports them
-or not: COLLATE, COLOR (False if monochrome printer), COPIES (True if copies
-are supported), DUPLEX, LAYOUT_ISSUE (Currently Chrome has a bug so that the
-printer must still provide page_orientation), LOCAL_PRINT (set to True if your
-printer supports local printing before the printer is registered).
+-- AUTOMODE --
+* You should probably set this to False, as this will cause each
+  print test to wait for user input to determine if it passed or failed. If
+  AUTOMODE = True, then all jobs will be printed out and regardless of how they
+  look, the test will pass.
 
-- SLEEP --> This script tries its best to avoid using sleep but in the case that 
-it is used, you can tweak the sleep times based on the categories. The printer 
-specific ones are REGISTRATION, and PRINTER_STATE, defaulted to 5 and 10 seconds
-respectively.
+-- CAPS --
+* This should reflect the actual capabilities of the printer. Set the
+  following values to True or False, depending on if the printer supports them
+  or not: COLLATE, COLOR (False if monochrome printer), COPIES (True if copies
+  are supported), DUPLEX, LAYOUT_ISSUE (Currently Chrome has a bug so that the
+  printer must still provide page_orientation), LOCAL_PRINT (set to True if your
+  printer supports local printing before the printer is registered).
 
-You may specify which tests to run/ignore via editing:
-- TEST['RUN'] --> Add a '#' prefix in front of a test name to exclude from test
+-- SLEEP --
+* This script tries its best to avoid using sleep but in the case that it is
+  used, you can tweak the sleep times based on the categories. The printer
+  specific ones are REGISTRATION, and PRINTER_STATE, defaults are 5 and 10 secs
+  respectively.
 
-The documents and emails must belong to the USER account you set up below.
-USER2 does not need those documents or mail messages.
+-- TEST['RUN'] --
+* You may specify which tests to run/ignore via editing this.
+  Add a '#' prefix in front of a test name to exclude from test
+.
 
-- LOGFILES --> change this from /tmp/logocert if you want the log files to be
-stored in a different location.
-- PRINTER --> add the correct values for CERTID (Certification ID), FIRMWARE,
-IP address, MANUFACTURER, MODEL, PORT (integer, not string), SERIAL, and STATUS.
-- TEST --> If you don't want the test results to be written to a Google
-Spreadsheet, then change SPREADSHEET to False. If you are on a Windows machine
-and running the tool out of an ANSI color supporting console and want to
-enable console color coding, set FORCE_COLOR_OUTPUT to True.
-- TESTENV --> add the versions used during testing
-- USER --> add the client id, client secret of the test account from step 1.
-Also add the email address of this user.
-- USER2 --> add the email address of the 2nd test account.
+-- LOGFILES --
+* Change this from /tmp/logocert if you want the log files to be stored in a
+  different location.
+
+-- PRINTER --
+* Add the correct values for CERTID (Certification ID), FIRMWARE, IP address,
+  MANUFACTURER, MODEL, PORT (integer, not string), SERIAL, and STATUS.
+
+-- TEST --
+* If you don't want the test results to be written to a Google Spreadsheet,
+  then change SPREADSHEET to False.
+
+* If you don't want to share the Google Sheets results with Google, set
+  SHARE_SHEET_WITH_GOOGLE to False. However, it is highly recommended that you
+  enable sharing to facilitate debugging and progress tracking. Setting
+  SHARE_SHEET_WITH_GOOGLE to True enables read-only access for
+  cloud-print-certification-team@google.com.
+
+* If you are on a Windows machine and running the tool out of an ANSI color
+  supporting console and want to enable color ouptut, set FORCE_COLOR_OUTPUT
+  to True.
+
+-- TESTENV --
+* Add the versions used during testing
+
+-- USER --
+* Add the client id, client secret of the test account from step 1. Also add the
+  email address of this user.
+
+-- USER2 --
+* Add the email address of the 2nd test account.
 
 Save the _config.py and then all of the preparatory work is completed. Now simply
 execute testcert.py (NOTE: The user account should have no GCP printers registered 
@@ -182,16 +204,16 @@ as follows:
 -------------------------Printer is UNREGISTERED before running the suites below
 - PostUnregistration
 
-The order that the test cases run in is not deterministic, but the suites will run
-in the order they are placed in.
+The order that the test cases run is determined alphanumerically, but the suites
+will run in the order they are placed in.
 
 LocalPrinting has a one-time dependency on CloudPrinting. When the
-LocalPrinting suite is run for the first time, it will make 3 calls to the GCP
-submit interface in order to download the converted pwg-raster images that will
-be used in subsequent LocalPrinting tests. If Cloud Printing does not work for
-your printer, you would have to manually generate pwg-raster formats of
-testpage.png, rosemary.pdf, and dna_overview.png and store them under the images
-directory as testpage.pwg, rosemary.pwg, and dna_overview.pwg.
+LocalPrinting suite is run for the first time for a printer, it will make calls
+to the GCP submit interface in order to download the converted pwg-raster images
+that will be used in subsequent LocalPrinting tests. If Cloud Printing does not
+work for your printer, you would have to manually generate pwg-raster formats of
+testpage.png and rosemary.pdf then store them under the images directory as
+testpage.pwg and rosemary.pwg.
 
 Once the test has run, results will be placed in a log file. Log files are
 created with a date-time stamp in the logname. All of the test results will be
@@ -228,7 +250,7 @@ https://github.com/jstasiak/python-zeroconf/issues/84
 There are two workarounds for this:
 
   a) Comment out the line "if addr.get('netmask') != HOST_ONLY_NETWORK_MASK" in
-  zeroconf.py (Note: This requires editing a python dependency)
+  zeroconf.py (Note: This requires editing a Python dependency)
 
   OR
 

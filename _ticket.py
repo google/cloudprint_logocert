@@ -148,8 +148,12 @@ class CloudJobTicket(object):
 
 
 
-class CjtConstants(object):
-  """A class that holds constants that are used in a CJT"""
+class GCPConstants(object):
+  """A class that holds constants that are used in a GCP"""
+
+  #
+  # CJT (Cloud Job Ticket) constants
+  #
 
   # Color scheme
   MONOCHROME = 'STANDARD_MONOCHROME'
@@ -174,7 +178,10 @@ class CjtConstants(object):
   A4_HEIGHT = 297000
   A4_WIDTH = 210000
 
-  # Printer state
+  #
+  # CJS (Cloud Job State) constants
+  #
+
   DRAFT = 'DRAFT'
   HELD = 'HELD'
   QUEUED = 'QUEUED'
@@ -182,4 +189,3 @@ class CjtConstants(object):
   STOPPED = 'STOPPED'
   DONE = 'DONE'
   ABORTED = 'ABORTED'
-  ERROR = 'ERROR'

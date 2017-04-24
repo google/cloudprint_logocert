@@ -40,7 +40,6 @@ This module is dependent on modules from the LogoCert package.
 from _common import Sleep
 from _common import Extract
 from _config import Constants
-from _jsonparser import JsonParser
 from _transport import Transport
 
 from json import dumps
@@ -60,23 +59,10 @@ class GCPService(object):
       auth_token: the authentication token to use for GCP requests
     """
     self.auth_token = auth_token
+    self.header = {'Authorization': 'Bearer %s' % auth_token}
     self.logger = _log.GetLogger('LogoCert')
-    self.jparser = JsonParser(self.logger)
     self.transport = Transport(self.logger)
 
-  def FormatResponse(self, response):
-    """Format a JSON reponse from the GCP Service into a dictionary.
-
-    Args:
-      response: json response from GCP Service.
-    Returns:
-      dictionary of keys and values found in response.
-    """
-    response_dict = {}
-    info = self.jparser.Read(response['data'])
-    Extract(info, response_dict)
-
-    return response_dict
 
   def VerifyNotNone(query):
     """Decorator to check that None is not returned.
@@ -97,7 +83,7 @@ class GCPService(object):
     return VerifyNotNone
 
 
-  def InterfaceQuery(query):
+  def HTTPGetQuery(query):
     """Decorator for various queries to GCP interfaces
 
     Args:
@@ -107,8 +93,11 @@ class GCPService(object):
     """
     def GCPQuery(self, *args, **kwargs):
       url = query(self, *args, **kwargs)
-      res = self.transport.HTTPReq(url, auth_token=self.auth_token)
-      return self.FormatResponse(res)
+      res = self.transport.HTTPGet(url, headers=self.header)
+
+      response_dict = {}
+      Extract(res.json(), response_dict)
+      return response_dict
 
     return GCPQuery
 
@@ -125,8 +114,7 @@ class GCPService(object):
 
          """
     url = '%s/download?id=%s&forcepwg=1' % (Constants.GCP['MGT'], job_id)
-    r = requests.get(url,
-                     headers={'Authorization': 'Bearer %s' % self.auth_token})
+    r = self.transport.HTTPGet(url, headers=self.header)
 
     if r is None or requests.codes.ok != r.status_code:
       if r is None:
@@ -144,41 +132,7 @@ class GCPService(object):
     return r.content
 
 
-
-  # Not decorated with @InterfaceQuery since Submit() uses 'requests'
-  # instead of '_transport'
-  @VerifyNotNone
-  def Register(self, printer, printer_id, proxy, cdd_path):
-    """Register a printer under the user's account
-
-        Args:
-          printer: string, name of printer to register.
-          printer_id: string, printer's id.
-          proxy: string, network proxy.
-          cdd_path: string, file path to the CDD file
-        Returns:
-          dictionary, response msg from the printer if successful;
-                      otherwise, None
-            """
-    data = {'printer': printer,
-            'printerid': printer_id,
-            'use_cdd': True,
-            'proxy': proxy}
-
-    files = {"capabilities": ('capabilities', open(cdd_path, 'rb'))}
-    url = '%s/register' % (Constants.GCP['MGT'])
-
-    r = requests.post(url, data=data, files=files,
-                      headers={'Authorization': 'Bearer %s' % self.auth_token})
-
-    if r is None or requests.codes.ok != r.status_code:
-      return None
-
-    return r.json()
-
-  # Not decorated with @InterfaceQuery since Submit() uses 'requests' instead
-  # of '_transport'. 'requests' is chosen because it provides a simple one liner
-  # for HTTP Posts with files
+  # Not decorated with @HTTPGetQuery since Submit() is an HTTP Post
   @VerifyNotNone
   def Submit(self, printer_id, content, title, cjt=None, is_url=False):
     """Submit a print job to the printer
@@ -222,9 +176,8 @@ class GCPService(object):
     print 'Attempting to submit a job through GCP for up to 60 seconds'
     t_end = time.time()+60
     while time.time() < t_end:
-      r = requests.post(url, data = data, files = files ,
-                        headers= {'Authorization':
-                                  'Bearer %s' % self.auth_token})
+      r = self.transport.HTTPPost(url, data=data, files=files,
+                                  headers=self.header)
       if r is None:
         print 'ERROR! HTTP POST to /submit returned None type'
         return None
@@ -251,8 +204,7 @@ class GCPService(object):
     # Continuously gotten HTTP error codes to fall out of the while loop
     return None
 
-  # Not decorated with @InterfaceQuery since Update() uses 'requests'
-  # instead of '_transport'
+  # Not decorated with @HTTPGetQuery since Update() is an HTTP Post
   @VerifyNotNone
   def Update(self, printer_id, setting):
     """Update a cloud printer
@@ -269,8 +221,7 @@ class GCPService(object):
     data = {'printerid': printer_id,
             'local_settings': dumps(setting)}
 
-    r = requests.post(url, data=data,
-                      headers={'Authorization': 'Bearer %s' % self.auth_token})
+    r = self.transport.HTTPPost(url, data=data, headers=self.header)
 
     if r is None or requests.codes.ok != r.status_code:
       return False
@@ -283,7 +234,7 @@ class GCPService(object):
 
 
   @VerifyNotNone
-  @InterfaceQuery
+  @HTTPGetQuery
   def Delete(self, printer_id):
     """Delete a printer owned by a user.
 
@@ -297,7 +248,7 @@ class GCPService(object):
     return url
 
   @VerifyNotNone
-  @InterfaceQuery
+  @HTTPGetQuery
   def DeleteJob(self, job_id):
     """Delete a job owned by user.
 
@@ -311,7 +262,7 @@ class GCPService(object):
     return url
 
   @VerifyNotNone
-  @InterfaceQuery
+  @HTTPGetQuery
   def Jobs(self, printer_id=None, owner=None, job_title=None, status=None):
     """Get a list of print jobs which user has permission to view.
 
@@ -321,8 +272,8 @@ class GCPService(object):
       job_title: string, filter jobs whose title or tags contain this string.
       status: string, filter jobs that match this status.
     Returns:
-      string, url to be used by InterfaceQuery method.
-    Valid Job Status strings are: QUEUED, IN_PROGRESS, DONE, ERROR, SUBMITTED,
+      string, url to be used by HTTPGetQuery method.
+    Valid Job state strings are: QUEUED, IN_PROGRESS, DONE, ERROR, SUBMITTED,
     and HELD.
     """
     args = '?'
@@ -342,14 +293,14 @@ class GCPService(object):
     return url
 
   @VerifyNotNone
-  @InterfaceQuery
+  @HTTPGetQuery
   def List(self, proxy_id):
     """Execute the list interface and return printer fields.
 
     Args:
       proxy_id: string, proxy of printer.
     Returns:
-      string: url to by used by InterfaceQuery method.
+      string: url to by used by HTTPGetQuery method.
     Note: the List interface returns the same information as the Search
     interface; therefore, use the Search interface unless you need a list
     or printers using the same proxy_id.
@@ -359,14 +310,14 @@ class GCPService(object):
     return url
 
   @VerifyNotNone
-  @InterfaceQuery
+  @HTTPGetQuery
   def Printer(self, printer_id):
     """Execute the printer interface and return printer fields and capabilites.
 
     Args:
       printer_id: string, id of printer.
     Returns:
-      string: url to be used by InterfaceQuery method.
+      string: url to be used by HTTPGetQuery method.
     """
     fields = 'connectionStatus,semanticState,uiState,queuedJobsCount'
     url = '%s/printer?printerid=%s&usecdd=True&extra_fields=%s' % (
@@ -375,14 +326,14 @@ class GCPService(object):
     return url
 
   @VerifyNotNone
-  @InterfaceQuery
+  @HTTPGetQuery
   def Search(self, printer=None):
     """Search for printers owned by user.
 
     Args:
       printer: string, name or partial name of printer to search for.
     Returns:
-      string: url to be used by InterfaceQuery method.
+      string: url to be used by HTTPGetQuery method.
     """
     url = '%s/search' % Constants.GCP['MGT']
     if printer:
@@ -422,20 +373,20 @@ class GCPService(object):
       return job
 
   @VerifyNotNone
-  def WaitJobStatusNotIn(self, job_id, printer_id, job_status_list, timeout=60):
-    """Wait until the job status becomes a status which is not in the list.
+  def WaitJobStateNotIn(self, job_id, printer_id, job_state, timeout=60):
+    """Wait until the job state is not the specified state.
 
     Args:
       job_id: string, id of the print job.
       printer_id: string, id of the printer
-      job_status_list: string, list of job status.
+      job_state: string or list, job state(s) that should not be observed.
       timeout: integer, number of seconds to wait.
     Returns:
       string, current job.
 
     """
-    print ('Waiting up to %s seconds for the job to not have a status(es) '
-           'in the list: %s' % (timeout, job_status_list))
+    print ('Waiting up to %s seconds for the job to not have any of the '
+           'following job state(s): %s\n' % (timeout, job_state))
 
     end = time.time() + timeout
 
@@ -443,7 +394,7 @@ class GCPService(object):
       job = self.GetJobInfo(job_id, printer_id)
 
       if job is not None:
-        if job['status'] not in job_status_list:
+        if job['semanticState']['state']['type'] not in job_state:
           return job
 
       Sleep('POLL')
@@ -451,20 +402,20 @@ class GCPService(object):
     return None
 
   @VerifyNotNone
-  def WaitJobStatus(self, job_id, printer_id, job_status, timeout=60):
-    """Wait until the job status becomes the specified status
+  def WaitJobStateIn(self, job_id, printer_id, job_state, timeout=60):
+    """Wait until the job state becomes the specified state(s)
 
     Args:
       job_id: string, id of the print job.
       printer_id: string, id of the printer
-      job_status: string, list of job status.
+      job_state: string or list, job state(s) to wait for.
       timeout: integer, number of seconds to wait.
     Returns:
       dict, current job.
 
     """
-    print ('Waiting up to %s seconds for the job to have the status: %s' %
-           (timeout, job_status))
+    print ('Waiting up to %s seconds for the job to have one of the following '
+           'job state(s): %s\n' % (timeout, job_state))
 
     end = time.time() + timeout
 
@@ -472,7 +423,7 @@ class GCPService(object):
       job = self.GetJobInfo(job_id, printer_id)
 
       if job is not None:
-        if job['status'] == job_status:
+        if job['semanticState']['state']['type'] in job_state:
           return job
 
       Sleep('POLL')

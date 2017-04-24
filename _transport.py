@@ -22,11 +22,9 @@ This module is dependent on modules from the LogoCert package.
 """
 
 import socket  # In order to set a default timeout.
-import urllib
-import urllib2
+import requests
 
 from _config import Constants
-from _jsonparser import JsonParser
 
 
 class Transport(object):
@@ -39,114 +37,71 @@ class Transport(object):
         logger: initialized logger object.
     """
     self.logger = logger
-    self.jparser = JsonParser(logger)
     socket.setdefaulttimeout(Constants.URL['TIMEOUT'])
 
-  def HTTPReq(self, url, auth_token=None, cloudprint=True, data=None,
-              headers=None, printdata=None, user=None):
-    """Send a HTTP Get or Post Request to a remote server.
+  def HTTPPost(self, url, headers=None, params=None, data=None, files=None):
+    """Send a HTTP Post Request to a remote server.
 
     Args:
       url: string, url to send request to.
-      auth_token: string, Google auth token of user.
-      cloudprint: boolean, True = add CloudPrint Header.
-      data: dictionary, data to send in request.
       headers: dict, key/value pairs of HTTP header.
-      printdata: encoded data for printing.
-      user: string, email address of user.
+      params: key/value pairs of parameters.
+      data: data to post
+      files: file to post
     Returns:
-      dict: response with keys code, headers, and data.
-    If data is not None (it has a value) this will become a Post request.
+      dict: Response object, with keys code, headers, and data.
     """
-    response = {'code': None,
-                'headers': None,
-                'data': None,
-               }
+    response = requests.post(url, headers=headers, params=params, data=data,
+                             files=files)
 
-    if not headers:
-      headers = {}
-    self.logger.debug('User = %s', user)
-    if user is not None:
-      self.logger.debug('Found user: %s', user)
-      # Must urlencode the user string.
-      userdict = {'user': user}
-      encoded_user = urllib.urlencode(userdict)
-      url += '&'
-      url += encoded_user
-    self.url = url
-    self.user = user
-    self.logger.debug('Using headers: %s', headers)
-    self.logger.debug('Accessing URL: %s', url)
+    if response is None:
+      self.logger.info('HTTP(S) POST to %s failed', url)
+      return None
 
-    request = urllib2.Request(self.url)
-    if auth_token:
-      self.logger.debug('Using Auth Token: %s', auth_token)
-      request.add_header('Authorization', 'Bearer %s' % auth_token)
-    if cloudprint:
-      request.add_header('X-CloudPrint-Proxy', 'GCPLogoCert')
-    if headers:
-      for header in headers:
-        self.logger.debug('Using header: %s:%s', header, headers[header])
-        request.add_header(header, headers[header])
-    # If data = '', we want to execute a POST, so use: if data is not None.
-    if data is not None:
-      edata = urllib.urlencode(data)
-      self.logger.debug('Executing a HTTP POST request')
-      request.add_data(edata)
-    else:
-      self.logger.debug('Executing a HTTP Get request')
-    if printdata is not None:
-      request.add_data(printdata)
-      self.logger.debug('Adding print data.')
-
-    try:
-      r = urllib2.urlopen(request)
-    except urllib2.URLError as e:  # This includes the HTTPError subclass.
-      if hasattr(e, 'code'):
-        response['code'] = e.code
-        self.logger.info('Return Code: %s', e.code)
-      if hasattr(e, 'reason'):
-        response['data'] = e.reason
-        self.logger.info(e.reason)
-      self.logger.debug(response)
-      return response
-
-    response['code'] = r.getcode()
-    response['headers'] = r.info()
-    response['data'] = r.read()
-    self.LogData(response)
-    self.logger.debug(response)
-    r.close()
+    self.LogResponseData(response)
 
     return response
 
-
-  def LogData(self, response):
-    """Log all response headers and data.
+  def HTTPGet(self, url, headers=None, params=None):
+    """Send a HTTP Get Request to a remote server.
 
     Args:
-      response: dictionary from a response from Distributer.SendHTTPReq().
+      url: string, url to send request to.
+      headers: dict, key/value pairs of HTTP header.
+      params: key/value pairs of parameters.
     Returns:
-      boolean: True = return code is 200, False = return code is not 200.
+      dict: Response object, with keys code, headers, and data.
+    """
+    response = requests.get(url, headers=headers, params=params)
+
+    if response is None:
+      self.logger.info('HTTP(S) GET for %s failed', url)
+      return None
+
+    self.LogResponseData(response)
+
+    return response
+
+  def LogResponseData(self, response):
+    """Log all response headers and data.
+
     If this function is called and the log level is not debug, this method will
     only log the return code.
-    """
 
-    info = self.jparser.Read(response['data'])
-    if info['json']:
-      self.logger.debug(info['json'])
+    Args:
+      response: Response object from the requests module.
+    """
+    self.logger.debug('HTTP device return code: %s', response.status_code)
+
+    self.logger.debug('Headers returned from query:')
+    for k,v in response.headers.iteritems():
+      self.logger.debug('Header Key: %s\nHeader Value: %s', k, v)
+
+    self.logger.debug('Response Data:')
+    try:
+      info = response.json()
+    except ValueError:
+      self.logger.info('No JSON object in response')
+    else:
       for k in info:
         self.logger.debug('Data item: %s\nData Value: %s', k, info[k])
-    if response['headers']:
-      self.logger.debug('Headers returned from query:')
-      for header in response['headers']:
-        self.logger.debug('Header Key: %s\nHeader Value: %s', header,
-                          response['headers'][header])
-    if response['code']:
-      self.logger.debug('HTTP device return code: %s', response['code'])
-      if response['code'] == 200:
-        return True
-      else:
-        return False
-    else:
-      return False
