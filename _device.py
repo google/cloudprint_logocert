@@ -396,7 +396,7 @@ class Device(object):
         self.logger.debug('Registered with device id: %s', self.dev_id)
     return r.status_code == requests.codes.ok
 
-  def LocalPrint(self, title, content, cjt):
+  def LocalPrint(self, title, content, cjt, content_type):
     """Submit a local print job to the printer
 
         Args:
@@ -418,7 +418,7 @@ class Device(object):
       print 'Error creating a local print job.\n'
       return None
 
-    output = self.SubmitDoc(job_id, title, content)
+    output = self.SubmitDoc(job_id, title, content, content_type)
     if output is None:
       # Cancel the job creation to get back to a normal state
       self.CancelJob(job_id)
@@ -471,7 +471,7 @@ class Device(object):
         return res['job_id']
     return None
 
-  def SubmitDoc(self, job_id, title, content):
+  def SubmitDoc(self, job_id, title, content, content_type):
     """Second step for printing locally, submit a local print job to the printer
 
         Args:
@@ -487,8 +487,6 @@ class Device(object):
 
     url = (self.privet_url['submitdoc'] + '?job_id=%s&job_name=%s' %
            (job_id, title))
-
-    content_type = 'image/pwg-raster'
 
     if content_type not in self.supported_types:
       print ('This printer does not support the following content type: %s' %
