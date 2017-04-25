@@ -46,7 +46,6 @@ class GoogleDataMgr(object):
       Constants: object holding constant values.
     """
     self.logger = logger
-    self.drive = 'https://drive.google.com'
     self.creds = creds
     self.transport = Transport(self.logger)
 
@@ -68,17 +67,85 @@ class GoogleDataMgr(object):
     Returns:
       void - this should not fail
     """
-    SHEETS = discovery.build('sheets', 'v4', http=self.creds.authorize(Http()))
+    service = discovery.build('sheets', 'v4', http=self.creds.authorize(Http()))
     data = {'properties': {'title': name}}
-    res = SHEETS.spreadsheets().create(body=data).execute()
+    res = service.spreadsheets().create(body=data).execute()
     if res is not None and 'spreadsheetId' in res:
       self.logger.info('Created a new google spreadsheet with sheets API.')
+
+      self.addConditionalFormatting(service, res['spreadsheetId'])
       if Constants.TEST['SHARE_SHEET_WITH_GOOGLE']:
         self.logger.info('Attempting to share newly created sheet with Google')
         self.ShareSheet(res['spreadsheetId'])
     else:
       self.logger.info('Failed to create a new google spreadhseet with '
                        'sheets API')
+
+  def addConditionalFormatting(self, service, id):
+    """Add conditional formatting for sheet.
+
+    Args:
+      service: Object, resource for interacting with google API
+      id: String, spreadsheet ID
+    """
+
+    requests=[]
+
+    # Rule 1 - PASS is green
+    passed_rule = self.getBGColorRule('Passed', rgb=(183,225,205))
+    failed_rule = self.getBGColorRule('Failed', rgb=(244,199,195))
+    skipped_rule = self.getBGColorRule('Skipped', rgb=(252,232,178))
+
+    requests.append(passed_rule)
+    requests.append(failed_rule)
+    requests.append(skipped_rule)
+
+    body = {'requests': requests}
+
+    request = service.spreadsheets().batchUpdate(spreadsheetId=id, body=body)
+    request.execute()
+
+
+  def getBGColorRule(self, text_to_match, rgb):
+    """Get conditional formatting rule object for Column C of sheet.
+
+    Args:
+      text_to_match: String, the text to conditionally format for
+      rgb: tuple, RGB values (out of 255)
+    """
+
+    return {
+             'addConditionalFormatRule': {
+               'rule': {
+                 'ranges': [
+                   {
+                     'sheetId': 0,
+                     'startRowIndex': 0,
+                     'endRowIndex': 9999,
+                     'startColumnIndex': 2,
+                     'endColumnIndex': 3
+                   }
+                 ],
+                 'booleanRule': {
+                   'condition': {
+                     'type': 'TEXT_EQ',
+                     'values': [
+                       {
+                         'userEnteredValue': text_to_match
+                       }
+                     ]
+                   },
+                   'format': {
+                     'backgroundColor': {
+                       'red': rgb[0]/255.0,
+                       'green': rgb[1]/255.0,
+                       'blue': rgb[2]/255.0
+                     }
+                   }
+                 }
+               }
+             }
+           }
 
   def ShareSheet(self, id):
     """Share a Google Spreadsheet with Google's GCP certification team.

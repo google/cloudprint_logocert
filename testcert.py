@@ -166,7 +166,6 @@ def setUpModule():
   if Constants.TEST['SPREADSHEET']:
     global _sheet
     _sheet = _sheets.SheetMgr(_logger, _oauth2.storage.get(), Constants)
-    _sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
 
 

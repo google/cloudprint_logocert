@@ -1,6 +1,7 @@
 <test_account/*
 .idea/*
 credentials.txt
+credentials.json
 *.pyc
 _config.py
 images/*.pwg
