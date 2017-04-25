@@ -21,6 +21,7 @@ Google Spreadsheets. It is dependent on the external module gdata:
 https://github.com/google/gdata-python-client
 """
 from _config import Constants
+from _transport import Transport
 
 import gdata.gauth
 import gdata.service
@@ -30,7 +31,6 @@ import gdata.spreadsheets.data
 
 from googleapiclient import discovery
 from httplib2 import Http
-import requests
 import json
 import sys
 
@@ -48,6 +48,7 @@ class GoogleDataMgr(object):
     self.logger = logger
     self.drive = 'https://drive.google.com'
     self.creds = creds
+    self.transport = Transport(self.logger)
 
     self.token = gdata.gauth.OAuth2Token(
         client_id=Constants.USER['CLIENT_ID'],
@@ -102,8 +103,8 @@ class GoogleDataMgr(object):
     headers = {'Content-Type': 'application/json',
                'Authorization': 'Bearer %s' % self.token.access_token}
 
-    r = requests.post(url, data=json.dumps(data), params=params,
-                      headers=headers)
+    r = self.transport.HTTPPost(url, data=json.dumps(data), params=params,
+                                headers=headers)
 
     if r is None:
       self.logger.error('Google Drive API returned None response')

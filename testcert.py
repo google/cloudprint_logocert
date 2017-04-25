@@ -4126,19 +4126,20 @@ class CloudPrinting(LogoCert):
       raise
 
 
-  def waitAndManualPass(self, test_id, test_name, output, manual_prompt=None):
+  def waitAndManualPass(self, test_id, test_name, output,
+                        verification_prompt=None):
     """Wait for cloudprint job completion then prompt for manual verification.
 
     Args:
       test_id: string, id of the testcase
       test_name: string, title of the print job
       output: dictionary, submit response from GCP server
-      manual_prompt: string, manual verification prompt message
+      verification_prompt: string, manual verification prompt message
     """
     self.waitForCloudPrintJobCompletion(test_id, test_name, output)
 
-    if manual_prompt:
-      print manual_prompt
+    if verification_prompt:
+      print verification_prompt
     self.ManualPass(test_id, test_name)
 
 
@@ -4380,7 +4381,8 @@ class CloudPrinting(LogoCert):
     else:
       prompt = 'Google log-in page should print without errors.\n'
       prompt += 'Fail this test if there are errors or quality issues.'
-      self.waitAndManualPass(test_id, test_name, output, manual_prompt=prompt)
+      self.waitAndManualPass(test_id, test_name, output,
+                             verification_prompt=prompt)
 
 
   def test_11_CloudPrintPngFillPage(self):
@@ -5445,7 +5447,8 @@ class CloudPrinting(LogoCert):
       prompt = 'The 1st print job should have no margins.\n'
       prompt += 'The 2nd print job should have 5cm margins for all sides.\n'
       prompt += 'If the margins are not correct, fail this test.'
-      self.waitAndManualPass(test_id, test_name, output, manual_prompt=prompt)
+      self.waitAndManualPass(test_id, test_name, output,
+                             verification_prompt=prompt)
 
 
 if __name__ == '__main__':
