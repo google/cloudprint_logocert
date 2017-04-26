@@ -3958,7 +3958,7 @@ class Unregister(LogoCert):
     test_id3 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
     test_name3 = 'testOffDeviceIsDeleted'
 
-    print 'Printer needs to be registered at the beginning of this testcase'
+    print 'Printer needs to be registered to begin this testcase'
     is_registered = _device.isPrinterRegistered()
     try:
       self.assertTrue(is_registered)
@@ -4031,6 +4031,15 @@ class PostUnregistration(LogoCert):
       print 'LocalPrinting suite should be run before this suite'
       print 'LocalPrinting will produce the raster file needed for this test'
       notes = 'Run LocalPrinting suite before PostUnregistration suite'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    print 'Printer needs to be unregistered to begin this testcase'
+    is_registered = _device.isPrinterRegistered()
+    try:
+      self.assertFalse(is_registered)
+    except AssertionError:
+      notes = 'Printer needs to be unregistered before this testcase runs'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
