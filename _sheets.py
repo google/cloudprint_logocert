@@ -35,22 +35,21 @@ class SheetMgr(object):
     self.logger = logger
     self.headers = Constants.TEST['RESULTS']
     self.sheet = _gdocs.GoogleDataMgr(logger, creds, Constants)
-    # First see if Spreadsheet Already exists.
+
     self.sheet_id = self.sheet.GetSpreadSheetID(Constants.TEST['NAME'])
+    # Create new Spreadsheet if it does not already exist.
     if not self.sheet_id:
       self.sheet.CreateSheet(Constants.TEST['NAME'])
       self.sheet_id = self.sheet.GetSpreadSheetID(Constants.TEST['NAME'])
       if not self.sheet_id:
-        # Something went wrong
         self.logger.error('Error creating spreadsheet.')
-    self.worksheet_id = self.sheet.GetWorkSheetID(self.sheet_id)
 
-  def MakeHeaders(self):
-    """Add column headers to the spreadsheet."""
-    if self.sheet.CreateColumnHeaders(self.headers, self.sheet_id,
-                                      self.worksheet_id):
-      return True
-    return False
+    self.worksheet_id = self.sheet.GetWorkSheetID(self.sheet_id)
+    if not self.sheet.CreateColumnHeaders(self.headers,
+                                          self.sheet_id,
+                                          self.worksheet_id):
+      self.logger.error('Error adding heading to sheet')
+
 
   def AddRow(self, row):
     """Add a row to an existing spreadsheet with a column header.

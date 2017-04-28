@@ -17,9 +17,9 @@ Some functions to get OAuth2 credentials.
 """
 
 import httplib2
-import requests
 
 from _config import Constants
+from _transport import Transport
 
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.file import Storage
@@ -38,6 +38,7 @@ class Oauth2(object):
     """
     self.logger = logger
     self.storage = Storage(Constants.AUTH['CRED_FILE'])
+    self.transport = Transport(self.logger)
 
   def GetTokens(self):
     """Retrieve credentials."""
@@ -120,6 +121,6 @@ class Oauth2(object):
 
     request_url = Constants.OAUTH_TOKEN
 
-    res = requests.post(request_url, headers=headers, params=params)
+    res = self.transport.HTTPPost(request_url, headers=headers, params=params)
 
     return res.json()

@@ -29,7 +29,7 @@ class Constants(object):
   ACCOUNTS = 'https://accounts.google.com'
 
   AUTH = {
-      'CRED_FILE': 'credentials.txt',
+      'CRED_FILE': 'credentials.json',
       'REDIRECT': 'urn:ietf:wg:oauth:2.0:oob',
       'SCOPE': ('https://www.googleapis.com/auth/cloudprint '
                 'https://spreadsheets.google.com/feeds/ '

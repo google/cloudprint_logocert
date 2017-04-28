@@ -166,7 +166,6 @@ def setUpModule():
   if Constants.TEST['SPREADSHEET']:
     global _sheet
     _sheet = _sheets.SheetMgr(_logger, _oauth2.storage.get(), Constants)
-    _sheet.MakeHeaders()
   # pylint: enable=global-variable-undefined
 
 
@@ -1849,6 +1848,8 @@ class PreRegistration(LogoCert):
       except AssertionError:
         notes = 'Unable to cancel registration request.'
         self.LogTest(test_id, test_name, 'Failed', notes)
+        PromptAndWaitForUserAction('Make sure printer is unregistered before '
+                                   'proceeding. Press ENTER to continue')
         raise
       else:
         notes = 'Cancelled registration attempt from printer panel.'
@@ -2389,7 +2390,6 @@ class LocalPrinting(LogoCert):
     try:
       self.assertTrue(success)
     except AssertionError:
-<<<<<<< HEAD
       notes = 'Failed to detect update before timing out.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
@@ -2402,22 +2402,6 @@ class LocalPrinting(LogoCert):
       notes2 = 'Printer not in idle state after updates.'
       self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
-=======
-      notes = 'Error local printing with color selected.'
-      self.LogTest(test_id, test_name, 'Blocked', notes)
-    else:
-      print 'Print job should be printed in color.'
-      print 'If not, fail this test.'
-      self.ManualPass(test_id, test_name)
-
-  def testLocalPrintLongUrl(self):
-    """Verify printer can local print a long URL."""
-    test_id = '8b89286b-a5aa-4936-a7d8-e768962930d8'
-    test_name = 'testLocalPrintLongUrl'
-    url = ('http://www-10.lotus.com/ldd/portalwiki.nsf/dx/'
-           'Determining_the_best_IBM_Lotus_Web_Content_Management_delivery'
-           '_option_for_your_needs')
->>>>>>> refs/remotes/origin/master
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt, 'image/pwg-raster')
     try:
@@ -3974,7 +3958,7 @@ class Unregister(LogoCert):
     test_id3 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
     test_name3 = 'testOffDeviceIsDeleted'
 
-    print 'Printer needs to be registered at the beginning of this testcase'
+    print 'Printer needs to be registered to begin this testcase'
     is_registered = _device.isPrinterRegistered()
     try:
       self.assertTrue(is_registered)
@@ -4047,6 +4031,15 @@ class PostUnregistration(LogoCert):
       print 'LocalPrinting suite should be run before this suite'
       print 'LocalPrinting will produce the raster file needed for this test'
       notes = 'Run LocalPrinting suite before PostUnregistration suite'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    print 'Printer needs to be unregistered to begin this testcase'
+    is_registered = _device.isPrinterRegistered()
+    try:
+      self.assertFalse(is_registered)
+    except AssertionError:
+      notes = 'Printer needs to be unregistered before this testcase runs'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 
@@ -4141,19 +4134,20 @@ class CloudPrinting(LogoCert):
       raise
 
 
-  def waitAndManualPass(self, test_id, test_name, output, manual_prompt=None):
+  def waitAndManualPass(self, test_id, test_name, output,
+                        verification_prompt=None):
     """Wait for cloudprint job completion then prompt for manual verification.
 
     Args:
       test_id: string, id of the testcase
       test_name: string, title of the print job
       output: dictionary, submit response from GCP server
-      manual_prompt: string, manual verification prompt message
+      verification_prompt: string, manual verification prompt message
     """
     self.waitForCloudPrintJobCompletion(test_id, test_name, output)
 
-    if manual_prompt:
-      print manual_prompt
+    if verification_prompt:
+      print verification_prompt
     self.ManualPass(test_id, test_name)
 
 
@@ -4395,7 +4389,8 @@ class CloudPrinting(LogoCert):
     else:
       prompt = 'Google log-in page should print without errors.\n'
       prompt += 'Fail this test if there are errors or quality issues.'
-      self.waitAndManualPass(test_id, test_name, output, manual_prompt=prompt)
+      self.waitAndManualPass(test_id, test_name, output,
+                             verification_prompt=prompt)
 
 
   def test_11_CloudPrintPngFillPage(self):
@@ -5460,7 +5455,8 @@ class CloudPrinting(LogoCert):
       prompt = 'The 1st print job should have no margins.\n'
       prompt += 'The 2nd print job should have 5cm margins for all sides.\n'
       prompt += 'If the margins are not correct, fail this test.'
-      self.waitAndManualPass(test_id, test_name, output, manual_prompt=prompt)
+      self.waitAndManualPass(test_id, test_name, output,
+                             verification_prompt=prompt)
 
 
 if __name__ == '__main__':
