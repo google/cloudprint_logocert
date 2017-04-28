@@ -2389,6 +2389,7 @@ class LocalPrinting(LogoCert):
     try:
       self.assertTrue(success)
     except AssertionError:
+<<<<<<< HEAD
       notes = 'Failed to detect update before timing out.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
@@ -2401,6 +2402,22 @@ class LocalPrinting(LogoCert):
       notes2 = 'Printer not in idle state after updates.'
       self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
+=======
+      notes = 'Error local printing with color selected.'
+      self.LogTest(test_id, test_name, 'Blocked', notes)
+    else:
+      print 'Print job should be printed in color.'
+      print 'If not, fail this test.'
+      self.ManualPass(test_id, test_name)
+
+  def testLocalPrintLongUrl(self):
+    """Verify printer can local print a long URL."""
+    test_id = '8b89286b-a5aa-4936-a7d8-e768962930d8'
+    test_name = 'testLocalPrintLongUrl'
+    url = ('http://www-10.lotus.com/ldd/portalwiki.nsf/dx/'
+           'Determining_the_best_IBM_Lotus_Web_Content_Management_delivery'
+           '_option_for_your_needs')
+>>>>>>> refs/remotes/origin/master
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt)
     try:
