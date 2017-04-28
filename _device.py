@@ -424,13 +424,14 @@ class Device(object):
     self.logger.error('Unable to delete printer from service.')
     return False
 
- def LocalPrint(self, title, content, cjt, content_type):
+  def LocalPrint(self, title, content, cjt, content_type):
     """Submit a local print job to the printer
 
         Args:
           title: string, title of the print job
           content: string, url or absolute filepath of the item to print.
           cjt: CloudJobTicket, object that defines the options of the print job
+          content_type: string, MIME type of the print data
         Returns:
           int, the job id of the local print job that succeeded, else None
         """
@@ -506,10 +507,10 @@ class Device(object):
           job_id: string, local job id that was returned by /createjob
           title: string, title of the print job
           content: string, url or absolute filepath of the item to print.
+          content_type: string, MIME type of the print data
         Returns:
           int, the job id of the print job if successful, else None
             """
-    name = basename(content)
     with open(content, 'rb') as f:
       content = f.read()
 

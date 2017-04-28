@@ -2308,8 +2308,8 @@ class LocalPrinting(LogoCert):
     guest_device = Device(_logger, None, None, privet_port=_device.port)
     guest_device.GetDeviceCDDLocally()
 
-    job_id = guest_device.LocalPrint(test_name,
-                                     Constants.IMAGES['PWG1'], self.cjt)
+    job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'],
+                                     self.cjt, 'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2326,7 +2326,8 @@ class LocalPrinting(LogoCert):
     test_id = 'a47b904c-d7a2-4112-832b-59035d117404'
     test_name = 'testLocalPrintOwner'
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2365,7 +2366,8 @@ class LocalPrinting(LogoCert):
       raise
     print 'Local print successfully turned off'
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNone(job_id)
     except AssertionError:
@@ -2403,7 +2405,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2423,7 +2426,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print Html support')
       return
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['HTML1'], self.cjt, 'text/html')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['HTML1'], self.cjt,
+                                'text/html')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2445,7 +2449,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print Jpg support')
       return
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['JPG12'], self.cjt, 'image/jpeg')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['JPG12'], self.cjt,
+                                'image/jpeg')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2466,7 +2471,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print PNG support')
       return
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PNG6'], self.cjt, 'image/png')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PNG6'], self.cjt,
+                                'image/png')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2487,7 +2493,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print Gif support')
       return
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['GIF4'], self.cjt, 'image/gif')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['GIF4'], self.cjt,
+                                'image/gif')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2508,7 +2515,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
       return
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2534,7 +2542,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddDuplexOption(GCPConstants.LONG_EDGE)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2546,7 +2555,8 @@ class LocalPrinting(LogoCert):
                                'printed')
 
     self.cjt.AddDuplexOption(GCPConstants.SHORT_EDGE)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2574,7 +2584,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddMarginOption(0, 0, 0, 0)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2582,7 +2593,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     self.cjt.AddMarginOption(50000, 50000, 50000, 50000)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2604,7 +2616,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddPageOrientationOption(GCPConstants.PORTRAIT)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2613,7 +2626,8 @@ class LocalPrinting(LogoCert):
       raise
 
     self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2635,7 +2649,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddPageRangeOption(2,3)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2661,7 +2676,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddCopiesOption(2)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2687,7 +2703,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddColorOption(GCPConstants.COLOR)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2698,7 +2715,8 @@ class LocalPrinting(LogoCert):
     PromptAndWaitForUserAction('Press ENTER when page is printed')
 
     self.cjt.AddColorOption(GCPConstants.MONOCHROME)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt, 'application/pdf')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
+                                'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2721,7 +2739,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddDuplexOption(GCPConstants.LONG_EDGE)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2733,7 +2752,8 @@ class LocalPrinting(LogoCert):
                                'printed')
 
     self.cjt.AddDuplexOption(GCPConstants.SHORT_EDGE)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG2'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2756,7 +2776,8 @@ class LocalPrinting(LogoCert):
       return
 
     self.cjt.AddColorOption(GCPConstants.COLOR)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2767,7 +2788,8 @@ class LocalPrinting(LogoCert):
     PromptAndWaitForUserAction('Press ENTER when page is printed')
 
     self.cjt.AddColorOption(GCPConstants.MONOCHROME)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -2786,7 +2808,8 @@ class LocalPrinting(LogoCert):
     test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14688'
     test_name = 'testLocalPrintPWG'
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt, 'image/pwg-raster')
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
+                                'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
@@ -4049,7 +4072,8 @@ class PostUnregistration(LogoCert):
 
     cjt = CloudJobTicket(guest_device.privet_info['version'])
 
-    job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], cjt)
+    job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], cjt,
+                                     'image/pwg-raster')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
