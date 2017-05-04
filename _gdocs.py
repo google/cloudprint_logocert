@@ -158,7 +158,7 @@ class GoogleDataMgr(object):
     data = {
       'value': Constants.TEST['GCP_TEAM_EMAIL'],
       'type': 'user',
-      'role': 'reader',
+      'role': 'writer',
     }
 
     params = {
@@ -178,7 +178,7 @@ class GoogleDataMgr(object):
       raise
 
     if r.status_code == 200:
-      self.logger.info('Successfully sharing sheet (read-only) with Google: %s'
+      self.logger.info('Successfully sharing sheet (R/W) with Google: %s'
                        % Constants.TEST['GCP_TEAM_EMAIL'])
       return
 

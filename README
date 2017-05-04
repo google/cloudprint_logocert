@@ -147,7 +147,7 @@ The following sections should be edited:
 * If you don't want to share the Google Sheets results with Google, set
   SHARE_SHEET_WITH_GOOGLE to False. However, it is highly recommended that you
   enable sharing to facilitate debugging and progress tracking. Setting
-  SHARE_SHEET_WITH_GOOGLE to True enables read-only access for
+  SHARE_SHEET_WITH_GOOGLE to True enables read/write access for
   cloud-print-certification-team@google.com.
 
 * If you are on a Windows machine and running the tool out of an ANSI color

@@ -105,8 +105,8 @@ class Constants(object):
                               # certain status: processing, idle, etc
                               # Statuses come from the device's Privet/info
                               # interface
-    'PRINTING': 600,          # Used for waiting for a printer to complete
-                              # printing a job
+    'PRINTING': 1000,         # Printer dependent: Used for waiting for a
+                              # printer to complete printing a job.
   }
 
   GCP = {'MGT': 'https://www.google.com/cloudprint'}
