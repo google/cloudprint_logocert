@@ -458,6 +458,11 @@ class Privet(LogoCert):
 
   These tests should be run before a device is registered.
   """
+  @classmethod
+  def setUpClass(cls):
+    LogoCert.setUpClass(cls)
+    _device.assertPrinterIsUnregistered()
+
 
   def testPrivetInfoAPI(self):
     """Verify device responds to PrivetInfo API requests."""
@@ -1702,6 +1707,7 @@ class PreRegistration(LogoCert):
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
     cls.sleep_time = 60
+    _device.assertPrinterIsUnregistered()
 
 
   def testDeviceAdvertisePrivet(self):
@@ -1862,6 +1868,11 @@ class PreRegistration(LogoCert):
 class Registration(LogoCert):
   """Test device registration."""
 
+  @classmethod
+  def setUpClass(cls):
+    LogoCert.setUpClass(cls)
+    _device.assertPrinterIsUnregistered()
+
   def test_01_DeviceRegistrationTimeOut(self):
     """Verify printer registration times out properly"""
     test_id = '64f31b27-0779-4c94-8f8a-ec9d44ce6171'
@@ -2007,6 +2018,7 @@ class LocalDiscovery(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
   def toggleOnLocalPrinting(self):
@@ -2291,6 +2303,7 @@ class LocalPrinting(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
     # Need to download a few raster files that will be used to test local
@@ -2828,6 +2841,7 @@ class PostRegistration(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
   def testDeviceDetails(self):
@@ -2945,6 +2959,7 @@ class PrinterState(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
   def GetErrorMsg(self, printer_states):
@@ -3311,6 +3326,7 @@ class JobState(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
   def testOnePagePrintJobState(self):
@@ -3937,6 +3953,8 @@ class RunAfter24Hours(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsRegistered()
+
     _logger.info('Sleeping for 1 day before running additional tests.')
     print 'Sleeping for 1 day before running additional tests.'
     Sleep('ONE_DAY')
@@ -3968,6 +3986,7 @@ class Unregister(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
   def testUnregisterDevice(self):
@@ -4038,6 +4057,8 @@ class PostUnregistration(LogoCert):
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
+    _device.assertPrinterIsUnregistered()
+
 
   def testLocalPrintGuestUserUnregisteredPrinter(self):
     """Verify local print for unregistered printer is correct."""
@@ -4054,15 +4075,6 @@ class PostUnregistration(LogoCert):
       print 'LocalPrinting suite should be run before this suite'
       print 'LocalPrinting will produce the raster file needed for this test'
       notes = 'Run LocalPrinting suite before PostUnregistration suite'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-
-    print 'Printer needs to be unregistered to begin this testcase'
-    is_registered = _device.isPrinterRegistered()
-    try:
-      self.assertFalse(is_registered)
-    except AssertionError:
-      notes = 'Printer needs to be unregistered before this testcase runs'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
 

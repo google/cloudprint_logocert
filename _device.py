@@ -25,6 +25,7 @@ from _privet import Privet
 from _transport import Transport
 
 from _common import Sleep
+from _common import RedText
 from _common import PromptUserAction
 from json import dumps
 from os.path import basename
@@ -607,16 +608,28 @@ class Device(object):
   def isPrinterRegistered(self):
     """Use the /privet/info interface to see if printer is registered
 
-        Returns:
-          boolean, True if registered, False if not registered,
-                   None if /privet/info failed
-        """
+    Returns:
+      boolean, True if registered, False if not registered,
+               None if /privet/info failed
+    """
     info = self.Info()
     if info is not None:
         return info['id'] and info['connection_state'] == 'online'
     return None
 
+  def assertPrinterIsRegistered(self):
+    """Raise exception if printer is unregistered"""
+    if not self.isPrinterRegistered():
+      print RedText('ERROR: Printer needs to be registered before this '
+                    'suite runs')
+      raise EnvironmentError
 
+  def assertPrinterIsUnregistered(self):
+    """Raise exception if printer is registered"""
+    if self.isPrinterRegistered():
+      print RedText('ERROR: Printer needs to be unregistered before this '
+                    'suite runs')
+      raise EnvironmentError
 
   def CancelJob(self, job_id):
     #TODO: Posting a mismatch job seems to cancel the created job,
