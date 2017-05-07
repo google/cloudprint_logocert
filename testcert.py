@@ -466,7 +466,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPI(self):
     """Verify device responds to PrivetInfo API requests."""
-    test_id = '612051fb-f156-4846-8924-e62f70273643'
+    test_id = '7201b68f-de0b-4e93-a1a6-d674af9ec6ec'
     test_name = 'testPrivetInfoAPI'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -482,7 +482,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIManufacturer(self):
     """Verify device PrivetInfo API contains manufacturer field."""
-    test_id = '0da3de50-2541-4585-8314-d3593be7a2d9'
+    test_id = '58fedd52-3bc4-472b-897e-55ee5675fa5c'
     test_name = 'testPrivetInfoAPIManufacturer'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -498,7 +498,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIModel(self):
     """Verify device PrivetInfo API contains model field."""
-    test_id = 'd2725e0d-033a-45b2-b528-cb00f8729e5b'
+    test_id = 'a0421845-9477-487f-8674-4203cbe6801b'
     test_name = 'testPrivetInfoAPIModel'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -514,7 +514,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIFirmware(self):
     """Verify device PrivetInfo API contains firmware field."""
-    test_id = '9ab29ed3-cbed-458e-9cd7-0021c1da37d2'
+    test_id = '4c055e06-02aa-436d-b700-80f184e84f47'
     test_name = 'testPrivetInfoAPIFirmware'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -530,7 +530,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIUpdateUrl(self):
     """Verify device PrivetInfo API contains update_url field."""
-    test_id = 'd7f67d75-9f9d-49ad-b3b2-5557c8c51470'
+    test_id = 'd469199f-fcbd-4a83-90bf-772453be2b09'
     test_name = 'testPrivetInfoAPIUpdateUrl'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -546,7 +546,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIVersion(self):
     """Verify device PrivetInfo API contains version field."""
-    test_id = 'daef86f2-f979-4960-8d57-677ce2b237d7'
+    test_id = '7a5c02f3-26f6-4df4-b8c8-953bedd4ba2d'
     test_name = 'testPrivetInfoAPIVersion'
     # When a device object is initialized, it sends a request to the privet
     # info API, so all of the needed information should already be set.
@@ -571,7 +571,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoDeviceState(self):
     """Verify device PrivetInfo API contains DeviceState and valid value."""
-    test_id = '3d0fdb69-d14c-4628-a45d-54048465f741'
+    test_id = 'c3ea4263-3745-4d69-8dd4-578f5e5a336b'
     test_name = 'testPrivetInfoDeviceState'
     valid_states = ['idle', 'processing', 'stopped']
     try:
@@ -594,7 +594,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoConnectionState(self):
     """Verify device PrivetInfo contains ConnectionState and valid value."""
-    test_id = '2f4b5912-fa44-4e37-b4a5-01cd2ea7fcfc'
+    test_id = '8ab9ac16-0c6e-47ec-a24e-c5ad4f77abb2'
     test_name = 'testPrivetInfoConnectionState'
     valid_states = ['online', 'offline', 'connecting', 'not-configured']
     try:
@@ -617,7 +617,7 @@ class Privet(LogoCert):
 
   def testPrivetAccessTokenAPI(self):
     """Verify unregistered device Privet AccessToken API returns correct rc."""
-    test_id = '74b0548c-5932-4aaa-a363-56dd9d44268b'
+    test_id = 'ffa0d9dc-840f-486a-a890-91773fc2b12d'
     test_name = 'testPrivetAccessTokenAPI'
     api = 'accesstoken'
     if Constants.CAPS['LOCAL_PRINT']:
@@ -652,7 +652,7 @@ class Privet(LogoCert):
 
   def testPrivetCapsAPI(self):
     """Verify unregistered device Privet Capabilities API returns correct rc."""
-    test_id = '82bd4d7d-e70b-45fb-9ecb-41f267ef9b24'
+    test_id = '3bd87d10-301d-43b4-b959-96ede9537526'
     test_name = 'testPrivetCapsAPI'
     api = 'capabilities'
     if Constants.CAPS['LOCAL_PRINT']:
@@ -686,7 +686,7 @@ class Privet(LogoCert):
 
   def testPrivetPrinterAPI(self):
     """Verify unregistered device Privet Printer API returns correct rc."""
-    test_id = 'c6e56ee1-eb55-478b-a495-dbdfeb7fe1ae'
+    test_id = 'c957966b-b63c-4827-94fa-1bf1fe930638'
     test_name = 'testPrivetPrinterAPI'
     api = 'printer'
     expected_return_codes = [200, 404]
@@ -712,7 +712,7 @@ class Privet(LogoCert):
 
   def testPrivetUnknownURL(self):
     """Verify device returns 404 return code for unknown url requests."""
-    test_id = 'caf2f4e7-df0d-4093-8303-73eff5ab9024'
+    test_id = '12119bbe-7707-44f3-8743-8cde0696dcd0'
     test_name = 'testPrivetUnknownURL'
     response = _transport.HTTPGet(_device.privet_url['INVALID'],
                                  headers=_device.headers)
@@ -735,7 +735,7 @@ class Privet(LogoCert):
 
   def testPrivetRegisterAPI(self):
     """Verify unregistered device exposes register API."""
-    test_id = '48f09590-03b1-4068-a902-c21290026247'
+    test_id = 'f875316e-7189-4321-8ac7-bf5e1bd53d8d'
     test_name = 'testPrivetRegisterAPI'
 
     success = _device.StartPrivetRegister()
@@ -753,7 +753,7 @@ class Privet(LogoCert):
 
   def testPrivetRegistrationInvalidParam(self):
     """Verify device return error if invalid registration param given."""
-    test_id = 'fec798b2-ed5f-44ac-8752-e44fd47462e2'
+    test_id = 'b2d25268-86aa-41f5-8891-3a5e29c4dbff'
     test_name = 'testPrivetRegistrationInvalidParam'
 
     url = _device.privet_url['register']['invalid']
@@ -791,7 +791,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIEmptyToken(self):
     """Verify device returns code 200 if Privet Token is empty."""
-    test_id = '9cce6158-7b68-42b3-94b2-9bacadac07c9'
+    test_id = '1c3d8852-0130-49e1-baab-396fabb774a9'
     test_name = 'testPrivetInfoAPIEmptyToken'
     response = _transport.HTTPGet(_device.privet_url['info'],
                                  headers=_device.privet.headers_empty)
@@ -814,7 +814,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIInvalidToken(self):
     """Verify device returns code 200 if Privet Token is invalid."""
-    test_id = 'f568feee-4693-4643-a61a-73a705288808'
+    test_id = '83eafa05-bfe4-480a-8a24-c44e57b78252'
     test_name = 'testPrivetInfoAPIInvalidToken'
     response = _transport.HTTPGet(_device.privet_url['info'],
                                  headers=_device.privet.headers_invalid)
@@ -837,7 +837,7 @@ class Privet(LogoCert):
 
   def testPrivetInfoAPIMissingToken(self):
     """Verify device returns code 400 if Privet Token is missing."""
-    test_id = '271a2089-be2e-4237-b0c1-e64f4e636c35'
+    test_id = 'bdd2be1d-1ee1-4348-b95d-59916947e10b'
     test_name = 'testPrivetInfoAPIMissingToken'
     response = _transport.HTTPGet(_device.privet_url['info'],
                                  headers=_device.privet.headers_missing)
@@ -860,7 +860,7 @@ class Privet(LogoCert):
 
   def testDeviceRegistrationInvalidClaimToken(self):
     """Verify a device will not register if the claim token is invalid."""
-    test_id = 'a48518b0-bc96-480b-a8f2-f26cbb42e1b8'
+    test_id = '80afa1d1-bd62-4534-87e6-49f9905f6973'
     test_name = 'testDeviceRegistrationInvalidClaimToken'
     try:
       self.assertTrue(_device.StartPrivetRegister())
@@ -895,7 +895,7 @@ class Privet(LogoCert):
 
   def testDeviceRegistrationInvalidUserAuthToken(self):
     """Verify a device will not register if the user auth token is invalid."""
-    test_id = 'da3d4ce4-5b81-4bb4-a487-7c8e92b552c6'
+    test_id = 'ac798d92-4789-4e0e-ad59-da5ce5ae0be2'
     test_name = 'testDeviceRegistrationInvalidUserAuthToken'
     try:
       self.assertTrue(_device.StartPrivetRegister())
@@ -938,7 +938,7 @@ class Printer(LogoCert):
 
   def testPrinterName(self):
     """Verify printer provides a name."""
-    test_id = '79f45999-b9e7-4f95-8992-79c06eaa1b76'
+    test_id = '56f55e15-a170-4963-8523-eedd69877892'
     test_name = 'testPrinterName'
     try:
       self.assertIsNotNone(_device.name)
@@ -975,7 +975,7 @@ class Printer(LogoCert):
 
   def testPrinterStatus(self):
     """Verify printer has online status."""
-    test_id = 'f04dfb47-5745-498b-b366-c79d37536904'
+    test_id = '0197ce66-ab79-4b0c-be02-c78325cda7fe'
     test_name = 'testPrinterStatus'
     try:
       self.assertIsNotNone(_device.status)
@@ -995,7 +995,7 @@ class Printer(LogoCert):
 
   def testPrinterModel(self):
     """Verify printer provides a model string."""
-    test_id = '145f1c07-0e9d-4a5e-ae17-ff31f62c94e3'
+    test_id = '5be33583-4acb-4e6f-9c28-cbf4070839bd'
     test_name = 'testPrinterModel'
     try:
       self.assertIn('model', _device.details)
@@ -1028,7 +1028,7 @@ class Printer(LogoCert):
 
   def testPrinterManufacturer(self):
     """Verify printer provides a manufacturer string."""
-    test_id = '68134ba3-5a05-4a77-82ca-b06ae6195cd8'
+    test_id = '2df537db-2de1-433e-94e0-cf87782d76db'
     test_name = 'testPrinterManufacturer'
     try:
       self.assertIn('manufacturer', _device.details)
@@ -1064,7 +1064,7 @@ class Printer(LogoCert):
 
   def testPrinterUUID(self):
     """Verify printer provides a UUID ( equilvalent to serial number )."""
-    test_id = '3996db1d-93ea-4f4c-b70c-dfd9355d5e5d'
+    test_id = '777cb00b-7297-4268-8d76-b96ef98df30f'
     test_name = 'testPrinterUUID'
     try:
       self.assertIn('uuid', _device.details)
@@ -1084,7 +1084,7 @@ class Printer(LogoCert):
 
   def testPrinterGCPVersion(self):
     """Verify printer provides GCP Version supported."""
-    test_id = '7a8ec212-52d2-441d-8e18-383ac850f567'
+    test_id = '36d37e66-5aac-446a-bcaf-3815dc2169da'
     test_name = 'testPrinterGCPVersion'
     try:
       self.assertIn('gcpVersion', _device.details)
@@ -1118,7 +1118,7 @@ class Printer(LogoCert):
 
   def testPrinterFirmwareVersion(self):
     """Verify printer provides a firmware version."""
-    test_id = '96b2fc8d-708d-4be8-b439-7fec563c44d9'
+    test_id = '139b03d7-117b-4e20-ba7d-6a3968d03804'
     test_name = 'testPrinterFirmwareVersion'
     try:
       self.assertIn('firmware', _device.details)
@@ -1150,7 +1150,7 @@ class Printer(LogoCert):
 
   def testPrinterType(self):
     """Verify printer provides a type."""
-    test_id = 'f4fb09a4-527b-4fa7-8629-0171037db113'
+    test_id = '2e2e0414-2775-4a41-be17-5698c14f85b6'
     test_name = 'testPrinterType'
     try:
       self.assertIn('type', _device.details)
@@ -1183,7 +1183,7 @@ class Printer(LogoCert):
 
   def testPrinterFirmwareUpdateUrl(self):
     """Verify printer provides a firmware update URL."""
-    test_id = '27a06940-2f82-4550-8231-69615aa516c8'
+    test_id = 'dbc975aa-6005-4b00-9ead-c9ce42f387f2'
     test_name = 'testPrinterFirmwareUpdateUrl'
     try:
       self.assertIn('updateUrl', _device.details)
@@ -1217,7 +1217,7 @@ class Printer(LogoCert):
 
   def testPrinterProxy(self):
     """Verify that printer provides a proxy."""
-    test_id = 'd01c84fd-6310-47f0-a464-60997a8e3d68'
+    test_id = '5740c76a-7d69-4304-a5f4-e263fb98a5ce'
     test_name = 'testPrinterProxy'
     try:
       self.assertIn('proxy', _device.details)
@@ -1249,7 +1249,7 @@ class Printer(LogoCert):
 
   def testSetupUrl(self):
     """Verify the printer provides a setup URL."""
-    test_id = 'd03c034d-2deb-42d9-a6fd-1685c2472e97'
+    test_id = '7811e41d-90ea-44c5-b522-ea45751ef6a0'
     test_name = 'testSetupUrl'
     try:
       self.assertIn('setupUrl', _device.cdd)
@@ -1269,7 +1269,7 @@ class Printer(LogoCert):
 
   def testPrinterID(self):
     """Verify Printer has a PrinterID."""
-    test_id = '5bc5d513-3a1f-441a-8acd-d007fe0e0e35'
+    test_id = '6503a6b0-5e69-4165-ae7a-27d080f995f0'
     test_name = 'testPrinterID'
     try:
       self.assertIsNotNone(_device.dev_id)
@@ -1301,7 +1301,7 @@ class Printer(LogoCert):
 
   def testLocalSettings(self):
     """Verify the printer contains local settings."""
-    test_id = 'cede3eec-41fb-43de-b1f1-76d17443b6f3'
+    test_id = 'd5668a87-4341-4891-9f07-7da377ce4eea'
     test_name = 'testLocalSettings'
     try:
       self.assertIn('local_settings', _device.cdd)
@@ -1321,7 +1321,7 @@ class Printer(LogoCert):
 
   def testCaps(self):
     """Verify the printer contains capabilities."""
-    test_id = '1977ab77-27af-4702-a6f3-5b66fc1b5720'
+    test_id = 'e46a6823-0a94-4b9a-a7fd-afab3b9e5c73'
     test_name = 'testCaps'
     try:
       self.assertIn('caps', _device.cdd)
@@ -1340,7 +1340,7 @@ class Printer(LogoCert):
 
   def testUuid(self):
     """Verify the printer contains a UUID."""
-    test_id = 'e53df4c2-d208-41d0-bb62-ec6be6ebac9f'
+    test_id = '6d06cc18-6b4a-489a-bdfb-cccd7c3ee0d8'
     test_name = 'testUuid'
     try:
       self.assertIn('uuid', _device.cdd)
@@ -1360,7 +1360,7 @@ class Printer(LogoCert):
 
   def testDefaultDisplayName(self):
     """Verify Default Display Name is present."""
-    test_id = '1cb52261-cf01-45ed-b447-8ec8902b36f2'
+    test_id = '6c0d4832-7ca5-4ab6-a483-997f2cea26f0'
     test_name = 'testDefaultDisplayName'
     try:
       self.assertIn('defaultDisplayName', _device.cdd)
@@ -1373,7 +1373,7 @@ class Printer(LogoCert):
 
   def testCapsSupportedContentType(self):
     """Verify supported_content_type contains needed types."""
-    test_id = 'aa7c157e-bd0a-4048-a8a9-88ce3e9a96b8'
+    test_id = '87762b98-7bbf-4edd-92e8-b5495b7fc8e3'
     test_name = 'testCapsSupportedContentType'
     try:
       self.assertIn('supported_content_type', _device.cdd['caps'])
@@ -1400,7 +1400,7 @@ class Printer(LogoCert):
 
   def testCapsPwgRasterConfig(self):
     """Verify printer CDD contains a pwg_raster_config parameter."""
-    test_id = 'e3565806-2320-48ef-8eab-2f48fbcffc33'
+    test_id = 'eb19cc7e-556f-4356-a3b9-c2d5979fa4ca'
     test_name = 'testCapsPwgRasterConfig'
     try:
       self.assertIn('pwg_raster_config', _device.cdd['caps'])
@@ -1415,7 +1415,7 @@ class Printer(LogoCert):
 
   def testCapsInputTrayUnit(self):
     """Verify input_tray_unit is in printer capabilities."""
-    test_id = 'e10b7314-fc04-4a4a-ae59-8bf4a3ae165d'
+    test_id = '3998c0b2-1277-4e60-b7ff-7ac28c5d8aba'
     test_name = 'testCapsInputTrayUnit'
     try:
       self.assertIn('input_tray_unit', _device.cdd['caps'])
@@ -1429,7 +1429,7 @@ class Printer(LogoCert):
 
   def testCapsOutputBinUnit(self):
     """Verify output_bin_unit is in printer capabilities."""
-    test_id = '0f329dba-75c3-45f0-a3a1-4d63f5d195b0'
+    test_id = '438bb772-119f-42e5-a624-d0a543edba95'
     test_name = 'testCapsOutputBinUnit'
     try:
       self.assertIn('output_bin_unit', _device.cdd['caps'])
@@ -1443,7 +1443,7 @@ class Printer(LogoCert):
 
   def testCapsMarker(self):
     """Verify marker is in printer capabilities."""
-    test_id = '35005c07-3b18-48b2-a3a2-20fe78bedff2'
+    test_id = '6932133f-b2b4-420e-a95e-5d5ec2a70d8e'
     test_name = 'testCapsMarker'
     try:
       self.assertIn('marker', _device.cdd['caps'])
@@ -1457,7 +1457,7 @@ class Printer(LogoCert):
 
   def testCapsCover(self):
     """Verify cover is in printer capabilities."""
-    test_id = 'c5564d8b-d811-4510-b031-b761bb094631'
+    test_id = '17145e5e-8bea-46cc-b9bc-c8e0c396756b'
     test_name = 'testCapsCover'
     try:
       self.assertIn('cover', _device.cdd['caps'])
@@ -1471,7 +1471,7 @@ class Printer(LogoCert):
 
   def testCapsColor(self):
     """Verify color is in printer capabilities."""
-    test_id = '01bd068d-0b8f-41a4-82ea-39ef5fb09994'
+    test_id = '2835bd83-2009-4864-82e4-33ae7e424557'
     test_name = 'testCapsColor'
     try:
       self.assertIn('color', _device.cdd['caps'])
@@ -1485,7 +1485,7 @@ class Printer(LogoCert):
 
   def testCapsDuplex(self):
     """Verify duplex is in printer capabilities."""
-    test_id = '7bda6263-a629-4e1a-84e9-28e84fa2b014'
+    test_id = '75fbbffe-5530-4523-a4b8-4dfd0b9aee08'
     test_name = 'testCapsDuplex'
     if not Constants.CAPS['DUPLEX']:
       if 'duplex' in _device.cdd['caps']:
@@ -1506,7 +1506,7 @@ class Printer(LogoCert):
 
   def testCapsCopies(self):
     """Verify copies is in printer capabilities."""
-    test_id = '9d1464d1-46fb-4d1c-a8fb-3fa0e7dc9509'
+    test_id = '2c87558d-d6a5-4f36-b10c-8e77aad2b53a'
     test_name = 'testCapsCopies'
     if not Constants.CAPS['COPIES_CLOUD']:
       if 'copies' in _device.cdd['caps']:
@@ -1527,7 +1527,7 @@ class Printer(LogoCert):
 
   def testCapsDpi(self):
     """Verify dpi is in printer capabilities."""
-    test_id = 'cd4c9dbc-da9d-4de7-a5b7-74e4618ce1b7'
+    test_id = '40cb422c-f1e6-49ea-936a-62c9bb667f13'
     test_name = 'testCapsDpi'
     try:
       self.assertIn('dpi', _device.cdd['caps'])
@@ -1541,7 +1541,7 @@ class Printer(LogoCert):
 
   def testCapsMediaSize(self):
     """Verify media_size is in printer capabilities."""
-    test_id = 'dae470da-ac50-47cb-8ef7-073cc856cfed'
+    test_id = '69c8f693-ad42-4a77-b239-4f40205fca85'
     test_name = 'testCapsMediaSize'
     try:
       self.assertIn('media_size', _device.cdd['caps'])
@@ -1555,7 +1555,7 @@ class Printer(LogoCert):
 
   def testCapsCollate(self):
     """Verify collate is in printer capabilities."""
-    test_id = '550f72b4-4eb0-4869-87bf-197a9ef1cf09'
+    test_id = '4f398f26-9770-49f0-9e34-523bd41d8f1c'
     test_name = 'testCapsCollate'
     if not Constants.CAPS['COLLATE']:
       if 'collate' in _device.cdd['caps']:
@@ -1577,7 +1577,7 @@ class Printer(LogoCert):
 
   def testCapsPageOrientation(self):
     """Verify page_orientation is not in printer capabilities."""
-    test_id = '79c696e5-33eb-4a47-a173-c698c4423b7c'
+    test_id = '317fcdca-e663-41f9-b48a-8779dfe2f1ad'
     test_name = 'testCapsPageOrientation'
     if Constants.CAPS['LAYOUT_ISSUE']:
       notes = 'Chrome issue in local printing requires orientation in caps.'
@@ -1595,7 +1595,7 @@ class Printer(LogoCert):
 
   def testCapsMargins(self):
     """Verify margin is not in printer capabilities."""
-    test_id = '674b3b1a-282a-4e41-a4d2-046ce65e7403'
+    test_id = '7d60c7c7-08ed-45f2-9e39-1a50d45467a6'
     test_name = 'testCapsMargins'
     try:
       self.assertNotIn('margins', _device.cdd['caps'])
@@ -1609,7 +1609,7 @@ class Printer(LogoCert):
 
   def testCapsFitToPage(self):
     """Verify fit_to_page is not in printer capabilities."""
-    test_id = '86c99c63-1581-470f-b771-94e389a5fc32'
+    test_id = 'c29ae530-3395-4136-9289-47e93e9975da'
     test_name = 'testCapsFitToPage'
     try:
       self.assertNotIn('fit_to_page', _device.cdd['caps'])
@@ -1623,7 +1623,7 @@ class Printer(LogoCert):
 
   def testCapsPageRange(self):
     """Verify page_range is not in printer capabilities."""
-    test_id = 'f80b2077-2ed2-4fc1-a2d6-2fa3b90e9c9f'
+    test_id = '52873b94-ef48-4601-975e-4d90f2a85d51'
     test_name = 'testCapsPageRange'
     try:
       self.assertNotIn('page_range', _device.cdd['caps'])
@@ -1637,7 +1637,7 @@ class Printer(LogoCert):
 
   def testCapsReverseOrder(self):
     """Verify reverse_order is not in printer capabilities."""
-    test_id = 'f24797e4-090c-42fd-98e7-f19ea3d39ebf'
+    test_id = '4004adbd-9322-402b-8e63-942b710cbaad'
     test_name = 'testCapsReverseOrder'
     try:
       self.assertNotIn('reverse_order', _device.cdd['caps'])
@@ -1651,7 +1651,7 @@ class Printer(LogoCert):
 
   def testCapsHash(self):
     """Verify printer CDD contains a capsHash."""
-    test_id = 'd39db864-3e18-46f3-8c16-d367f155c1e0'
+    test_id = 'a9cbdeb3-c8a8-405c-a317-940a0b761f55'
     test_name = 'testCapsHash'
     try:
       self.assertIn('capsHash', _device.cdd)
@@ -1665,7 +1665,7 @@ class Printer(LogoCert):
 
   def testCapsCertificationID(self):
     """Verify printer has a certificaionID and it is correct."""
-    test_id = '8885e5c7-50a1-4667-aa25-4f40588e396f'
+    test_id = '5ad8b344-4326-4456-a874-054b56bf68cc'
     test_name = 'testCapsCertificationID'
     try:
       self.assertIn('certificationId', _device.cdd)
@@ -1688,7 +1688,7 @@ class Printer(LogoCert):
 
   def testCapsResolvedIssues(self):
     """Verify printer contains resolvedIssues in printer capabilities."""
-    test_id = '5a1ef1e7-26ba-458b-a72f-a5ebf26e437c'
+    test_id = 'f461801f-bc2e-416c-8949-d6d9971f05b1'
     test_name = 'testCapsResolvedIssues'
     try:
       self.assertIn('resolvedIssues', _device.cdd)
@@ -1712,7 +1712,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceAdvertisePrivet(self):
     """Verify printer under test advertises itself using Privet."""
-    test_id = '3382acca-15f7-46d1-9b43-2d36defa9443'
+    test_id = '5a24949f-1c78-4a7d-8f52-4f4c57b78f76'
     test_name = 'testDeviceAdvertisePrivet'
 
     print 'Listening for the printer\'s advertisements for up to 60 seconds'
@@ -1738,7 +1738,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceSleepingAdvertisePrivet(self):
     """Verify sleeping printer advertises itself using Privet."""
-    test_id = 'fffb765b-bb62-4927-82d4-209928ef7d23'
+    test_id = 'e8528e4d-370b-43a3-aee2-ad6f048dc367'
     test_name = 'testDeviceSleepingAdvertisePrivet'
 
     print 'Put the printer in sleep mode.'
@@ -1768,7 +1768,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceOffNoAdvertisePrivet(self):
     """Verify powered off device does not advertise using Privet."""
-    test_id = '35ce7a3d-3403-499e-9a60-4d17e1693178'
+    test_id = '27fba22f-e8b1-4fe2-821f-fff5ef4cac27'
     test_name = 'testDeviceOffNoAdvertisePrivet'
 
     PromptAndWaitForUserAction('Press ENTER once printer is powered off')
@@ -1787,7 +1787,7 @@ class PreRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Passed', notes)
 
       """Verify freshly powered on device advertises itself using Privet."""
-      test_id2 = 'ad3c730b-dcc9-4597-8953-d9bc5dca4205'
+      test_id2 = '6f87d61b-8784-41be-bb38-0405f85cb2e3'
       test_name2 = 'testDeviceOffPowerOnAdvertisePrivet'
 
       PromptUserAction('Power on the printer and wait...')
@@ -1816,7 +1816,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceRegistrationNotLoggedIn(self):
     """Test printer cannot be registered if user not logged in."""
-    test_id = '984be779-3ca4-4bb7-a2e1-e1868f687905'
+    test_id = '619926b7-c051-4d67-81b4-bb68bb4812a8'
     test_name = 'testDeviceRegistrationNotLoggedIn'
 
     success = _device.Register('ACCEPT the registration request on Printer UI '
@@ -1836,7 +1836,7 @@ class PreRegistration(LogoCert):
 
   def testDeviceCancelRegistration(self):
     """Test printer cancellation prevents registration."""
-    test_id = 'ce1c9c46-3164-4f07-aa41-241867a4a28b'
+    test_id = '842259b0-13df-496c-81bf-1f06bdd3a35f'
     test_name = 'testDeviceCancelRegistration'
     _logger.info('Testing printer registration cancellation.')
 
@@ -1875,7 +1875,7 @@ class Registration(LogoCert):
 
   def test_01_DeviceRegistrationTimeOut(self):
     """Verify printer registration times out properly"""
-    test_id = '64f31b27-0779-4c94-8f8a-ec9d44ce6171'
+    test_id = '1ce516e7-f831-465c-9ceb-2af9050b0dd9'
     test_name = 'testDeviceRegistrationNoAccept'
 
     print 'Do not select accept/cancel registration from the printer U/I.'
@@ -1905,7 +1905,7 @@ class Registration(LogoCert):
 
   def test_02_DeviceRegistrationPanelUI(self):
     """Verify printer panel UI shows registration prompt"""
-    test_id = '6968e44b-3c2d-4b14-8fd5-06c94f1e8c41'
+    test_id = 'dd233ea2-42e2-4a1e-a9ff-4df727edd591'
     test_name = 'testDeviceAcceptRegistration'
 
     if Constants.CAPS['PRINTER_PANEL_UI']:
@@ -1927,13 +1927,13 @@ class Registration(LogoCert):
     2- User2 cannot register after User1 has begun registration process
     3- Printer correctly advertises as registered after registration
     """
-    test_id = 'b36f4085-f14f-49e0-adc0-cdbaae45bd9f'
+    test_id = 'a2cefbe9-9c8b-4987-966c-c0da7343be17'
     test_name = 'testDeviceRegistration'
 
-    test_id2 = '923ee7f2-c337-49d4-aa4d-8f8e3b43621a'
+    test_id2 = '5b8b6d1d-618a-40c5-a16b-89de96b62262'
     test_name2 = 'testDeviceRegistrationMultipleUsers'
 
-    test_id3 = '65da1989-8273-45bc-a9f0-5826b58ab7eb'
+    test_id3 = '5c3ccd4d-6d04-40b7-8dad-89164964b42d'
     test_name3 = 'testDeviceRegistrationAdvertise'
 
     # Register user1
@@ -2045,7 +2045,7 @@ class LocalDiscovery(LogoCert):
 
   def testLocalDiscoveryToggle(self):
     """Verify printer behaves correctly when local discovery is toggled."""
-    test_id = '54131136-9e03-4b17-acd2-7ca72e2ad732'
+    test_id = '72133bd8-c945-4364-aa2b-69a2ee088c59'
     test_name = 'testLocalDiscoveryToggle'
     notes = None
     notes2 = None
@@ -2134,7 +2134,7 @@ class LocalDiscovery(LogoCert):
   def testPrinterOnAdvertiseLocally(self):
     """Verify printer sends start up advertisement packets when turned on.
        """
-    test_id = 'e979119e-5a35-4065-89cf-1c4ef795c5b9'
+    test_id = '79ae01a8-9af8-4666-9186-fd822158bb30'
     test_name = 'testPrinterOnAdvertiseLocally'
 
     print 'This test should begin with the printer turned off.'
@@ -2159,7 +2159,7 @@ class LocalDiscovery(LogoCert):
 
   def testPrinterOffSendGoodbyePacket(self):
     """Verify printer sends goodbye packet when turning off."""
-    test_id = '074cf049-a13c-4a7e-91ed-a0ce9457b4f4'
+    test_id = 'c76fb24b-22ce-4c44-a692-df91697b759c'
     test_name = 'testPrinterOffSendGoodbyePacket'
     if not Constants.CAPS['GOODBYE_PACKET']:
       notes = 'Printer does not send goodbye packet.'
@@ -2207,7 +2207,7 @@ class LocalDiscovery(LogoCert):
 
   def testPrinterIdleNoBroadcastPrivet(self):
     """Verify idle printer doesn't send mDNS broadcasts."""
-    test_id = '703a55d2-7291-4637-b257-dc885fdb5abd'
+    test_id = '288ca17e-65fc-4a9b-bf1f-59272a987927'
     test_name = 'testPrinterIdleNoBroadcastPrivet'
 
     print 'Ensure printer stays on and remains in idle state.'
@@ -2248,7 +2248,7 @@ class LocalDiscovery(LogoCert):
 
   def testUpdateLocalSettings(self):
     """Verify printer's local settings can be updated with Update API."""
-    test_id = '9a2fde45-ea02-4cdd-90ab-af752cbdd394'
+    test_id = 'b88c27c6-e6fa-48e6-a19e-4e581c0f8e1c'
     test_name = 'testUpdateLocalSettings'
     # Get the current xmpp timeout value.
 
@@ -2314,7 +2314,7 @@ class LocalPrinting(LogoCert):
 
   def test_01_LocalPrintGuestUser(self):
     """Verify local print on a registered printer is available to guest user."""
-    test_id = '8ba6f1ba-66cc-4d9e-aa3c-1d2e611ddb38'
+    test_id = '465133e5-783d-4e60-882e-3c779d0421c0'
     test_name = 'testLocalPrintGuestUser'
 
     # New instance of device that is not authenticated - contains no auth-token
@@ -2336,7 +2336,7 @@ class LocalPrinting(LogoCert):
 
   def test_02_LocalPrintOwner(self):
     """Verify local print on a registered printer as the owner."""
-    test_id = 'a47b904c-d7a2-4112-832b-59035d117404'
+    test_id = '38d7736d-20e4-4474-b32f-19414c32c9ab'
     test_name = 'testLocalPrintOwner'
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
@@ -2354,7 +2354,7 @@ class LocalPrinting(LogoCert):
 
   def test_03_LocalPrintingToggle(self):
     """Verify printer behaves correctly when local printing toggled."""
-    test_id = '533d4ac6-5c1d-4c99-a91e-2bac7c31864f'
+    test_id = 'fb331ad7-8ef1-4266-a35c-4ddf553e47e6'
     test_name = 'testLocalPrintingToggle'
     notes = None
     notes2 = None
@@ -2432,7 +2432,7 @@ class LocalPrinting(LogoCert):
 
   def test_04_LocalPrintHTML(self):
     """Verify printer can local print HTML file."""
-    test_id = '8745d54b-045a-4378-a024-d331785ac62e'
+    test_id = 'c93ed781-d0b5-44bc-89e2-4e5b31bafd3d'
     test_name = 'testLocalPrintHTML'
 
     if 'text/html' not in _device.supported_types:
@@ -2454,7 +2454,7 @@ class LocalPrinting(LogoCert):
 
   def test_05_LocalPrintJPG(self):
     """Verify a 1 page JPG file prints using Local Printing."""
-    test_id = '01a0aa7e-80e3-4336-8183-0c5cbf8e9f19'
+    test_id = '824f95f8-9380-4c37-9552-f6e56e2c8463'
     test_name = 'testLocalPrintJPG'
 
     if ('image/jpeg' not in _device.supported_types and
@@ -2477,7 +2477,7 @@ class LocalPrinting(LogoCert):
 
   def test_06_LocalPrintPNG(self):
     """Verify a 1 page PNG file prints using Local Printing."""
-    test_id = 'a4588515-2c18-4f57-80c6-9c23cb57f074'
+    test_id = '90c3f594-6792-4c07-b747-ae217ff8178a'
     test_name = 'testLocalPrintPNG'
 
     if 'image/png' not in _device.supported_types:
@@ -2499,7 +2499,7 @@ class LocalPrinting(LogoCert):
 
   def test_07_LocalPrintGIF(self):
     """Verify a 1 page GIF file prints using Local Printing."""
-    test_id = '7b61815b-5719-4114-bdf7-8fce6e0d8dc5'
+    test_id = '39720f61-f142-4ef5-ba55-1efaad8a89dd'
     test_name = 'testLocalPrintGIF'
 
     if 'image/gif' not in _device.supported_types:
@@ -2521,7 +2521,7 @@ class LocalPrinting(LogoCert):
 
   def test_08_LocalPrintPDF(self):
     """Verify a 1 page PDF file prints using Local Printing."""
-    test_id = '0a02c47a-32b0-47b4-af7a-810c002d282d'
+    test_id = 'd6497ac5-4d15-46d4-8aee-261890180dca'
     test_name = 'testLocalPrintPDF'
 
     if 'application/pdf' not in _device.supported_types:
@@ -2543,7 +2543,7 @@ class LocalPrinting(LogoCert):
 
   def test_09_LocalPrintPDFDuplex(self):
     """Verify printer respects duplex option for PDFs in local print."""
-    test_id = 'e235f70d-2f81-4ea4-9d0d-b56db2174a57'
+    test_id = 'c1b3136f-e6c1-413d-977d-c295a8351703'
     test_name = 'testLocalPrintPDFDuplex'
 
     if 'application/pdf' not in _device.supported_types:
@@ -2585,7 +2585,7 @@ class LocalPrinting(LogoCert):
 
   def test_10_LocalPrintPDFMargins(self):
     """Verify printer respects margins option for PDFs in local print."""
-    test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0b8e'
+    test_id = 'a9c482e0-9494-469c-a391-d70c171bd9c2'
     test_name = 'testLocalPrintPDFMargins'
 
     if 'application/pdf' not in _device.supported_types:
@@ -2621,7 +2621,7 @@ class LocalPrinting(LogoCert):
 
   def test_11_LocalPrintPDFLayout(self):
     """Verify printer respects layout settings for PDFs in local print."""
-    test_id = 'fb522a69-2454-40ab-9453-270553664fea'
+    test_id = '151eca79-23c5-4fad-855d-2b5aad7dd9c5'
     test_name = 'testLocalPrintPDFLayout'
 
     if 'application/pdf' not in _device.supported_types:
@@ -2654,7 +2654,7 @@ class LocalPrinting(LogoCert):
 
   def test_12_LocalPrintPDFPageRange(self):
     """Verify printer respects page range for PDFs in local print."""
-    test_id = '1580f47d-4115-462d-b85e-bd4d5fd4d7e3'
+    test_id = 'f3b2428b-2c48-411d-a7b6-c336452b36b6'
     test_name = 'testLocalPrintPDFPageRange'
 
     if 'application/pdf' not in _device.supported_types:
@@ -2676,7 +2676,7 @@ class LocalPrinting(LogoCert):
 
   def test_13_LocalPrintPDFCopies(self):
     """Verify printer respects copy option for PDFs in local print."""
-    test_id = 'c849ce7a-07e0-488e-b266-e002bdbde4d6'
+    test_id = '1eb21d57-59f4-457e-a097-d5c4d584502f'
     test_name = 'testLocalPrintPDFCopies'
 
     if 'application/pdf' not in _device.supported_types:
@@ -2703,7 +2703,7 @@ class LocalPrinting(LogoCert):
 
   def test_14_LocalPrintPDFColorSelect(self):
     """Verify printer respects color option for PDFs in local print."""
-    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14684'
+    test_id = 'e12ea6cc-d33f-4f94-a435-694704f7ba72'
     test_name = 'testLocalPrintPDFColorSelect'
 
     if 'application/pdf' not in _device.supported_types:
@@ -2744,7 +2744,7 @@ class LocalPrinting(LogoCert):
 
   def test_15_LocalPrintPWGDuplex(self):
     """Verify printer respects duplex option for PWGs in local print."""
-    test_id = 'e235f70d-2f81-4ea4-9d0d-b56db2174a58'
+    test_id = 'ebd264ed-e9ac-4bff-9a8b-d1b4c5af477e'
     test_name = 'testLocalPrintPWGDuplex'
 
     if not Constants.CAPS['DUPLEX']:
@@ -2780,7 +2780,7 @@ class LocalPrinting(LogoCert):
 
   def test_16_LocalPrintPWGColorSelect(self):
     """Verify printer respects color option for PWGs in local print."""
-    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14685'
+    test_id = 'bfd5ee5e-4bef-4e8e-b64a-63fef421ae28'
     test_name = 'testLocalPrintPWGColorSelect'
 
     if not Constants.CAPS['COLOR']:
@@ -2818,7 +2818,7 @@ class LocalPrinting(LogoCert):
 
   def test_17_LocalPrintPWG(self):
     """Verify printer can successfully print PWGs in local print."""
-    test_id = '7e0e555f-d8ac-4ec3-b268-0420baf14688'
+    test_id = '013fb153-940a-45d2-a5fd-7112d4d1198d'
     test_name = 'testLocalPrintPWG'
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['PWG1'], self.cjt,
@@ -2846,7 +2846,7 @@ class PostRegistration(LogoCert):
 
   def testDeviceDetails(self):
     """Verify printer details are provided to Cloud Print Service."""
-    test_id = '6bcf8903-af2c-439c-9c8b-1dd829521905'
+    test_id = '597a2e5d-9fe8-455b-aa3a-2f063621d2b2'
     test_name = 'testDeviceDetails'
 
     try:
@@ -2864,7 +2864,7 @@ class PostRegistration(LogoCert):
 
   def testRegisteredDevicePoweredOffShowsOffline(self):
     """Verify device shows offline when it is powered off."""
-    test_id = 'ba6b2c0c-10da-4910-bb6f-63c826087054'
+    test_id = '9bb02ec3-b3f5-4d26-98dd-9b493bfe226e'
     test_name = 'testRegisteredDevicePoweredOffShowsOffline'
 
     # Make sure device is in 'online' state before this test
@@ -2934,7 +2934,7 @@ class PostRegistration(LogoCert):
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device advertises as registered."""
-    test_id = '7e4ce6cd-0ad1-4194-83f7-3ea11fa30526'
+    test_id = 'f95f07e3-6c51-49c5-8a14-29b51c5e5695'
     test_name = 'testRegisteredDeviceNotDiscoverableAfterPowerOn'
 
     PromptAndWaitForUserAction('Press ENTER once printer is powered off')
@@ -3063,7 +3063,7 @@ class PrinterState(LogoCert):
 
   def testLostNetworkConnection(self):
     """Verify printer that loses network connection reconnects properly."""
-    test_id = '0af4301e-bacb-40c4-8b95-a8b29aefc8dd'
+    test_id = '8c67068a-e8c0-4b3f-b85d-52977f62a3fd'
     test_name = 'testLostNetworkConnection'
 
     print 'Test printer handles connection status when reconnecting to network.'
@@ -3087,7 +3087,7 @@ class PrinterState(LogoCert):
 
   def testOpenPaperTray(self):
     """Verify if open paper tray is reported correctly."""
-    test_id = '519969fa-97d1-4116-84e7-4f1f689e1df7'
+    test_id = '09f3f838-922b-4526-b5b8-bd83806816d0'
     test_name = 'testOpenPaperTray'
 
     if not Constants.CAPS['TRAY_SENSOR']:
@@ -3113,7 +3113,7 @@ class PrinterState(LogoCert):
                                                  '% full')):
         raise
 
-    test_id2 = '5041f9a4-0b58-451a-906f-dec2375d93a4'
+    test_id2 = 'a158fe6a-125f-46e2-a382-9189eb06b5f0'
     test_name2 = 'testClosedPaperTray'
     print 'Now close the paper tray.'
     PromptAndWaitForUserAction('Press ENTER once the paper tray is closed.')
@@ -3131,7 +3131,7 @@ class PrinterState(LogoCert):
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
-    test_id = 'e8001a2a-e403-4f5a-94e5-59e61528d161'
+    test_id = 'bb5048de-cf93-487e-a44b-9366721fa39c'
     test_name = 'testNoMediaInTray'
 
     if not Constants.CAPS['MEDIA_SENSOR']:
@@ -3146,7 +3146,7 @@ class PrinterState(LogoCert):
                                      suffixes=('is empty')):
       raise
 
-    test_id2 = '64e592be-d6c4-424e-9e69-021c92b09953'
+    test_id2 = 'a0387dea-6b87-4418-9489-41c9b4cb68d9'
     test_name2 = 'testMediaInTray'
     print 'Place media in all paper trays.'
     PromptAndWaitForUserAction('Press ENTER once you have placed paper '
@@ -3158,7 +3158,7 @@ class PrinterState(LogoCert):
 
   def testRemoveTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
-    test_id = '3be1a76e-b60f-4166-aeb2-0feed9de67c8'
+    test_id = '13c3cccd-0d72-4a04-8462-d4fa16992338'
     test_name = 'testRemoveTonerCartridge'
 
     if not Constants.CAPS['TONER']:
@@ -3189,7 +3189,7 @@ class PrinterState(LogoCert):
           'Press ENTER once toner is replaced in printer to continue testing.')
         raise
 
-    test_id2 = 'b73b5b6b-9398-48ad-9646-dbb501b32f8c'
+    test_id2 = 'cbe4b5ac-7edb-41f3-a816-98aaf9522c83'
     test_name2 = 'testExhaustTonerCartridge'
 
     if not Constants.CAPS['EMPTY_INK_SENSOR']:
@@ -3222,7 +3222,7 @@ class PrinterState(LogoCert):
             'continue testing.')
           raise
 
-    test_id3 = 'e2a57ebb-97cf-4f36-b405-0d753d4a862c'
+    test_id3 = 'd2bd8b57-c7c1-45b4-b458-1800c240a93a'
     test_name3 = 'testReplaceMissingToner'
     print ('Verify that the error is fixed by replacing the original '
            'toner cartridge.')
@@ -3241,7 +3241,7 @@ class PrinterState(LogoCert):
 
   def testCoverOpen(self):
     """Verify that an open door or cover is reported correctly."""
-    test_id = 'b4d4f888-2a97-4ab4-aab8-c847046616f8'
+    test_id = 'fd368e65-3143-48d8-83a9-24199511f262'
     test_name = 'testCoverOpen'
 
     if not Constants.CAPS['COVER']:
@@ -3263,7 +3263,7 @@ class PrinterState(LogoCert):
                                        suffixes=('is open')):
         raise
 
-    test_id2 = 'a26b7d34-15b4-4819-84a5-4b8e5bc3a30e'
+    test_id2 = '57b2fd84-5328-4a39-a70e-e0ae250ff109'
     test_name2 = 'testCoverClosed'
     print 'Now close the printer cover.'
     PromptAndWaitForUserAction('Press ENTER once the printer cover is closed.')
@@ -3281,7 +3281,7 @@ class PrinterState(LogoCert):
 
   def testPaperJam(self):
     """Verify printer properly reports a paper jam with correct state."""
-    test_id = 'fe089b80-0e1b-4f28-9239-42b8d65724ac'
+    test_id = '1ccbf64c-17bc-4464-a943-f9b94d3f6a3f'
     test_name = 'testPaperJam'
 
     print 'Cause the printer to become jammed with paper.'
@@ -3299,7 +3299,7 @@ class PrinterState(LogoCert):
       if not self.VerifyUiStateMessage(test_id, test_name, ['paper jam']):
         raise
 
-    test_id2 = 'ff7e0f11-4955-4510-8a5c-91f809f6b263'
+    test_id2 = 'd1b77fe3-9d1d-4d08-917a-6c7254ea3bd2'
     test_name2 = 'testRemovePaperJam'
     print 'Now clear the paper jam.'
     PromptAndWaitForUserAction('Press ENTER once the paper jam is clear '
@@ -3331,7 +3331,7 @@ class JobState(LogoCert):
 
   def testOnePagePrintJobState(self):
     """Verify a 1 page print job is reported correctly."""
-    test_id = '345f2083-ec94-4548-9c01-ad7d8f1840ec'
+    test_id = 'a848d29b-1dd6-422a-ab3e-5f370083d278'
     test_name = 'testOnePagePrintJobState'
     print 'Wait for this one page print job to finish.'
 
@@ -3368,7 +3368,7 @@ class JobState(LogoCert):
 
   def testMultiPageJobState(self):
     """Verify a multi-page print job is reported with correct state."""
-    test_id = '7bbf3e1f-c972-4414-ad7c-e6054aa7416f'
+    test_id = '09be688d-03c9-47a4-afaa-0c87b12c9608'
     test_name = 'testMultiPageJobState'
     print 'Wait until job starts printing 7 page PDF file...'
 
@@ -3415,7 +3415,7 @@ class JobState(LogoCert):
 
   def testJobDeletionRecovery(self):
     """Verify printer recovers from an In-Progress job being deleted."""
-    test_id = 'd270088d-0a95-416c-98ab-c703cadde1c3'
+    test_id = 'e679616c-d363-4f86-882b-d274dde44c46'
     test_name = 'testJobDeletionRecovery'
 
     output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name,
@@ -3457,7 +3457,7 @@ class JobState(LogoCert):
 
   def testJobStateEmptyInputTray(self):
     """Validate proper /control msg when input tray is empty."""
-    test_id = '3e178014-b2b6-4ee0-b9b5-f2df24be10b0'
+    test_id = '8ccc4b5e-becc-466f-87be-3fd9782a4769'
     test_name = 'testJobStateEmptyInputTray'
     print 'Empty the input tray of all paper.'
 
@@ -3534,7 +3534,7 @@ class JobState(LogoCert):
 
   def testJobStateMissingToner(self):
     """Validate proper /control msg when toner or ink cartridge is missing."""
-    test_id = '88ae0238-c866-41eb-b5c1-dea43b902335'
+    test_id = 'ad9ddb5a-57cf-404c-93cb-c576943b3efd'
     test_name = 'testJobStateMissingToner'
 
     if not Constants.CAPS['TONER']:
@@ -3616,7 +3616,7 @@ class JobState(LogoCert):
 
   def testJobStateNetworkOutage(self):
     """Validate proper /control msg when there is network outage."""
-    test_id = '52f25929-6970-400f-93b1-e1542309f31f'
+    test_id = 'f7b647ba-5b73-4d71-96b9-d1ae506ee0c5'
     test_name = 'testJobStateNetworkOutage'
     print ('This test requires the printer to be disconnected from the network '
            'after the first page is printed.')
@@ -3674,7 +3674,7 @@ class JobState(LogoCert):
 
   def testJobStateWithPaperJam(self):
     """Validate proper behavior of print job when paper is jammed."""
-    test_id = '664a8841-14d0-483e-a91a-34722dfdb298'
+    test_id = '167ecac1-db45-4e2c-9352-98bff432d03b'
     test_name = 'testJobStateWithPaperJam'
 
     print 'This test will validate job state when there is a paper jam.'
@@ -3714,7 +3714,7 @@ class JobState(LogoCert):
 
   def testJobStateIncorrectMediaSize(self):
     """Validate proper behavior when incorrect media size is selected."""
-    test_id = '0c5a757c-ab57-4383-b286-1503c09ad81f'
+    test_id = 'edea71b1-4cbe-47a5-bc96-93e33b68c0b7'
     test_name = 'testJobStateIncorrectMediaSize'
     print 'This test is designed to select media size that is not available.'
     print 'The printer should prompt the user to enter the requested size.'
@@ -3757,10 +3757,10 @@ class JobState(LogoCert):
     finally:
       PromptAndWaitForUserAction('Press ENTER once printer is loaded with '
                                  'letter size paper to continue testing. ')
-      
+
   def testMultipleJobsPrint(self):
     """Verify multiple jobs in queue are all printed."""
-    test_id = '50790aa4-f276-4c12-9a06-fc0fdf446d7e'
+    test_id = '48389666-80ae-41a9-a9ab-3112a42c84bd'
     test_name = 'testMultipleJobsPrint'
     print 'This tests that multiple jobs in print queue are printed.'
 
@@ -3780,7 +3780,7 @@ class JobState(LogoCert):
 
   def testPrintToOfflinePrinter(self):
     """Validate offline printer prints all queued jobs when back online."""
-    test_id = '0f3a6cb5-bc4c-4fe9-858a-799d58082b23'
+    test_id = '83869333-ff32-4093-a557-323887204902'
     test_name = 'testPrintToOfflinePrinter'
 
     print 'This tests that an offline printer will print all jobs'
@@ -3823,7 +3823,7 @@ class JobState(LogoCert):
 
   def testDeleteQueuedJob(self):
     """Verify deleting a queued job is properly handled by printer."""
-    test_id = '6a449854-a0d9-480b-82e0-f04342f6793a'
+    test_id = '01808d62-7c0f-4427-90ce-29f429f1d594'
     test_name = 'testDeleteQueuedJob'
 
     PromptAndWaitForUserAction('Press ENTER once printer is powered off')
@@ -3876,7 +3876,7 @@ class JobState(LogoCert):
     """Verify print recovers from malformatted print job."""
     test_id = 'eb71a35f-3fc8-4e3b-a4c8-6cda4cf4f3b4'
     test_name = 'testMalformattedFile'
-    test_id2 = '2e9d33c1-7611-4d5c-90b5-dd5282b36479'
+    test_id2 = '80877c2a-f46e-4256-80d9-474ff16eb60b'
     test_name2 = 'testErrorRecovery'
 
     print 'Submitting a malformatted PDF file.'
@@ -3911,7 +3911,7 @@ class JobState(LogoCert):
 
   def testPagesPrinted(self):
     """Verify printer properly reports number of pages printed."""
-    test_id = 'e078c865-738a-44a7-bf32-cff5c47d0857'
+    test_id = 'bfd7e2d8-e75a-4a7b-8f47-00d0c1081963'
     test_name = 'testPagesPrinted'
 
     output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF10'], test_name,
@@ -3961,7 +3961,7 @@ class RunAfter24Hours(LogoCert):
 
   def testPrinterOnline(self):
     """validate printer has online status."""
-    test_id = '5e0bf694-086a-4258-b23a-aa0d9a746dd7'
+    test_id = '490821e9-99b8-4f2b-a54c-6e4cfcb6f45c'
     test_name = 'testPrinterOnline'
 
     # Tokens have expired since the 24 hr sleep, refresh them
@@ -3991,13 +3991,13 @@ class Unregister(LogoCert):
 
   def testUnregisterDevice(self):
     """Unregister printer."""
-    test_id = 'bd9cdf91-431a-4534-a747-55ef8cbd8391'
+    test_id = 'd008a124-fb56-40de-a530-7c510f1fe078'
     test_name = 'testUnregisterDevice'
 
-    test_id2 = '015c45ee-ba09-47b0-ab2d-53453410de4d'
+    test_id2 = 'b112a9bc-4a11-4956-893c-4498ff753058'
     test_name2 = 'testUnregisteredDevicePrivetAdvertise'
 
-    test_id3 = 'a6054736-ee47-4db4-8ad9-640ed987ac75'
+    test_id3 = '8e158286-674f-486c-9a61-be2c61de20b9'
     test_name3 = 'testOffDeviceIsDeleted'
 
     print 'Printer needs to be registered to begin this testcase'
@@ -4062,7 +4062,7 @@ class PostUnregistration(LogoCert):
 
   def testLocalPrintGuestUserUnregisteredPrinter(self):
     """Verify local print for unregistered printer is correct."""
-    test_id = '6e75edff-2512-4c7b-b5f0-79d2ef17d922'
+    test_id = '379dcb9a-2287-41bc-a387-be0d8a132c25'
     test_name = 'testLocalPrintGuestUserUnregisteredPrinter'
 
     if not Constants.CAPS['LOCAL_PRINT']:
@@ -4195,7 +4195,7 @@ class CloudPrinting(LogoCert):
 
   def test_00_CloudPrintMediaSizeSelect(self):
     """Verify cloud printing with media size option."""
-    test_id = '14ee1e62-7b38-423c-8637-50a2ae460ddc'
+    test_id = 'c8de872f-49bd-45b7-9623-8db0861aed35'
     test_name = 'testPrintMediaSizeSelect'
     _logger.info('Testing the selection of A4 media size.')
     PromptAndWaitForUserAction('Load printer with A4 size paper. '
@@ -4218,7 +4218,7 @@ class CloudPrinting(LogoCert):
 
   def test_01_CloudPrintJpgDpiSetting(self):
     """Verify cloud printing a jpg with DPI option."""
-    test_id = '93c42b61-30e9-407c-bcd5-df50f418c53b'
+    test_id = 'aed7d8a4-e669-4a07-b47a-d833d1ef6b16'
     test_name = 'testPrintJpgDpiSetting'
 
     dpi_options = _device.cdd['caps']['dpi']['option']
@@ -4243,7 +4243,7 @@ class CloudPrinting(LogoCert):
 
   def test_02_CloudPrintJpg2Copies(self):
     """Verify cloud printing Jpg with copies option set to 2."""
-    test_id = '734537e6-c075-4d38-bc4b-dd1b6ad1a7ca'
+    test_id = '96d913fc-35cb-48ae-9e73-1737a36ae02a'
     test_name = 'testPrintJpg2Copies'
     if not Constants.CAPS['COPIES_CLOUD']:
       notes = 'Copies not supported.'
@@ -4267,7 +4267,7 @@ class CloudPrinting(LogoCert):
 
   def test_03_CloudPrintPdfDuplexLongEdge(self):
     """Verify cloud printing a pdf with the duplex option set to long edge."""
-    test_id = 'cb86137b-943d-47fc-adcd-663ad9f0dce8'
+    test_id = '068e4390-0e88-4632-a2d4-83dad3b36d09'
     test_name = 'testPrintPdfDuplexLongEdge'
     if not Constants.CAPS['DUPLEX']:
       notes = 'Duplex not supported.'
@@ -4290,7 +4290,7 @@ class CloudPrinting(LogoCert):
 
   def test_04_CloudPrintPdfDuplexShortEdge(self):
     """Verify cloud printing a pdf with the duplex option set to short edge."""
-    test_id = '651588ca-c4aa-4710-b203-64085834dd17'
+    test_id = '2b9eb721-48ee-46c5-bf76-6f0868a6acbf'
     test_name = 'testPrintPdfDuplexShortEdge'
     if not Constants.CAPS['DUPLEX']:
       notes = 'Duplex not supported.'
@@ -4313,7 +4313,7 @@ class CloudPrinting(LogoCert):
 
   def test_05_CloudPrintColorSelect(self):
     """Verify cloud printing with color options."""
-    test_id = '52686084-5ae2-4bda-b715-aba6a8972268'
+    test_id = '1c433239-bec8-45a6-b1c1-d4190e4cc085'
     test_name = 'testPrintColorSelect'
     if not Constants.CAPS['COLOR']:
       notes = 'Color is not supported.'
@@ -4335,7 +4335,7 @@ class CloudPrinting(LogoCert):
 
   def test_06_CloudPrintPdfReverseOrder(self):
     """Verify cloud printing a pdf with reverse order option."""
-    test_id = '1c2610c9-4f16-42ca-9d4a-018f127c4b58'
+    test_id = 'f7551021-cb3c-4a00-93e4-1ef619d5e15c'
     test_name = 'testPrintPdfReverseOrder'
     _logger.info('Print with reverse order flag set...')
 
@@ -4353,7 +4353,7 @@ class CloudPrinting(LogoCert):
 
   def test_07_CloudPrintPdfPageRangePage2(self):
     """Verify cloud printing a pdf with the page range option set to 2."""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfd'
+    test_id = 'bf37a319-321d-4b50-9e5a-44b542dacc50'
     test_name = 'testPrintPdfPageRangePage2'
     _logger.info('Setting page range to page 2 only')
 
@@ -4409,29 +4409,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_10_CloudPrintUrl(self):
-    """Verify cloud printing simple 1 page url - google.com"""
-    test_id = '9a957af4-eeed-47c3-8f12-7e60008a6f38'
-    test_name = 'testPrintUrl'
-
-    output = self.submit(_device.dev_id, Constants.GCP['MGT'], test_id,
-                         test_name, self.cjt, is_url=True)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing simple 1 page URL.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      prompt = 'Google log-in page should print without errors.\n'
-      prompt += 'Fail this test if there are errors or quality issues.'
-      self.waitAndManualPass(test_id, test_name, output,
-                             verification_prompt=prompt)
-
-
   def test_11_CloudPrintPngFillPage(self):
     """Verify cloud printing a png with the fill page option."""
-    test_id = '0f911f5f-7001-4d87-933f-c15f42823da6'
+    test_id = 'ad1eff9e-6516-46c1-8ff9-c9de845c3e4c'
     test_name = 'testPrintPngFillPage'
     _logger.info('Setting print option to Fill Page...')
 
@@ -4450,7 +4430,7 @@ class CloudPrinting(LogoCert):
 
   def test_12_CloudPrintPngFitToPage(self):
     """Verify cloud printing a png with the fit to page option."""
-    test_id = '5f2ab7d7-663b-4b86-b4e5-c38979baad11'
+    test_id = '58913ffe-93c3-4405-81ac-ec592169b8a7'
     test_name = 'testPrintPngFitToPage'
     _logger.info('Setting print option to Fit to Page...')
 
@@ -4469,7 +4449,7 @@ class CloudPrinting(LogoCert):
 
   def test_13_CloudPrintPngGrowToPage(self):
     """Verify cloud printing a png with the grow to page option."""
-    test_id = '09532b30-f853-458e-99bf-5c1c532573c8'
+    test_id = 'c189611b-12f0-4a2e-ba9f-3672c89206d6'
     test_name = 'testPrintPngGrowToPage'
     _logger.info('Setting print option to Grow to Page...')
 
@@ -4488,7 +4468,7 @@ class CloudPrinting(LogoCert):
 
   def test_14_CloudPrintPngShrinkToPage(self):
     """Verify cloud printing a png with the shrink to page option."""
-    test_id = '3309482d-d23a-4ad7-8161-8c474ab1e6de'
+    test_id = '00b50f0a-a196-4c4a-823c-de9547010735'
     test_name = 'testPrintPngShrinkToPage'
     _logger.info('Setting print option to Shrink to Page...')
 
@@ -4507,7 +4487,7 @@ class CloudPrinting(LogoCert):
 
   def test_15_CloudPrintPngNoFitting(self):
     """Verify cloud printing a png with the no fitting option."""
-    test_id = '0c8c1bd5-7d2a-4f51-9219-36d1f6957b57'
+    test_id = 'b2ed2f00-e449-4805-995e-8dac5fde7ab2'
     test_name = 'testPrintPngNoFitting'
     _logger.info('Setting print option to No Fitting...')
 
@@ -4526,7 +4506,7 @@ class CloudPrinting(LogoCert):
 
   def test_16_CloudPrintJpgPortrait(self):
     """Verify cloud printing a jpg with the portrait option."""
-    test_id = '6e36efd8-fb5b-4fce-8d24-2cc1097a88f5'
+    test_id = '951209b8-c615-4c5b-864b-cdbfbe80c195'
     test_name = 'testPrintJpgPortrait'
     _logger.info('Print simple JPG file with portrait orientation.')
 
@@ -4546,7 +4526,7 @@ class CloudPrinting(LogoCert):
 
   def test_17_CloudPrintJpgLandscape(self):
     """Verify cloud printing a jpg with the landscape option."""
-    test_id = '1d97a167-bc37-4e24-adf9-7e4bdbfff553'
+    test_id = '007d7987-c496-45b7-a43b-4ca58625e124'
     test_name = 'testPrintJpgLandscape'
     _logger.info('Print simple JPG file with landscape orientation.')
 
@@ -4566,7 +4546,7 @@ class CloudPrinting(LogoCert):
 
   def test_18_CloudPrintJpgBlacknWhite(self):
     """Verify cloud printing a jpg with the monochrome option."""
-    test_id = 'bbd3c533-fcc2-4bf1-adc9-9cd63cc35a80'
+    test_id = 'e725888b-1e3c-45d7-963a-19f13296c57e'
     test_name = 'testPrintJpgBlacknWhite'
     _logger.info('Print black and white JPG file.')
 
@@ -4583,89 +4563,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_19_CloudPrintJpgColorTestLandscape(self):
-    """Verify cloud printing a jpg with color and landscape options."""
-    test_id = '26076864-6aad-44e5-96a6-4f455e751fe7'
-    test_name = 'testPrintJpgColorTestLandscape'
-    _logger.info('Print color test JPG file with landscape orientation.')
-
-    self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG2'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing color test JPG file with landscape orientation.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
-  def test_20_CloudPrintJpgPhoto(self):
-    """Verify cloud printing a jpg photo with landscape option."""
-    test_id = '1f0e4b40-a164-4441-b3cb-182e2a5a5cdb'
-    test_name = 'testPrintJpgPhoto'
-    _logger.info('Print JPG photo in landscape orientation.')
-
-    self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG5'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing JPG photo in landscape orientation.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
-  def test_21_CloudPrintJpgSingleObject(self):
-    """Verify cloud printing a single option jpg in landscape."""
-    test_id = '03a22a19-8089-4150-8f1b-ceb78180713e'
-    test_name = 'testPrintJpgSingleObject'
-    _logger.info('Print JPG file single object in landscape.')
-
-    self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG7'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing single object JPG file in landscape.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
-  def test_22_CloudPrintJpgProgressive(self):
-    """Verify cloud printing a progressive jpg in landscape."""
-    test_id = '8ce44d03-ba45-40c5-af0f-2aacb8a6debf'
-    test_name = 'testPrintJpgProgressive'
-    _logger.info('Print a Progressive JPG file.')
-
-    self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG8'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing progressive JPEG file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_23_CloudPrintJpgMultiImageWithText(self):
     """Verify cloud printing a multi-image jpg in landscape."""
-    test_id = '2d7ba1af-917b-467b-9e09-72f77cf58a56'
+    test_id = 'b842c6a0-eff1-4070-adbd-33a0352fad81'
     test_name = 'testPrintJpgMultiImageWithText'
     _logger.info('Print multi image with text JPG file.')
 
@@ -4683,48 +4583,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_24_CloudPrintJpgMaxComplex(self):
-    """Verify cloud printing a complex jpg """
-    test_id = 'c8208125-e720-406a-9308-bc80d461b08e'
-    test_name = 'testPrintJpgMaxComplex'
-    _logger.info('Print complex JPG file.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG10'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing complex JPG file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
-  def test_25_CloudPrintJpgMultiTargetPortrait(self):
-    """Verify cloud printing a multi-target jpg with portrait option."""
-    test_id = '3ff201de-77f3-4be1-9cf2-60dc29698f0b'
-    test_name = 'testPrintJpgMultiTargetPortrait'
-    _logger.info('Print multi-target JPG file with portrait orientation.')
-
-    self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(GCPConstants.PORTRAIT)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG11'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing multi-target JPG file in portrait.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_26_CloudPrintJpgStepChartLandscape(self):
     """Verify cloud printing a step-chart jpg with the landscape option."""
-    test_id = 'f2f2cae4-e835-48e0-8632-953dd50be0ca'
+    test_id = '6a77f2b3-d752-4300-9ba6-7a3fe7132556'
     test_name = 'testPrintJpgStepChartLandscape'
     _logger.info('Print step chart JPG file in landscape orientation.')
 
@@ -4744,7 +4605,7 @@ class CloudPrinting(LogoCert):
 
   def test_27_CloudPrintJpgLarge(self):
     """Verify cloud printing a large jpg with the landscape option."""
-    test_id = 'c45e7ebf-241b-4fdf-8d0b-4d7f850a2b1a'
+    test_id = 'fe34f8a5-9e95-4b39-bdba-25c782d7ad09'
     test_name = 'testPrintJpgLarge'
     _logger.info('Print large JPG file with landscape orientation.')
 
@@ -4762,29 +4623,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_28_CloudPrintJpgLargePhoto(self):
-    """Verify cloud printing a large-photo jpg with the landscape option."""
-    test_id = 'e30fefe9-1a32-4b22-9088-0af5fe2ffd57'
-    test_name = 'testPrintJpgLargePhoto'
-    _logger.info('Print large photo JPG file with landscape orientation.')
-
-    self.cjt.AddColorOption(self.color)
-    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['JPG4'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing large photo JPG file in landscape.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_29_CloudPrintFilePdf(self):
     """Test cloud printing a standard, 1 page b&w PDF file."""
-    test_id = '0d4d0d33-b170-414d-a722-00e848bede10'
+    test_id = '289773db-af6f-4303-a859-53dce219f07e'
     test_name = 'testPrintFilePdf'
     _logger.info('Printing a black and white 1 page PDF file.')
 
@@ -4801,28 +4642,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_30_CloudPrintFileColorPdf(self):
-    """Test cloud printing an ICC version 4 test color PDF file."""
-    test_id = 'd81fe624-c6ec-4e72-9535-9cead873a4fa'
-    test_name = 'testPrintFileColorPdf'
-    _logger.info('Printing a color, 1 page PDF file.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF13'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing 1 page, color PDF file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_31_CloudPrintFileMultiPagePdf(self):
     """Test cloud printing a standard, 3 page color PDF file."""
-    test_id = '84e4d761-594d-4930-8a91-b43d037a7422'
+    test_id = '2beca3f9-6a43-4272-a049-613153da4de7'
     test_name = 'testPrintFileMultiPagePdf'
     _logger.info('Printing a 3 page, color PDF file.')
 
@@ -4841,7 +4663,7 @@ class CloudPrinting(LogoCert):
 
   def test_32_CloudPrintFileLargeColorPdf(self):
     """Test cloud printing a 20 page, color PDF file."""
-    test_id = '005a9954-b55e-40f9-8a66-aa06b5528a78'
+    test_id = 'bdd50e2d-513d-4a48-a9c1-388a88f0b7ad'
     test_name = 'testPrintFileLargeColorPdf'
     _logger.info('Printing a 20 page, color PDF file.')
 
@@ -4860,7 +4682,7 @@ class CloudPrinting(LogoCert):
 
   def test_33_CloudPrintFilePdfV1_2(self):
     """Test cloud printing PDF version 1.2 file."""
-    test_id = '7cd98a62-d209-4d5a-934d-f951e0db9666'
+    test_id = '7ab294f5-31b1-48ee-9c5a-cd77dc7cfaf3'
     test_name = 'testPrintFilePdfV1_2'
     _logger.info('Printing a PDF v1.2 file.')
 
@@ -4878,7 +4700,7 @@ class CloudPrinting(LogoCert):
 
   def test_34_CloudPrintFilePdfV1_3(self):
     """Test cloud printing PDF version 1.3 file."""
-    test_id = 'dec3eebc-75b3-47c2-8619-0451e172cb08'
+    test_id = 'f95b8ec9-48c7-46c5-b233-50cf410a8f04'
     test_name = 'testPrintFilePdfV1_3'
     _logger.info('Printing a PDF v1.3 file.')
 
@@ -4896,7 +4718,7 @@ class CloudPrinting(LogoCert):
 
   def test_35_CloudPrintFilePdfV1_4(self):
     """Test cloud printing PDF version 1.4 file."""
-    test_id = '881cdd22-49e8-4560-ae13-b8c79741f7d1'
+    test_id = '45da57b3-f5b9-4b6e-a40e-79ff2bd8d451'
     test_name = 'testPrintFilePdfV1_4'
     _logger.info('Printing a PDF v1.4 file.')
 
@@ -4914,7 +4736,7 @@ class CloudPrinting(LogoCert):
 
   def test_36_CloudPrintFilePdfV1_5(self):
     """Test cloud printing PDF version 1.5 file."""
-    test_id = '518c3a4b-1335-4979-b1e6-2b06acad8905'
+    test_id = 'e4a8a756-1ebb-47d4-9b83-17d6b0973883'
     test_name = 'testPrintFilePdfV1_5'
     _logger.info('Printing a PDF v1.5 file.')
 
@@ -4932,7 +4754,7 @@ class CloudPrinting(LogoCert):
 
   def test_37_CloudPrintFilePdfV1_6(self):
     """Test cloud printing PDF version 1.6 file."""
-    test_id = '94dbee8a-e02c-4926-ad7e-a83dbff716dd'
+    test_id = '7a35cf71-9b92-4bb8-aaf7-277d196ca42c'
     test_name = 'testPrintFilePdfV1_6'
     _logger.info('Printing a PDF v1.6 file.')
 
@@ -4950,7 +4772,7 @@ class CloudPrinting(LogoCert):
 
   def test_38_CloudPrintFilePdfV1_7(self):
     """Test cloud printing PDF version 1.7 file."""
-    test_id = '2ee12493-eeaf-43cd-a136-d01227d63e9a'
+    test_id = 'cc58720f-ed23-4506-8a9d-c852a71ba1cb'
     test_name = 'testPrintFilePdfV1_7'
     _logger.info('Printing a PDF v1.7 file.')
 
@@ -4968,7 +4790,7 @@ class CloudPrinting(LogoCert):
 
   def test_39_CloudPrintFilePdfColorTicket(self):
     """Test cloud printing PDF file of Color Ticket in landscape orientation."""
-    test_id = '4bddcf56-984b-4c4d-9c39-63459b295247'
+    test_id = '286cc889-88c3-4bc8-87e5-cc44c921f52d'
     test_name = 'testPrintFilePdfColorTicket'
     _logger.info('Printing PDF Color ticket in with landscape orientation.')
 
@@ -4988,7 +4810,7 @@ class CloudPrinting(LogoCert):
 
   def test_40_CloudPrintFilePdfLetterMarginTest(self):
     """Test cloud printing PDF Letter size margin test file."""
-    test_id = 'a7328247-84ab-4a8f-865a-f8f30ed20fc2'
+    test_id = '361ae296-321d-4b6b-b84c-a2d60fb40d99'
     test_name = 'testPrintFilePdfLetterMarginTest'
     _logger.info('Printing PDF Letter Margin Test.')
 
@@ -5004,27 +4826,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_41_CloudPrintFilePdfMarginTest2(self):
-    """Test cloud printing PDF margin test 2 file."""
-    test_id = '215a7db8-ae4b-4784-b49a-49c30cf82b53'
-    test_name = 'testPrintFilePdfMarginTest2'
-    _logger.info('Printing PDF Margin Test 2 file.')
-
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF6'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing margin test 2 PDF file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_42_CloudPrintFilePdfSimpleLandscape(self):
     """Test cloud printing PDF with landscape layout."""
-    test_id = '2aaa222a-7d35-4f88-bfc0-8cf2eb5f8373'
+    test_id = 'c4ed07f4-c32e-42b0-8a7d-4dae2cd2ec7b'
     test_name = 'testPrintFilePdfSimpleLandscape'
     _logger.info('Printing simple PDF file in landscape.')
 
@@ -5041,28 +4845,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_43_CloudPrintFilePdfCupsTestPage(self):
-    """Test cloud printing PDF CUPS test page."""
-    test_id = 'ae2a075b-ee7c-409c-8d2d-d08f5c2e868b'
-    test_name = 'testPrintFilePdfCupsTestPage'
-    _logger.info('Printing PDF CUPS test page.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF9'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing CUPS print test PDF file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_44_CloudPrintFilePdfColorTest(self):
     """Test cloud printing PDF Color Test file."""
-    test_id = '882efbf9-47f2-43cd-9ee9-d4b026679406'
+    test_id = '28286e1d-3b81-46b4-8372-1f97f88e5a58'
     test_name = 'testPrintFilePdfColorTest'
     _logger.info('Printing PDF Color Test page.')
 
@@ -5079,28 +4864,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_45_CloudPrintFilePdfBarCodeTicket(self):
-    """Test cloud printing Barcoded Ticket PDF file."""
-    test_id = 'b38c0113-095e-4e73-8efe-7352852cafb7'
-    test_name = 'testPrintFilePdfBarCodeTicket'
-    _logger.info('Printing PDF Bar coded ticket.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF12'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing bar coded ticket PDF file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_46_CloudPrintFilePdfComplexTicket(self):
     """Test cloud printing complex ticket PDF file."""
-    test_id = '12555398-4e1f-4305-bcc6-b2b82d665634'
+    test_id = 'afb758a1-4a6a-40a6-92fa-005bbd9addaa'
     test_name = 'testPrintFilePdfComplexTicket'
     _logger.info('Printing PDF of complex ticket.')
 
@@ -5117,28 +4883,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_47_CloudPrintFileSimpleGIF(self):
-    """Test cloud printing simple GIF file."""
-    test_id = '7c346ab2-d8b4-407b-b477-755a0432ace5'
-    test_name = 'testPrintFileSimpleGIF'
-    _logger.info('Printing simple GIF file.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['GIF2'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing simple GIF file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_48_CloudPrintFileSmallGIF(self):
     """Test cloud printing a small GIF file."""
-    test_id = '2e81decf-e364-4651-af1b-a516ac51f4bb'
+    test_id = 'd23d2310-91ab-4d62-ad21-fef3675be6c7'
     test_name = 'testPrintFileSmallGIF'
     _logger.info('Printing small GIF file.')
 
@@ -5157,7 +4904,7 @@ class CloudPrinting(LogoCert):
 
   def test_49_CloudPrintFileLargeGIF(self):
     """Test cloud printing a large GIF file."""
-    test_id = '72ed6bc4-1b42-4bc1-921c-4ab205dd56cd'
+    test_id = '3f9e7136-24bd-4007-84b0-216093bcad7b'
     test_name = 'testPrintFileLargeGIF'
     _logger.info('Printing large GIF file.')
 
@@ -5176,7 +4923,7 @@ class CloudPrinting(LogoCert):
 
   def test_50_CloudPrintFileBlackNWhiteGIF(self):
     """Test cloud printing a black & white GIF file."""
-    test_id = '7fa69496-542e-4f71-8538-7f67b907a2ec'
+    test_id = '96b6f311-82e7-4eb0-817b-d50dd7a4b1ef'
     test_name = 'testPrintFileBlackNWhiteGIF'
     _logger.info('Printing black and white GIF file.')
 
@@ -5195,7 +4942,7 @@ class CloudPrinting(LogoCert):
 
   def test_51_CloudPrintFileHTML(self):
     """Test cloud printing HTML file."""
-    test_id = '46164630-7c6e-4b37-b829-5edac13888ac'
+    test_id = 'ab13f135-4c39-4c9f-9352-6ae9bf2c1664'
     test_name = 'testPrintFileHTML'
     _logger.info('Printing HTML file.')
 
@@ -5211,28 +4958,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_52_CloudPrintFilePngA4Test(self):
-    """Test cloud printing A4 Test PNG file."""
-    test_id = '4c1e7474-3471-46b2-8e0d-2e605f89c129'
-    test_name = 'testPrintFilePngA4Test'
-    _logger.info('Printing A4 Test PNG file.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PNG1'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing A4 Test PNG file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_53_CloudPrintFilePngPortrait(self):
     """Test cloud printing PNG portrait file."""
-    test_id = '7f1e0a95-767e-4302-8225-61d93e127a41'
+    test_id = '528a5015-317f-4f85-a80c-10da77c22fe2'
     test_name = 'testPrintFilePngPortrait'
     _logger.info('Printing PNG portrait file.')
 
@@ -5251,7 +4979,7 @@ class CloudPrinting(LogoCert):
 
   def test_54_CloudPrintFileColorPngLandscape(self):
     """Test cloud printing color PNG file."""
-    test_id = '6b386438-d5cd-46c5-9b25-4ac50faf169c'
+    test_id = 'd9bdc76d-a27e-4d6b-8a72-43ec0c8ad881'
     test_name = 'testPrintFileColorPngLandscape'
     _logger.info('Printing Color PNG file in landscape.')
 
@@ -5269,28 +4997,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_55_CloudPrintFileSmallPng(self):
-    """Test cloud printing a small PNG file."""
-    test_id = '213b84ed-6ddb-4d9b-ab27-be8d5f6d8370'
-    test_name = 'testPrintFileSmallPng'
-    _logger.info('Printing a small PNG file.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PNG3'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing small PNG file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_56_CloudPrintFilePngWithLetters(self):
     """Test cloud printing PNG containing letters."""
-    test_id = '83b38406-74f2-4b2e-a74c-54998956ee18'
+    test_id = 'd5e07594-f141-40b6-90fb-3e0268168936'
     test_name = 'testPrintFilePngWithLetters'
     _logger.info('Printing PNG file with letters.')
 
@@ -5308,28 +5017,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_57_CloudPrintFilePngColorTest(self):
-    """Test cloud printing PNG Color Test file."""
-    test_id = '8f66270d-64df-49c7-bb49-01705b65d089'
-    test_name = 'testPrintFilePngColorTest'
-    _logger.info('Printing PNG Color Test file.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PNG5'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing Color Test PNG file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_58_CloudPrintFilePngColorImageWithText(self):
     """Test cloud printing color images with text PNG file."""
-    test_id = '931f1994-eebf-4fa6-9549-f8811b4ed641'
+    test_id = '7d9e30c2-52c2-4780-a2c4-64778ff31b36'
     test_name = 'testPrintFilePngColorImageWithText'
     _logger.info('Printing color images with text PNG file.')
 
@@ -5346,28 +5036,9 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_59_CloudPrintFilePngCupsTest(self):
-    """Test cloud printing Cups Test PNG file."""
-    test_id = '055898ba-25f7-4b4b-b116-ff7d499c8994'
-    test_name = 'testPrintFilePngCupsTest'
-    _logger.info('Printing Cups Test PNG file.')
-
-    self.cjt.AddColorOption(self.color)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PNG7'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing Cups Test PNG file.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
   def test_60_CloudPrintFileLargePng(self):
     """Test cloud printing Large PNG file."""
-    test_id = '852fab66-af6b-4f06-b94f-9d04508be3c6'
+    test_id = 'b64c37cd-3ba8-4dfc-bb3b-652e1ce0e08d'
     test_name = 'testPrintFileLargePng'
     _logger.info('Printing large PNG file.')
 
@@ -5386,7 +5057,7 @@ class CloudPrinting(LogoCert):
 
   def test_61_CloudPrintFileSvgSimple(self):
     """Test cloud printing simple SVG file."""
-    test_id = 'f10c0c3c-0d44-440f-8058-a0643235e2f8'
+    test_id = 'eb8c1076-c19d-442f-adcc-50909e1a0d73'
     test_name = 'testPrintFileSvgSimple'
     _logger.info('Printing simple SVG file.')
 
@@ -5404,7 +5075,7 @@ class CloudPrinting(LogoCert):
 
   def test_62_CloudPrintFileSvgWithImages(self):
     """Test cloud printing SVG file with images."""
-    test_id = '613e3f50-365f-4d4e-be72-d04202f74de4'
+    test_id = 'a130cd96-edce-4359-8cc9-3702c8a6e3f4'
     test_name = 'testPrintFileSvgWithImages'
     _logger.info('Printing SVG file with images.')
 
@@ -5423,7 +5094,7 @@ class CloudPrinting(LogoCert):
 
   def test_63_CloudPrintFileTiffRegLink(self):
     """Test cloud printing TIFF file of GCP registration link."""
-    test_id = 'ff85ffb1-7032-4006-948d-1725d93c5c5a'
+    test_id = 'f82f3e7b-5acd-4aa2-8d72-d4c94b60fae7'
     test_name = 'testPrintFileTiffRegLink'
     _logger.info('Printing TIFF file of GCP registration link.')
 
@@ -5441,7 +5112,7 @@ class CloudPrinting(LogoCert):
 
   def test_64_CloudPrintFileTiffPhoto(self):
     """Test cloud printing TIFF file of photo."""
-    test_id = '983ba7b4-ced0-4144-81cc-6abe89e63f78'
+    test_id = '0bcd79a1-b850-417e-ad42-5a525d358091'
     test_name = 'testPrintFileTiffPhoto'
     _logger.info('Printing TIFF file of photo.')
 
