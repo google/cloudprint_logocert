@@ -17,7 +17,7 @@ Please also see the README for updated set up details
             - Under TEST: FORCE_COLOR_OUTPUT field
         - Removed:
             - GOOGLE_DOCS dict
-            - Under TESTENV: CHROME and CHROMEDRIVER
+            - TESTENV dict
             - Under UESR and USER2: PW
 
 -  Power on's are polling waits instead of sleeps- the script polls for privet advertisement from the printer

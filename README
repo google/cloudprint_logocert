@@ -154,9 +154,6 @@ The following sections should be edited:
   supporting console and want to enable color ouptut, set FORCE_COLOR_OUTPUT
   to True.
 
--- TESTENV --
-* Add the versions used during testing
-
 -- USER --
 * Add the client id, client secret of the test account from step 1. Also add the
   email address of this user.
