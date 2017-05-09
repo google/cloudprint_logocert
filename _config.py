@@ -19,7 +19,7 @@ Use this module to support need constants and variables across multiple
 modules or classes. There are also some common functions defined here.
 """
 
-import mimetools
+import datetime
 import os
 
 
@@ -41,9 +41,6 @@ class Constants(object):
   # If a user must examine a print job to determine pass or fail, set
   # AUTOMODE to False.
   AUTOMODE = False
-
-  # A simple marker for the boundary of a multipart field for form data.
-  BOUNDARY = mimetools.choose_boundary()
 
   # CAPS represent device features and affects which tests will be run.
   # The values should be True or False.
@@ -195,13 +192,14 @@ class Constants(object):
   TEST = {
       # Please use descriptive names for sheets shared with Google
       # (e.g. Model-PrinterName, or PrinterName-FirmwareVersion)
-      'NAME': '-'.join([PRINTER['MODEL'], PRINTER['NAME']]),
+      'NAME': '_'.join([PRINTER['MODEL'],
+                        PRINTER['NAME'],
+                        str(datetime.date.today())]),
       'RESULTS': ['Test Case ID', 'Test Case Name', 'Status', 'Notes',
                   '','','','Re-run Cmd line'],
       'SPREADSHEET': True,
       # It is recommended that you set the below to True so that Google's
       # GCP certification team can better debug issues relating to your printer
-      # This only enables READ access
       'SHARE_SHEET_WITH_GOOGLE': True,
       'GCP_TEAM_EMAIL': 'cloud-print-certification-team@google.com',
       # Set the following to True if you wish to enable console output coloring
