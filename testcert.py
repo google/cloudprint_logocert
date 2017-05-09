@@ -2661,16 +2661,17 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
       return
 
-    self.cjt.AddPageRangeOption(2,3)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF10'], self.cjt,
+    self.cjt.AddPageRangeOption(2, end=2)
+    self.cjt.AddPageRangeOption(4, end=6)
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF1'], self.cjt,
                                 'application/pdf')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing with page range.'
+      notes = 'Error printing with page range set to page 2 and 4-6.'
       self.LogTest(test_id, test_name, 'Failed', notes)
     else:
-      print 'The print job should only print pages 2 and 3.'
+      print 'The print job should only print pages 2, 4, 5, 6.'
       print 'If this is not the case, fail this test.'
       self.ManualPass(test_id, test_name)
 
@@ -3640,7 +3641,8 @@ class JobState(LogoCert):
         raise
       else:
         print 'Re-establish network connection to printer.'
-        PromptAndWaitForUserAction('Press ENTER once network is reconnected')
+        PromptAndWaitForUserAction('Press ENTER once printer has successfully '
+                                   'established a connection to the network.')
         print ('Once network is reconnected, '
                'Job state should transition to in progress.')
         try:
@@ -3874,17 +3876,15 @@ class JobState(LogoCert):
 
   def testMalformattedFile(self):
     """Verify print recovers from malformatted print job."""
-    test_id = 'eb71a35f-3fc8-4e3b-a4c8-6cda4cf4f3b4'
-    test_name = 'testMalformattedFile'
-    test_id2 = '80877c2a-f46e-4256-80d9-474ff16eb60b'
-    test_name2 = 'testErrorRecovery'
+    test_id = '80877c2a-f46e-4256-80d9-474ff16eb60b'
+    test_name = 'testErrorRecovery'
 
     print 'Submitting a malformatted PDF file.'
 
     # First printing a malformatted PDF file. Not expected to print.
-    _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF5'], test_name, self.cjt)
+    _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF5'], 'Malformat', self.cjt)
     # Now print a valid file.
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF9'], test_name2,
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF9'], test_name,
                          self.cjt)
     try:
       self.assertTrue(output['success'])
@@ -3907,7 +3907,7 @@ class JobState(LogoCert):
         print 'Verify malformatted file did not put printer in error state.'
         self.ManualPass(test_id, test_name)
         print 'Verify print test page printed correctly.'
-        self.ManualPass(test_id2, test_name2)
+        self.ManualPass(test_id, test_name)
 
   def testPagesPrinted(self):
     """Verify printer properly reports number of pages printed."""
@@ -4364,45 +4364,6 @@ class CloudPrinting(LogoCert):
       self.assertTrue(output['success'])
     except AssertionError:
       notes = 'Error printing with page range set to page 2 only.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
-  def test_08_CloudPrintPdfPageRangePage4To6(self):
-    """Verify cloud printing a pdf with the page range option set to 4-6."""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcfe'
-    test_name = 'testPrintPdfPageRangePage4To6'
-    _logger.info('Setting page range to 4-6...')
-
-    self.cjt.AddPageRangeOption(4, end=6)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing with page range set to page 4-6.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
-
-  def test_09_CloudPrintPdfPageRangePage2And4to6(self):
-    """Verify cloud printing a pdf with the page range option set to 2, 4-6"""
-    test_id = '4f274ec1-28f0-4201-b769-65467f7abcff'
-    test_name = 'testPrintPdfPageRangePage2And4to6'
-    _logger.info('Setting page range to page 2 and 4-6...')
-
-    self.cjt.AddPageRangeOption(2, end=2)
-    self.cjt.AddPageRangeOption(4, end=6)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF1'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing with page range set to page 2 and 4-6.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
@@ -5130,7 +5091,7 @@ class CloudPrinting(LogoCert):
 
   def test_65_CloudPrintMarginsOptions(self):
     """Test cloud printing with margins option."""
-    test_id = 'f0143e4e-8dc1-42c1-96da-b9abc39a0eee'
+    test_id = 'e82ef19a-f744-4ab6-a0aa-c74763907bf0'
     test_name = 'testPrintMarginsOptions'
 
     if not Constants.CAPS['MARGIN']:
