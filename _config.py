@@ -226,13 +226,6 @@ class Constants(object):
             ],
       }
 
-  TESTENV = {
-      'ANDROID': '<Android Version>',
-      'PYTHON': '<Python Version>',
-      'OS': '<OS Name>',
-      'TABLET': '<Tablet Version>',
-      }
-
   URL = {
       'TIMEOUT': 20,
       }

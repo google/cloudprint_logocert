@@ -70,6 +70,7 @@ _device = None
 _oauth2 = None
 _gcp = None
 _sheet = None
+_TESTENV = {}
 
 def _ParseArgs():
   """Parse command line options."""
@@ -137,8 +138,8 @@ def setUpModule():
   _logger = _log.GetLogger('LogoCert', logdir=options.logdir,
                           loglevel=options.debug, stdout=options.stdout)
   os_type = '%s %s' % (platform.system(), platform.release())
-  Constants.TESTENV['OS'] = os_type
-  Constants.TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
+  _TESTENV['OS'] = os_type
+  _TESTENV['PYTHON'] = '.'.join(map(str, sys.version_info[:3]))
   _oauth2 = Oauth2(_logger)
   # Retrieve access + refresh tokens
   _oauth2.GetTokens()
@@ -433,8 +434,8 @@ class SystemUnderTest(LogoCert):
 
   def testRecordTestEnv(self):
     """Record test environment details to Google Sheets."""
-    notes = 'Android: %s\n' % Constants.TESTENV['ANDROID']
-    notes += 'Tablet: %s\n' % Constants.TESTENV['TABLET']
+    notes = 'OS: %s\n' % _TESTENV['OS']
+    notes += 'Python: %s\n' % _TESTENV['PYTHON']
     self.LogTest('N/A', 'N/A', 'N/A', notes)
 
     notes = 'Manufacturer: %s' % Constants.PRINTER['MANUFACTURER']
