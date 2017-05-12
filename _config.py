@@ -66,7 +66,7 @@ class Constants(object):
                               # if the paper tray is empty.
       'MARGIN': True,		      # Set this to True if a Printer supports
                               # margin specifications
-      'GOODBYE_PACKET': True, # Set this to True if a printer advertises sends
+      'GOODBYE_PACKET': True, # Set this to True if a printer supports sending
                               # a Privet goodbye packet when the device
                               # is shut off.
       'EMPTY_INK_SENSOR': False, # Set this to True if a printer can sense
