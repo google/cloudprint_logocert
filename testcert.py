@@ -454,6 +454,15 @@ class SystemUnderTest(LogoCert):
     notes = 'Serial Number: %s' % Constants.PRINTER['SERIAL']
     self.LogTest('N/A', 'N/A', 'N/A', notes)
 
+    self.LogTest('N/A', 'N/A', 'N/A', self.printCAPS())
+
+  def printCAPS(self):
+    caps = 'CAPS = {\n'
+    for k,v in Constants.CAPS.iteritems():
+      caps += "  '%s': %s,\n" % (k,v)
+    caps += '}\n'
+    return caps
+
 
 class Privet(LogoCert):
   """Verify device integrates correctly with the Privet protocol.
