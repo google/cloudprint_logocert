@@ -430,33 +430,24 @@ class SystemUnderTest(LogoCert):
 
   def testRecordTestEnv(self):
     """Record test environment details to Google Sheets."""
+    test_id = '459f04a4-7109-404c-b9e3-64573a077a65'
+    test_name = 'testEnvironment'
+
     os_type = '%s %s' % (platform.system(), platform.release())
     python_version = sys.version
 
     notes = 'OS: %s\n' % os_type
-    self.LogTest('N/A', 'N/A', 'N/A', notes)
+    notes += 'Python: %s\n' % python_version
+    notes += 'Manufacturer: %s\n' % Constants.PRINTER['MANUFACTURER']
+    notes += 'Model: %s\n' % Constants.PRINTER['MODEL']
+    notes += 'Name: %s\n' % Constants.PRINTER['NAME']
+    notes += 'Device Status: %s\n' % Constants.PRINTER['STATUS']
+    notes += 'Firmware: %s\n' % Constants.PRINTER['FIRMWARE']
+    notes += 'Serial Number: %s\n' % Constants.PRINTER['SERIAL']
+    notes += self.getCAPS()
+    self.LogTest(test_id, test_name, 'Passed', notes)
 
-    notes = 'Python: %s\n' % python_version
-    self.LogTest('N/A', 'N/A', 'N/A', notes)
-
-    notes = 'Manufacturer: %s' % Constants.PRINTER['MANUFACTURER']
-    self.LogTest('N/A', 'N/A', 'N/A', notes)
-
-    notes = 'Model: %s' % Constants.PRINTER['MODEL']
-    self.LogTest('N/A', 'N/A', 'N/A', notes)
-
-    notes = 'Device Status: %s' % Constants.PRINTER['STATUS']
-    self.LogTest('N/A', 'N/A', 'N/A', notes)
-
-    notes = 'Firmware: %s' % Constants.PRINTER['FIRMWARE']
-    self.LogTest('N/A', 'N/A', 'N/A', notes)
-
-    notes = 'Serial Number: %s' % Constants.PRINTER['SERIAL']
-    self.LogTest('N/A', 'N/A', 'N/A', notes)
-
-    self.LogTest('N/A', 'N/A', 'N/A', self.printCAPS())
-
-  def printCAPS(self):
+  def getCAPS(self):
     caps = 'CAPS = {\n'
     for k,v in Constants.CAPS.iteritems():
       caps += "  '%s': %s,\n" % (k,v)
