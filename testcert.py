@@ -3638,8 +3638,7 @@ class JobState(LogoCert):
 
     if output['success']:
       job_id = output['job']['id']
-      print 'Wait for one page to print.'
-      PromptAndWaitForUserAction('Press ENTER once network is disconnected.')
+      PromptAndWaitForUserAction('Wait for one page to print. Press ENTER once network is disconnected.')
 
       try:
         _gcp.WaitJobStateIn(job_id, _device.dev_id, GCPConstants.IN_PROGRESS)
