@@ -3914,7 +3914,6 @@ class JobState(LogoCert):
         raise
       else:
         print 'Verify malformatted file did not put printer in error state.'
-        self.ManualPass(test_id, test_name)
         print 'Verify print test page printed correctly.'
         self.ManualPass(test_id, test_name)
 
