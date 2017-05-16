@@ -438,7 +438,14 @@ class SystemUnderTest(LogoCert):
 
     notes = 'OS: %s\n' % os_type
     notes += 'Python: %s\n' % python_version
-    notes += 'Manufacturer: %s\n' % Constants.PRINTER['MANUFACTURER']
+    self.LogTest(test_id, test_name, 'Passed', notes)
+
+  def testPrinterDetails(self):
+    """Record printer details to Google Sheets."""
+    test_id = 'ec2f8266-6c3e-4ebd-a7b5-df4792a5d93a'
+    test_name = 'testPrinterDetails'
+
+    notes = 'Manufacturer: %s\n' % Constants.PRINTER['MANUFACTURER']
     notes += 'Model: %s\n' % Constants.PRINTER['MODEL']
     notes += 'Name: %s\n' % Constants.PRINTER['NAME']
     notes += 'Device Status: %s\n' % Constants.PRINTER['STATUS']
