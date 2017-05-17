@@ -73,6 +73,8 @@ class Constants(object):
                                  # when the ink/toner is empty
       'PRINTER_PANEL_UI': True,  # Set this to True if a printer supports
                                  # registration interaction through panel UI
+      'WEB_URL_UI': False,         # Set this to True if a printer supports
+                                 # registration interaction through Web URL UI
   }
 
   # Sleep contains the various durations of time.sleep() in SECONDS
