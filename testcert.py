@@ -1888,7 +1888,6 @@ class PreRegistration(LogoCert):
     if not Constants.CAPS['WEB_URL_UI']:
       notes = 'No Printer Web UI registration support.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
-      return
 
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on Printer Web UI.'
@@ -4287,25 +4286,6 @@ class CloudPrinting(LogoCert):
     finally:
       PromptAndWaitForUserAction('Load printer with letter size paper. '
                                  'Select return when ready.')
-
-  def test_66_CloudPrintPageOrientation(self):
-    """Verify cloud printing with media size option."""
-    test_id = '5085e650-5f08-43a5-bb61-8a485a8122e9'
-    test_name = 'testPageOrientation'
-    _logger.info('Testing the selection of non-default orientation')
-
-    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
-    output = self.submit(_device.dev_id, Constants.IMAGES['PDF4'], test_id,
-                         test_name, self.cjt)
-    try:
-      self.assertTrue(output['success'])
-    except AssertionError:
-      notes = 'Error printing in the non-default orientation.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    else:
-      self.waitAndManualPass(test_id, test_name, output)
-
 
   def test_01_CloudPrintJpgDpiSetting(self):
     """Verify cloud printing a jpg with DPI option."""
