@@ -1888,6 +1888,7 @@ class PreRegistration(LogoCert):
     if not Constants.CAPS['WEB_URL_UI']:
       notes = 'No Printer Web UI registration support.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
 
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on Printer Web UI.'
