@@ -1849,34 +1849,35 @@ class PreRegistration(LogoCert):
     test_name = 'testDeviceCancelRegistrationPanelUI'
     _logger.info('Testing printer registration cancellation.')
 
-    if Constants.CAPS['PRINTER_PANEL_UI']:
-      print 'Testing printer registration cancellation.'
-      print 'Do not accept printer registration request on Printer Panel UI.'
-
-      registration_success = _device.Register('CANCEL the registration request on'
-                                                ' Printer Panel UI and wait...')
-      if not registration_success:
-        # Confirm the user's account has no registered printers
-        res = _gcp.Search(_device.name)
-        try:
-          # Assert that 'printers' list is empty
-          self.assertFalse(res['printers'])
-        except AssertionError:
-          notes = 'Unable to cancel registration request from Printer Panel UI.'
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          PromptAndWaitForUserAction('Make sure printer is unregistered before '
-                                     'proceeding. Press ENTER to continue')
-          raise
-        else:
-          notes = 'Cancelled registration attempt from Printer Panel UI.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
-      else:
-        notes = 'Error cancelling registration process.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        _device.CancelRegistration()
-    else:
+    if not Constants.CAPS['PRINTER_PANEL_UI']:
       notes = 'No Printer Panel UI registration support.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
+    print 'Testing printer registration cancellation.'
+    print 'Do not accept printer registration request on Printer Panel UI.'
+
+    registration_success = _device.Register('CANCEL the registration request on'
+                                            ' Printer Panel UI and wait...')
+    if not registration_success:
+      # Confirm the user's account has no registered printers
+      res = _gcp.Search(_device.name)
+      try:
+        # Assert that 'printers' list is empty
+        self.assertFalse(res['printers'])
+      except AssertionError:
+        notes = 'Unable to cancel registration request from Printer Panel UI.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        PromptAndWaitForUserAction('Make sure printer is unregistered before '
+                                   'proceeding. Press ENTER to continue')
+        raise
+      else:
+        notes = 'Cancelled registration attempt from Printer Panel UI.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+    else:
+      notes = 'Error cancelling registration process.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      _device.CancelRegistration()
 
   def testDeviceCancelRegistrationWebUI(self):
     """Test printer cancellation prevents registration."""
@@ -1884,34 +1885,34 @@ class PreRegistration(LogoCert):
     test_name = 'testDeviceCancelRegistrationWebUI'
     _logger.info('Testing printer registration cancellation from printer web UI.')
 
-    if Constants.CAPS['WEB_URL_UI']:
-      print 'Testing printer registration cancellation.'
-      print 'Do not accept printer registration request on Printer Web UI.'
-
-      registration_success = _device.Register('CANCEL the registration request on'
-                                              ' Printer Web UI and wait...')
-      if not registration_success:
-        # Confirm the user's account has no registered printers
-        res = _gcp.Search(_device.name)
-        try:
-          # Assert that 'printers' list is empty
-          self.assertFalse(res['printers'])
-        except AssertionError:
-          notes = 'Unable to cancel registration request.'
-          self.LogTest(test_id, test_name, 'Failed', notes)
-          PromptAndWaitForUserAction('Make sure printer is unregistered before '
-                                     'proceeding. Press ENTER to continue')
-          raise
-        else:
-          notes = 'Cancelled registration attempt from Printer Web UI.'
-          self.LogTest(test_id, test_name, 'Passed', notes)
-      else:
-        notes = 'Error cancelling registration process.'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        _device.CancelRegistration()
-    else:
+    if not Constants.CAPS['WEB_URL_UI']:
       notes = 'No Printer Web UI registration support.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+
+    print 'Testing printer registration cancellation.'
+    print 'Do not accept printer registration request on Printer Web UI.'
+
+    registration_success = _device.Register('CANCEL the registration request on'
+                                            ' Printer Web UI and wait...')
+    if not registration_success:
+      # Confirm the user's account has no registered printers
+      res = _gcp.Search(_device.name)
+      try:
+        # Assert that 'printers' list is empty
+        self.assertFalse(res['printers'])
+      except AssertionError:
+        notes = 'Unable to cancel registration request.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        PromptAndWaitForUserAction('Make sure printer is unregistered before '
+                                   'proceeding. Press ENTER to continue')
+        raise
+      else:
+        notes = 'Cancelled registration attempt from Printer Web UI.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+    else:
+      notes = 'Error cancelling registration process.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      _device.CancelRegistration()
 
 class Registration(LogoCert):
   """Test device registration."""
@@ -1926,14 +1927,12 @@ class Registration(LogoCert):
     test_id = '1ce516e7-f831-465c-9ceb-2af9050b0dd9'
     test_name = 'testDeviceRegistrationNoAccept'
 
-    if Constants.CAPS['PRINTER_PANEL_UI']:
-      ui_str = "printer panel"
-    elif Constants.CAPS['WEB_URL_UI']:
-      ui_str = "printer web"
-    else:
-      self.LogTest(test_id, test_name, "Skipped")
-      return None
+    if not (Constants.CAPS['PRINTER_PANEL_UI'] or Constants.CAPS['WEB_URL_UI']):
+      notes = 'Printer automatically accepts registration requests.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
 
+    ui_str = 'printer panel' if Constants.CAPS['PRINTER_PANEL_UI'] else 'web'
     print 'Do not select accept/cancel registration from the %s U/I.' % ui_str
     print 'Wait for the registration request to time out.'
 
@@ -1964,32 +1963,34 @@ class Registration(LogoCert):
     test_id = 'dd233ea2-42e2-4a1e-a9ff-4df727edd591'
     test_name = 'testDeviceAcceptRegistrationPrinterPanelUI'
 
-    if Constants.CAPS['PRINTER_PANEL_UI']:
-      # Verify printer must accept registration requests on the printer panel
-      print 'Validate that the printer panel UI correctly showed a GCP '
-      print 'registration request during the previous "timeout" test'
-      print 'If printer does not have accept/cancel on printer panel,'
-      print 'Fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
-    else:
+    if not Constants.CAPS['PRINTER_PANEL_UI']:
       notes = 'No printer panel UI registration support.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
+    # Verify printer must accept registration requests on the printer panel
+    print 'Validate that the printer panel UI correctly showed a GCP '
+    print 'registration request during the previous "timeout" test'
+    print 'If printer does not have accept/cancel on printer panel,'
+    print 'Fail this test.'
+    self.ManualPass(test_id, test_name, print_test=False)
 
   def test_03_DeviceRegistrationWebUI(self):
     """Verify Web URL UI shows registration prompt"""
     test_id = 'e6a0cd4a-6db6-441d-9733-c7fb8e163ddc'
     test_name = 'testDeviceAcceptRegistrationWebURLUI'
 
-    if Constants.CAPS['WEB_URL_UI']:
-      # Verify printer must accept registration requests on the printer panel
-      print 'Validate that the web URL UI correctly showed a GCP '
-      print 'registration request during the previous "timeout" test'
-      print 'If printer does not show a accept/cancel on Printer Web UI,'
-      print 'Fail this test.'
-      self.ManualPass(test_id, test_name, print_test=False)
-    else:
+    if not Constants.CAPS['WEB_URL_UI']:
       notes = 'No Printer Web UI registration support.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
+    # Verify printer must accept registration requests on the printer panel
+    print 'Validate that the web URL UI correctly showed a GCP '
+    print 'registration request during the previous "timeout" test'
+    print 'If printer does not show a accept/cancel on Printer Web UI,'
+    print 'Fail this test.'
+    self.ManualPass(test_id, test_name, print_test=False)
 
   def test_04_DeviceRegistration(self):
     """Verify printer registration using Privet
