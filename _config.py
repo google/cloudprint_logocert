@@ -64,7 +64,7 @@ class Constants(object):
                               # if the paper tray is open.
       'MEDIA_SENSOR': False,  # Set this to True if printer has sensor to detect
                               # if the paper tray is empty.
-      'MARGIN': True,		      # Set this to True if a Printer supports
+      'MARGIN': True,         # Set this to True if a Printer supports
                               # margin specifications
       'GOODBYE_PACKET': True, # Set this to True if a printer supports sending
                               # a Privet goodbye packet when the device

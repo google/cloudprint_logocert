@@ -4287,6 +4287,25 @@ class CloudPrinting(LogoCert):
       PromptAndWaitForUserAction('Load printer with letter size paper. '
                                  'Select return when ready.')
 
+  def test_66_CloudPrintPageOrientation(self):
+    """Verify cloud printing with media size option."""
+    test_id = '5085e650-5f08-43a5-bb61-8a485a8122e9'
+    test_name = 'testPageOrientation'
+    _logger.info('Testing the selection of non-default orientation')
+
+    self.cjt.AddPageOrientationOption(GCPConstants.LANDSCAPE)
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF4'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing in the non-default orientation.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      self.waitAndManualPass(test_id, test_name, output)
+
+
   def test_01_CloudPrintJpgDpiSetting(self):
     """Verify cloud printing a jpg with DPI option."""
     test_id = 'aed7d8a4-e669-4a07-b47a-d833d1ef6b16'
