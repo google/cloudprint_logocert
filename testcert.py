@@ -4288,7 +4288,7 @@ class CloudPrinting(LogoCert):
       PromptAndWaitForUserAction('Load printer with letter size paper. '
                                  'Select return when ready.')
 
-  def test_66_CloudPrintPageOrientation(self):
+  def test_01_CloudPrintPageOrientation(self):
     """Verify cloud printing with media size option."""
     test_id = '5085e650-5f08-43a5-bb61-8a485a8122e9'
     test_name = 'testPageOrientation'
@@ -4307,7 +4307,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_01_CloudPrintJpgDpiSetting(self):
+  def test_02_CloudPrintJpgDpiSetting(self):
     """Verify cloud printing a jpg with DPI option."""
     test_id = 'aed7d8a4-e669-4a07-b47a-d833d1ef6b16'
     test_name = 'testPrintJpgDpiSetting'
@@ -4332,7 +4332,7 @@ class CloudPrinting(LogoCert):
     self.ManualPass(test_id, test_name)
 
 
-  def test_02_CloudPrintJpg2Copies(self):
+  def test_03_CloudPrintJpg2Copies(self):
     """Verify cloud printing Jpg with copies option set to 2."""
     test_id = '96d913fc-35cb-48ae-9e73-1737a36ae02a'
     test_name = 'testPrintJpg2Copies'
@@ -4356,7 +4356,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_03_CloudPrintPdfDuplexLongEdge(self):
+  def test_04_CloudPrintPdfDuplexLongEdge(self):
     """Verify cloud printing a pdf with the duplex option set to long edge."""
     test_id = '068e4390-0e88-4632-a2d4-83dad3b36d09'
     test_name = 'testPrintPdfDuplexLongEdge'
@@ -4379,7 +4379,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_04_CloudPrintPdfDuplexShortEdge(self):
+  def test_05_CloudPrintPdfDuplexShortEdge(self):
     """Verify cloud printing a pdf with the duplex option set to short edge."""
     test_id = '2b9eb721-48ee-46c5-bf76-6f0868a6acbf'
     test_name = 'testPrintPdfDuplexShortEdge'
@@ -4402,7 +4402,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_05_CloudPrintColorSelect(self):
+  def test_06_CloudPrintColorSelect(self):
     """Verify cloud printing with color options."""
     test_id = '1c433239-bec8-45a6-b1c1-d4190e4cc085'
     test_name = 'testPrintColorSelect'
@@ -4424,7 +4424,7 @@ class CloudPrinting(LogoCert):
     else:
       self.waitAndManualPass(test_id, test_name, output)
 
-  def test_06_CloudPrintPdfReverseOrder(self):
+  def test_07_CloudPrintPdfReverseOrder(self):
     """Verify cloud printing a pdf with reverse order option."""
     test_id = 'f7551021-cb3c-4a00-93e4-1ef619d5e15c'
     test_name = 'testPrintPdfReverseOrder'
@@ -4442,7 +4442,7 @@ class CloudPrinting(LogoCert):
     else:
       self.waitAndManualPass(test_id, test_name, output)
 
-  def test_07_CloudPrintPdfPageRangePage2(self):
+  def test_08_CloudPrintPdfPageRangePage2(self):
     """Verify cloud printing a pdf with the page range option set to 2."""
     test_id = 'bf37a319-321d-4b50-9e5a-44b542dacc50'
     test_name = 'testPrintPdfPageRangePage2'
@@ -4461,7 +4461,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_11_CloudPrintPngFillPage(self):
+  def test_09_CloudPrintPngFillPage(self):
     """Verify cloud printing a png with the fill page option."""
     test_id = 'ad1eff9e-6516-46c1-8ff9-c9de845c3e4c'
     test_name = 'testPrintPngFillPage'
@@ -4480,7 +4480,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_12_CloudPrintPngFitToPage(self):
+  def test_10_CloudPrintPngFitToPage(self):
     """Verify cloud printing a png with the fit to page option."""
     test_id = '58913ffe-93c3-4405-81ac-ec592169b8a7'
     test_name = 'testPrintPngFitToPage'
@@ -4499,7 +4499,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_13_CloudPrintPngGrowToPage(self):
+  def test_11_CloudPrintPngGrowToPage(self):
     """Verify cloud printing a png with the grow to page option."""
     test_id = 'c189611b-12f0-4a2e-ba9f-3672c89206d6'
     test_name = 'testPrintPngGrowToPage'
@@ -4518,7 +4518,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_14_CloudPrintPngShrinkToPage(self):
+  def test_12_CloudPrintPngShrinkToPage(self):
     """Verify cloud printing a png with the shrink to page option."""
     test_id = '00b50f0a-a196-4c4a-823c-de9547010735'
     test_name = 'testPrintPngShrinkToPage'
@@ -4537,7 +4537,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_15_CloudPrintPngNoFitting(self):
+  def test_13_CloudPrintPngNoFitting(self):
     """Verify cloud printing a png with the no fitting option."""
     test_id = 'b2ed2f00-e449-4805-995e-8dac5fde7ab2'
     test_name = 'testPrintPngNoFitting'
@@ -4556,7 +4556,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_16_CloudPrintJpgPortrait(self):
+  def test_14_CloudPrintJpgPortrait(self):
     """Verify cloud printing a jpg with the portrait option."""
     test_id = '951209b8-c615-4c5b-864b-cdbfbe80c195'
     test_name = 'testPrintJpgPortrait'
@@ -4576,7 +4576,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_17_CloudPrintJpgLandscape(self):
+  def test_15_CloudPrintJpgLandscape(self):
     """Verify cloud printing a jpg with the landscape option."""
     test_id = '007d7987-c496-45b7-a43b-4ca58625e124'
     test_name = 'testPrintJpgLandscape'
@@ -4596,7 +4596,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_18_CloudPrintJpgBlacknWhite(self):
+  def test_16_CloudPrintJpgBlacknWhite(self):
     """Verify cloud printing a jpg with the monochrome option."""
     test_id = 'e725888b-1e3c-45d7-963a-19f13296c57e'
     test_name = 'testPrintJpgBlacknWhite'
@@ -4615,7 +4615,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_23_CloudPrintJpgMultiImageWithText(self):
+  def test_17_CloudPrintJpgMultiImageWithText(self):
     """Verify cloud printing a multi-image jpg in landscape."""
     test_id = 'b842c6a0-eff1-4070-adbd-33a0352fad81'
     test_name = 'testPrintJpgMultiImageWithText'
@@ -4635,7 +4635,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_26_CloudPrintJpgStepChartLandscape(self):
+  def test_18_CloudPrintJpgStepChartLandscape(self):
     """Verify cloud printing a step-chart jpg with the landscape option."""
     test_id = '6a77f2b3-d752-4300-9ba6-7a3fe7132556'
     test_name = 'testPrintJpgStepChartLandscape'
@@ -4655,7 +4655,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_27_CloudPrintJpgLarge(self):
+  def test_19_CloudPrintJpgLarge(self):
     """Verify cloud printing a large jpg with the landscape option."""
     test_id = 'fe34f8a5-9e95-4b39-bdba-25c782d7ad09'
     test_name = 'testPrintJpgLarge'
@@ -4675,7 +4675,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_29_CloudPrintFilePdf(self):
+  def test_20_CloudPrintFilePdf(self):
     """Test cloud printing a standard, 1 page b&w PDF file."""
     test_id = '289773db-af6f-4303-a859-53dce219f07e'
     test_name = 'testPrintFilePdf'
@@ -4694,7 +4694,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_31_CloudPrintFileMultiPagePdf(self):
+  def test_21_CloudPrintFileMultiPagePdf(self):
     """Test cloud printing a standard, 3 page color PDF file."""
     test_id = '2beca3f9-6a43-4272-a049-613153da4de7'
     test_name = 'testPrintFileMultiPagePdf'
@@ -4713,7 +4713,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_32_CloudPrintFileLargeColorPdf(self):
+  def test_22_CloudPrintFileLargeColorPdf(self):
     """Test cloud printing a 20 page, color PDF file."""
     test_id = 'bdd50e2d-513d-4a48-a9c1-388a88f0b7ad'
     test_name = 'testPrintFileLargeColorPdf'
@@ -4732,7 +4732,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_33_CloudPrintFilePdfV1_2(self):
+  def test_23_CloudPrintFilePdfV1_2(self):
     """Test cloud printing PDF version 1.2 file."""
     test_id = '7ab294f5-31b1-48ee-9c5a-cd77dc7cfaf3'
     test_name = 'testPrintFilePdfV1_2'
@@ -4750,7 +4750,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_34_CloudPrintFilePdfV1_3(self):
+  def test_24_CloudPrintFilePdfV1_3(self):
     """Test cloud printing PDF version 1.3 file."""
     test_id = 'f95b8ec9-48c7-46c5-b233-50cf410a8f04'
     test_name = 'testPrintFilePdfV1_3'
@@ -4768,7 +4768,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_35_CloudPrintFilePdfV1_4(self):
+  def test_25_CloudPrintFilePdfV1_4(self):
     """Test cloud printing PDF version 1.4 file."""
     test_id = '45da57b3-f5b9-4b6e-a40e-79ff2bd8d451'
     test_name = 'testPrintFilePdfV1_4'
@@ -4786,7 +4786,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_36_CloudPrintFilePdfV1_5(self):
+  def test_26_CloudPrintFilePdfV1_5(self):
     """Test cloud printing PDF version 1.5 file."""
     test_id = 'e4a8a756-1ebb-47d4-9b83-17d6b0973883'
     test_name = 'testPrintFilePdfV1_5'
@@ -4804,7 +4804,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_37_CloudPrintFilePdfV1_6(self):
+  def test_27_CloudPrintFilePdfV1_6(self):
     """Test cloud printing PDF version 1.6 file."""
     test_id = '7a35cf71-9b92-4bb8-aaf7-277d196ca42c'
     test_name = 'testPrintFilePdfV1_6'
@@ -4822,7 +4822,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_38_CloudPrintFilePdfV1_7(self):
+  def test_28_CloudPrintFilePdfV1_7(self):
     """Test cloud printing PDF version 1.7 file."""
     test_id = 'cc58720f-ed23-4506-8a9d-c852a71ba1cb'
     test_name = 'testPrintFilePdfV1_7'
@@ -4840,7 +4840,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_39_CloudPrintFilePdfColorTicket(self):
+  def test_29_CloudPrintFilePdfColorTicket(self):
     """Test cloud printing PDF file of Color Ticket in landscape orientation."""
     test_id = '286cc889-88c3-4bc8-87e5-cc44c921f52d'
     test_name = 'testPrintFilePdfColorTicket'
@@ -4860,7 +4860,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_40_CloudPrintFilePdfLetterMarginTest(self):
+  def test_30_CloudPrintFilePdfLetterMarginTest(self):
     """Test cloud printing PDF Letter size margin test file."""
     test_id = '361ae296-321d-4b6b-b84c-a2d60fb40d99'
     test_name = 'testPrintFilePdfLetterMarginTest'
@@ -4878,7 +4878,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_42_CloudPrintFilePdfSimpleLandscape(self):
+  def test_31_CloudPrintFilePdfSimpleLandscape(self):
     """Test cloud printing PDF with landscape layout."""
     test_id = 'c4ed07f4-c32e-42b0-8a7d-4dae2cd2ec7b'
     test_name = 'testPrintFilePdfSimpleLandscape'
@@ -4897,7 +4897,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_44_CloudPrintFilePdfColorTest(self):
+  def test_32_CloudPrintFilePdfColorTest(self):
     """Test cloud printing PDF Color Test file."""
     test_id = '28286e1d-3b81-46b4-8372-1f97f88e5a58'
     test_name = 'testPrintFilePdfColorTest'
@@ -4916,7 +4916,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_46_CloudPrintFilePdfComplexTicket(self):
+  def test_33_CloudPrintFilePdfComplexTicket(self):
     """Test cloud printing complex ticket PDF file."""
     test_id = 'afb758a1-4a6a-40a6-92fa-005bbd9addaa'
     test_name = 'testPrintFilePdfComplexTicket'
@@ -4935,7 +4935,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_48_CloudPrintFileSmallGIF(self):
+  def test_34_CloudPrintFileSmallGIF(self):
     """Test cloud printing a small GIF file."""
     test_id = 'd23d2310-91ab-4d62-ad21-fef3675be6c7'
     test_name = 'testPrintFileSmallGIF'
@@ -4954,7 +4954,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_49_CloudPrintFileLargeGIF(self):
+  def test_35_CloudPrintFileLargeGIF(self):
     """Test cloud printing a large GIF file."""
     test_id = '3f9e7136-24bd-4007-84b0-216093bcad7b'
     test_name = 'testPrintFileLargeGIF'
@@ -4973,7 +4973,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_50_CloudPrintFileBlackNWhiteGIF(self):
+  def test_36_CloudPrintFileBlackNWhiteGIF(self):
     """Test cloud printing a black & white GIF file."""
     test_id = '96b6f311-82e7-4eb0-817b-d50dd7a4b1ef'
     test_name = 'testPrintFileBlackNWhiteGIF'
@@ -4992,7 +4992,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_51_CloudPrintFileHTML(self):
+  def test_37_CloudPrintFileHTML(self):
     """Test cloud printing HTML file."""
     test_id = 'ab13f135-4c39-4c9f-9352-6ae9bf2c1664'
     test_name = 'testPrintFileHTML'
@@ -5010,7 +5010,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_53_CloudPrintFilePngPortrait(self):
+  def test_38_CloudPrintFilePngPortrait(self):
     """Test cloud printing PNG portrait file."""
     test_id = '528a5015-317f-4f85-a80c-10da77c22fe2'
     test_name = 'testPrintFilePngPortrait'
@@ -5029,7 +5029,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_54_CloudPrintFileColorPngLandscape(self):
+  def test_39_CloudPrintFileColorPngLandscape(self):
     """Test cloud printing color PNG file."""
     test_id = 'd9bdc76d-a27e-4d6b-8a72-43ec0c8ad881'
     test_name = 'testPrintFileColorPngLandscape'
@@ -5049,7 +5049,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_56_CloudPrintFilePngWithLetters(self):
+  def test_40_CloudPrintFilePngWithLetters(self):
     """Test cloud printing PNG containing letters."""
     test_id = 'd5e07594-f141-40b6-90fb-3e0268168936'
     test_name = 'testPrintFilePngWithLetters'
@@ -5069,7 +5069,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_58_CloudPrintFilePngColorImageWithText(self):
+  def test_41_CloudPrintFilePngColorImageWithText(self):
     """Test cloud printing color images with text PNG file."""
     test_id = '7d9e30c2-52c2-4780-a2c4-64778ff31b36'
     test_name = 'testPrintFilePngColorImageWithText'
@@ -5088,7 +5088,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_60_CloudPrintFileLargePng(self):
+  def test_42_CloudPrintFileLargePng(self):
     """Test cloud printing Large PNG file."""
     test_id = 'b64c37cd-3ba8-4dfc-bb3b-652e1ce0e08d'
     test_name = 'testPrintFileLargePng'
@@ -5107,7 +5107,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_61_CloudPrintFileSvgSimple(self):
+  def test_43_CloudPrintFileSvgSimple(self):
     """Test cloud printing simple SVG file."""
     test_id = 'eb8c1076-c19d-442f-adcc-50909e1a0d73'
     test_name = 'testPrintFileSvgSimple'
@@ -5125,7 +5125,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_62_CloudPrintFileSvgWithImages(self):
+  def test_44_CloudPrintFileSvgWithImages(self):
     """Test cloud printing SVG file with images."""
     test_id = 'a130cd96-edce-4359-8cc9-3702c8a6e3f4'
     test_name = 'testPrintFileSvgWithImages'
@@ -5144,7 +5144,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_63_CloudPrintFileTiffRegLink(self):
+  def test_45_CloudPrintFileTiffRegLink(self):
     """Test cloud printing TIFF file of GCP registration link."""
     test_id = 'f82f3e7b-5acd-4aa2-8d72-d4c94b60fae7'
     test_name = 'testPrintFileTiffRegLink'
@@ -5162,7 +5162,7 @@ class CloudPrinting(LogoCert):
       self.waitAndManualPass(test_id, test_name, output)
 
 
-  def test_64_CloudPrintFileTiffPhoto(self):
+  def test_46_CloudPrintFileTiffPhoto(self):
     """Test cloud printing TIFF file of photo."""
     test_id = '0bcd79a1-b850-417e-ad42-5a525d358091'
     test_name = 'testPrintFileTiffPhoto'
@@ -5180,7 +5180,7 @@ class CloudPrinting(LogoCert):
     else:
       self.waitAndManualPass(test_id, test_name, output)
 
-  def test_65_CloudPrintMarginsOptions(self):
+  def test_47_CloudPrintMarginsOptions(self):
     """Test cloud printing with margins option."""
     test_id = 'e82ef19a-f744-4ab6-a0aa-c74763907bf0'
     test_name = 'testPrintMarginsOptions'
