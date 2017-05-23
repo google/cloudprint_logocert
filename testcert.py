@@ -2505,7 +2505,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
 
 
-  def test_18_ConversionPrintingToggle(self):
+  def test_04_ConversionPrintingToggle(self):
     """Verify printer behaves correctly when conversion printing is toggled."""
     test_id = '991b6649-20ac-4d11-9853-e43dc60d1c49'
     test_name = 'testConversionPrintingToggle'
@@ -2585,7 +2585,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
 
 
-  def test_04_LocalPrintHTML(self):
+  def test_05_LocalPrintHTML(self):
     """Verify printer can local print HTML file."""
     test_id = 'c93ed781-d0b5-44bc-89e2-4e5b31bafd3d'
     test_name = 'testLocalPrintHTML'
@@ -2607,7 +2607,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def test_05_LocalPrintJPG(self):
+  def test_06_LocalPrintJPG(self):
     """Verify a 1 page JPG file prints using Local Printing."""
     test_id = '824f95f8-9380-4c37-9552-f6e56e2c8463'
     test_name = 'testLocalPrintJPG'
@@ -2630,7 +2630,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def test_06_LocalPrintPNG(self):
+  def test_07_LocalPrintPNG(self):
     """Verify a 1 page PNG file prints using Local Printing."""
     test_id = '90c3f594-6792-4c07-b747-ae217ff8178a'
     test_name = 'testLocalPrintPNG'
@@ -2652,7 +2652,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def test_07_LocalPrintGIF(self):
+  def test_08_LocalPrintGIF(self):
     """Verify a 1 page GIF file prints using Local Printing."""
     test_id = '39720f61-f142-4ef5-ba55-1efaad8a89dd'
     test_name = 'testLocalPrintGIF'
@@ -2674,7 +2674,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def test_08_LocalPrintPDF(self):
+  def test_09_LocalPrintPDF(self):
     """Verify a 1 page PDF file prints using Local Printing."""
     test_id = 'd6497ac5-4d15-46d4-8aee-261890180dca'
     test_name = 'testLocalPrintPDF'
@@ -2696,7 +2696,7 @@ class LocalPrinting(LogoCert):
       print 'Fail this test if print out has errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
-  def test_09_LocalPrintPDFDuplex(self):
+  def test_10_LocalPrintPDFDuplex(self):
     """Verify printer respects duplex option for PDFs in local print."""
     test_id = 'c1b3136f-e6c1-413d-977d-c295a8351703'
     test_name = 'testLocalPrintPDFDuplex'
@@ -2738,7 +2738,7 @@ class LocalPrinting(LogoCert):
       self.ManualPass(test_id, test_name)
 
 
-  def test_10_LocalPrintPDFMargins(self):
+  def test_11_LocalPrintPDFMargins(self):
     """Verify printer respects margins option for PDFs in local print."""
     test_id = 'a9c482e0-9494-469c-a391-d70c171bd9c2'
     test_name = 'testLocalPrintPDFMargins'
@@ -2774,7 +2774,7 @@ class LocalPrinting(LogoCert):
     print 'If the margins are not correct, fail this test.'
     self.ManualPass(test_id, test_name)
 
-  def test_11_LocalPrintPDFLayout(self):
+  def test_12_LocalPrintPDFLayout(self):
     """Verify printer respects layout settings for PDFs in local print."""
     test_id = '151eca79-23c5-4fad-855d-2b5aad7dd9c5'
     test_name = 'testLocalPrintPDFLayout'
@@ -2807,7 +2807,7 @@ class LocalPrinting(LogoCert):
       print 'If the layout is not correct, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def test_12_LocalPrintPDFPageRange(self):
+  def test_13_LocalPrintPDFPageRange(self):
     """Verify printer respects page range for PDFs in local print."""
     test_id = 'f3b2428b-2c48-411d-a7b6-c336452b36b6'
     test_name = 'testLocalPrintPDFPageRange'
@@ -2830,7 +2830,7 @@ class LocalPrinting(LogoCert):
       print 'If this is not the case, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def test_13_LocalPrintPDFCopies(self):
+  def test_14_LocalPrintPDFCopies(self):
     """Verify printer respects copy option for PDFs in local print."""
     test_id = '1eb21d57-59f4-457e-a097-d5c4d584502f'
     test_name = 'testLocalPrintPDFCopies'
@@ -2857,7 +2857,7 @@ class LocalPrinting(LogoCert):
       print 'If 2 copies are not printed, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def test_14_LocalPrintPDFColorSelect(self):
+  def test_15_LocalPrintPDFColorSelect(self):
     """Verify printer respects color option for PDFs in local print."""
     test_id = 'e12ea6cc-d33f-4f94-a435-694704f7ba72'
     test_name = 'testLocalPrintPDFColorSelect'
@@ -2898,7 +2898,7 @@ class LocalPrinting(LogoCert):
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def test_15_LocalPrintPWGDuplex(self):
+  def test_16_LocalPrintPWGDuplex(self):
     """Verify printer respects duplex option for PWGs in local print."""
     test_id = 'ebd264ed-e9ac-4bff-9a8b-d1b4c5af477e'
     test_name = 'testLocalPrintPWGDuplex'
@@ -2934,7 +2934,7 @@ class LocalPrinting(LogoCert):
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def test_16_LocalPrintPWGColorSelect(self):
+  def test_17_LocalPrintPWGColorSelect(self):
     """Verify printer respects color option for PWGs in local print."""
     test_id = 'bfd5ee5e-4bef-4e8e-b64a-63fef421ae28'
     test_name = 'testLocalPrintPWGColorSelect'
@@ -2972,7 +2972,7 @@ class LocalPrinting(LogoCert):
       self.ManualPass(test_id, test_name)
 
 
-  def test_17_LocalPrintPWG(self):
+  def test_18_LocalPrintPWG(self):
     """Verify printer can successfully print PWGs in local print."""
     test_id = '013fb153-940a-45d2-a5fd-7112d4d1198d'
     test_name = 'testLocalPrintPWG'
