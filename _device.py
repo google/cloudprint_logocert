@@ -425,7 +425,7 @@ class Device(object):
     self.logger.error('Unable to delete printer from service.')
     return False
 
-  def LocalPrint(self, title, content, cjt, content_type):
+  def LocalPrint(self, title, content, cjt, content_type, check_supported_content = True):
     """Submit a local print job to the printer
 
         Args:
@@ -448,7 +448,7 @@ class Device(object):
       print 'Error creating a local print job.\n'
       return None
 
-    output = self.SubmitDoc(job_id, title, content, content_type)
+    output = self.SubmitDoc(job_id, title, content, content_type, check_supported_content)
     if output is None:
       # Cancel the job creation to get back to a normal state
       self.CancelJob(job_id)
@@ -501,7 +501,7 @@ class Device(object):
         return res['job_id']
     return None
 
-  def SubmitDoc(self, job_id, title, content, content_type):
+  def SubmitDoc(self, job_id, title, content, content_type, check_supported_content):
     """Second step for printing locally, submit a local print job to the printer
 
         Args:
@@ -518,7 +518,7 @@ class Device(object):
     url = (self.privet_url['submitdoc'] + '?job_id=%s&job_name=%s' %
            (job_id, title))
 
-    if content_type not in self.supported_types:
+    if check_supported_content and content_type not in self.supported_types:
       print ('This printer does not support the following content type: %s' %
              (content_type))
       print 'List of supported types are: ', self.supported_types

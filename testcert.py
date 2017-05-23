@@ -2504,6 +2504,87 @@ class LocalPrinting(LogoCert):
       notes2 = 'Able to print via privet local printing when re-enabled.'
       self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
 
+
+  def test_18_ConversionPrintingToggle(self):
+    """Verify printer behaves correctly when conversion printing is toggled."""
+    test_id = '991b6649-20ac-4d11-9853-e43dc60d1c49'
+    test_name = 'testConversionPrintingToggle'
+    notes = None
+    notes2 = None
+
+    print 'Disabling conversion printing'
+    setting = {'pending': {'printer/conversion_printing_enabled': False}}
+    res = _gcp.Update(_device.dev_id, setting=setting)
+
+    if not res['success']:
+      notes = 'Error turning off Conversion Printing.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    # Give the printer time to update.
+    success = _gcp.WaitForUpdate(_device.dev_id,
+                                 'printer/conversion_printing_enabled', False)
+    try:
+      self.assertTrue(success)
+    except AssertionError:
+      notes = 'Failed to detect update before timing out.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    print 'Conversion printing successfully turned off'
+
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['SVG1'], self.cjt,
+                                'image/svg+xml', False)
+    try:
+      self.assertIsNone(job_id)
+    except AssertionError:
+      notes = 'Able to print via privet conversion printing when disabled.'
+      notes += ' Check if the filetype svg is supported locally by the printer.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      notes = 'Not able to print file locally when conversion print is disabled.'
+
+    print 'Re-enabling conversion printing'
+    setting = {'pending': {'printer/conversion_printing_enabled': True}}
+    res = _gcp.Update(_device.dev_id, setting=setting)
+
+    if not res['success']:
+      notes2 = 'Error turning on Conversion Printing.'
+      self.LogTest(test_id, test_name, 'Failed', notes2)
+      raise
+
+    # Give the printer time to update.
+    success = _gcp.WaitForUpdate(_device.dev_id,
+                                 'printer/conversion_printing_enabled', True)
+    try:
+      self.assertTrue(success)
+    except AssertionError:
+      notes = 'Failed to detect update before timing out.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    print 'Local print successfully enabled'
+
+    success = _device.WaitForPrinterState('idle')
+    try:
+      self.assertTrue(success)
+    except AssertionError:
+      notes2 = 'Printer not in idle state after updates.'
+      self.LogTest(test_id, test_name, 'Failed', notes2)
+      raise
+
+    job_id = _device.LocalPrint(test_name, Constants.IMAGES['SVG1'], self.cjt,
+                                'image/svg+xml', False)
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes2 = 'Not able to print an svg file locally when conversion printing is enabled.'
+      self.LogTest(test_id, test_name, 'Failed', notes2)
+      raise
+    else:
+      notes2 = 'Able to print an svg file via privet local printing when conversion printing is re-enabled.'
+      self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
+
+
   def test_04_LocalPrintHTML(self):
     """Verify printer can local print HTML file."""
     test_id = 'c93ed781-d0b5-44bc-89e2-4e5b31bafd3d'
