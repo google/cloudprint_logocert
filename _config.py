@@ -47,34 +47,36 @@ class Constants(object):
   CAPS = {
       'COLLATE': False,
       'COLOR': False,
-      'COPIES_LOCAL': True,   # If a Printer supports copies for local printing,
-                              # set this to True.
-      'COPIES_CLOUD': True,   # If a Printer supports copies for cloud printing,
-                              # set this to True.
-      'COVER': True,          # Not all printers have a cover.
-      'DUPLEX': True,
-      'LAYOUT_ISSUE': True,   # Printer must set page orientation for local
-                              # printing, so page_orientation is still needed
-                              # in the printer capabilities.
-      'LOCAL_PRINT': True,    # If a Printer supports local printing without
-                              # being registered, set this to True.
-      'TONER': True,          # Set to false if printer is thermal or
-                              # has no toner.
-      'TRAY_SENSOR': False,   # Set this to True if printer has sensor to detect
-                              # if the paper tray is open.
-      'MEDIA_SENSOR': False,  # Set this to True if printer has sensor to detect
-                              # if the paper tray is empty.
-      'MARGIN': True,         # Set this to True if a Printer supports
-                              # margin specifications
-      'GOODBYE_PACKET': True, # Set this to True if a printer supports sending
-                              # a Privet goodbye packet when the device
-                              # is shut off.
+      'COPIES_LOCAL': True,      # If a Printer supports copies for local printing,
+                                 # set this to True.
+      'COPIES_CLOUD': True,      # If a Printer supports copies for cloud printing,
+                                 # set this to True.
+      'COVER': True,             # Not all printers have a cover.
+      'DUPLEX': True ,
+      'LAYOUT_ISSUE': True,      # Printer must set page orientation for local
+                                 # printing, so page_orientation is still needed
+                                 # in the printer capabilities.
+      'LOCAL_PRINT': True,       # If a Printer supports local printing without
+                                 # being registered, set this to True.
+      'TONER': True,             # Set to false if printer is thermal or
+                                 # has no toner.
+      'TRAY_SENSOR': False,      # Set this to True if printer has sensor to detect
+                                 # if the paper tray is open.
+      'MEDIA_SENSOR': False,     # Set this to True if printer has sensor to detect
+                                 # if the paper tray is empty.
+      'MARGIN': True,            # Set this to True if a Printer supports
+                                 # margin specifications
+      'GOODBYE_PACKET': True,    # Set this to True if a printer supports sending
+                                 # a Privet goodbye packet when the device
+                                 # is shut off.
       'EMPTY_INK_SENSOR': False, # Set this to True if a printer can sense
                                  # when the ink/toner is empty
       'PRINTER_PANEL_UI': True,  # Set this to True if a printer supports
                                  # registration interaction through panel UI
       'WEB_URL_UI': False,       # Set this to True if a printer supports
                                  # registration interaction through Web URL UI
+      'CONVERSION_PRINT': True,  # Set this to True if a printer supports
+                                 # the conversion printing for local print jobs
   }
 
   # Sleep contains the various durations of time.sleep() in SECONDS

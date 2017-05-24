@@ -2512,6 +2512,11 @@ class LocalPrinting(LogoCert):
     notes = None
     notes2 = None
 
+    if not Constants.CAPS['CONVERSION_PRINT']:
+      notes = 'Conversion printing is not supported.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
     print 'Disabling conversion printing'
     setting = {'pending': {'printer/conversion_printing_enabled': False}}
     res = _gcp.Update(_device.dev_id, setting=setting)
