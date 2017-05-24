@@ -1883,7 +1883,8 @@ class PreRegistration(LogoCert):
     """Test printer cancellation prevents registration."""
     test_id = '29194599-2629-44a0-b3c9-c5e54c5cec80'
     test_name = 'testDeviceCancelRegistrationWebUI'
-    _logger.info('Testing printer registration cancellation from printer web UI.')
+    _logger.info('Testing printer registration cancellation from '
+                 'printer web UI.')
 
     if not Constants.CAPS['WEB_URL_UI']:
       notes = 'No Printer Web UI registration support.'
@@ -2547,7 +2548,8 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'Not able to print file locally when conversion print is disabled.'
+      notes = 'Not able to print file locally when conversion print is' \
+                 + 'disabled.'
 
     print 'Re-enabling conversion printing'
     setting = {'pending': {'printer/conversion_printing_enabled': True}}
@@ -2582,11 +2584,13 @@ class LocalPrinting(LogoCert):
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
-      notes2 = 'Not able to print an svg file locally when conversion printing is enabled.'
+      notes2 = 'Not able to print an svg file locally when conversion ' \
+                + 'printing is enabled.'
       self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
     else:
-      notes2 = 'Able to print an svg file via privet local printing when conversion printing is re-enabled.'
+      notes2 = 'Able to print an svg file via privet local printing when ' \
+                + 'conversion printing is re-enabled.'
       self.LogTest(test_id, test_name, 'Passed', notes + '\n' + notes2)
 
 
@@ -3678,7 +3682,7 @@ class JobState(LogoCert):
                 job = _gcp.WaitJobStateIn(output['job']['id'],
                                           _device.dev_id,
                                           GCPConstants.DONE,
-                                          timeout= Constants.TIMEOUT['PRINTING'])
+                                          timeout=Constants.TIMEOUT['PRINTING'])
               except AssertionError:
                 notes = ('Job state did not transition to %s within '
                          '%s seconds.' %
@@ -3781,15 +3785,16 @@ class JobState(LogoCert):
     test_name = 'testJobStateNetworkOutage'
     print ('This test requires the printer to be disconnected from the network '
            'after the first page is printed.')
-    PromptAndWaitForUserAction('Press ENTER when you are prepared to disconnect '
-                               'the network to begin the printjob')
+    PromptAndWaitForUserAction('Press ENTER when you are prepared to disconnect'
+                               ' the network to begin the printjob')
 
     output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name,
                          self.cjt)
 
     if output['success']:
       job_id = output['job']['id']
-      PromptAndWaitForUserAction('Wait for one page to print. Press ENTER once network is disconnected.')
+      PromptAndWaitForUserAction('Wait for one page to print. Press ENTER '
+                                 'once network is disconnected.')
 
       try:
         _gcp.WaitJobStateIn(job_id, _device.dev_id, GCPConstants.IN_PROGRESS)
