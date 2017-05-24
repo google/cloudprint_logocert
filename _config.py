@@ -52,7 +52,7 @@ class Constants(object):
       'COPIES_CLOUD': True,      # If a Printer supports copies for cloud 
                                  # printing, set this to True.
       'COVER': True,             # Not all printers have a cover.
-      'DUPLEX': True ,
+      'DUPLEX': True,
       'LAYOUT_ISSUE': True,      # Printer must set page orientation for local
                                  # printing, so page_orientation is still needed
                                  # in the printer capabilities.

@@ -425,7 +425,8 @@ class Device(object):
     self.logger.error('Unable to delete printer from service.')
     return False
 
-  def LocalPrint(self, title, content, cjt, content_type, check_supported_content = True):
+  def LocalPrint(self, title, content, cjt, content_type, 
+                 check_supported_content = True):
     """Submit a local print job to the printer
 
         Args:
@@ -433,6 +434,9 @@ class Device(object):
           content: string, url or absolute filepath of the item to print.
           cjt: CloudJobTicket, object that defines the options of the print job
           content_type: string, MIME type of the print data
+          check_supported_content: boolean, set to false if you want prevent
+                    checking submitted file type (content type) with supported
+                    content types.
         Returns:
           int, the job id of the local print job that succeeded, else None
         """
@@ -448,7 +452,8 @@ class Device(object):
       print 'Error creating a local print job.\n'
       return None
 
-    output = self.SubmitDoc(job_id, title, content, content_type, check_supported_content)
+    output = self.SubmitDoc(job_id, title, content, content_type,
+                            check_supported_content)
     if output is None:
       # Cancel the job creation to get back to a normal state
       self.CancelJob(job_id)
@@ -501,7 +506,8 @@ class Device(object):
         return res['job_id']
     return None
 
-  def SubmitDoc(self, job_id, title, content, content_type, check_supported_content):
+  def SubmitDoc(self, job_id, title, content, content_type,
+                check_supported_content):
     """Second step for printing locally, submit a local print job to the printer
 
         Args:
@@ -509,6 +515,9 @@ class Device(object):
           title: string, title of the print job
           content: string, url or absolute filepath of the item to print.
           content_type: string, MIME type of the print data
+          check_supported_content: boolean, set to false if you want prevent
+                    checking submitted file type (content type) with supported
+                    content types.
         Returns:
           int, the job id of the print job if successful, else None
             """

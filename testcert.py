@@ -2480,8 +2480,8 @@ class LocalPrinting(LogoCert):
     try:
       self.assertTrue(success)
     except AssertionError:
-      notes = 'Failed to detect update before timing out.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      notes2 = 'Failed to detect update before timing out.'
+      self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
     print 'Local print successfully enabled'
 
@@ -2539,7 +2539,7 @@ class LocalPrinting(LogoCert):
     print 'Conversion printing successfully turned off'
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['SVG1'], self.cjt,
-                                'image/svg+xml', False)
+                                'image/svg+xml', check_supported_content=False)
     try:
       self.assertIsNone(job_id)
     except AssertionError:
@@ -2566,10 +2566,10 @@ class LocalPrinting(LogoCert):
     try:
       self.assertTrue(success)
     except AssertionError:
-      notes = 'Failed to detect update before timing out.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      notes2 = 'Failed to detect update before timing out.'
+      self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
-    print 'Local print successfully enabled'
+    print 'Conversion printing successfully enabled'
 
     success = _device.WaitForPrinterState('idle')
     try:
@@ -2580,7 +2580,7 @@ class LocalPrinting(LogoCert):
       raise
 
     job_id = _device.LocalPrint(test_name, Constants.IMAGES['SVG1'], self.cjt,
-                                'image/svg+xml', False)
+                                'image/svg+xml', check_supported_content=False)
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
