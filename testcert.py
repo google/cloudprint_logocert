@@ -2548,7 +2548,7 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = ('Not able to print file locally when conversion print is'
+      notes = ('Not able to print file locally when conversion print is '
                'disabled.')
 
     print 'Re-enabling conversion printing'
