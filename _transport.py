@@ -32,7 +32,7 @@ class Transport(object):
 
   def __init__(self, logger):
     """Get a reference to a logger object and JsonParser.
-    
+
     Args:
         logger: initialized logger object.
     """

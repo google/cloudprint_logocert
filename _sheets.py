@@ -27,7 +27,7 @@ class SheetMgr(object):
 
   def __init__(self, logger, creds, Constants):
     """ Sheet manager will use some objects from main module.
-    
+
     Args:
       logger: initialized logger object.
       Constants: object that contains contants.

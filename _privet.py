@@ -26,7 +26,7 @@ class Privet(object):
 
   def __init__(self, logger):
     """Get a reference to a logger object. Set some initial dictionaries.
-    
+
     Args:
       logger: initialized logger object.
     """

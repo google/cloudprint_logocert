@@ -21,8 +21,9 @@ It depends on the Python package zeroconf.
 The main interface to this module are the Wait_for_privet_mdns_service function
 and MDNS_Browser class. Wait_for_privet_mdns_service instatiates a listening
 session and closes it within the function whereas MDNS_Browser lets the caller
-decide when to close the session. The _Listener class is intended for the internals
-of this module and users of this module do not directly need to use it.
+decide when to close the session. The _Listener class is intended for the
+internals of this module and users of this module do not directly need
+to use it.
 """
 import copy
 import threading
@@ -115,7 +116,8 @@ def _find_zeroconf_threads():
 
 # pylint: disable=dangerous-default-value
 # The default case, [] is explicitly handled, and common.
-def Wait_for_privet_mdns_service(t_seconds, service, logger, wifi_interfaces=[]):
+def Wait_for_privet_mdns_service(t_seconds, service, logger,
+                                 wifi_interfaces=[]):
   """Listens for t_seconds and returns an information object for each service.
 
   This is the primary interface to discover mDNS services.  It blocks for
@@ -165,11 +167,13 @@ def wait_for_service_add(t_seconds, target_service, listener):
   """Wait for a service to be added.
 
       Args:
-        t_seconds: Time to listen for mDNS records, in seconds.  Floating point ok.
+        t_seconds: Time to listen for mDNS records, in seconds.
+                   Floating point ok.
         service: string, The service to wait for
         listener: _Listener object, the listener to wait on
       Returns:
-        If Add event observed, return the Zeroconf information class; otherwise, return None
+        If Add event observed, return the Zeroconf information class; otherwise,
+        return None
     """
   t_end = time.time() + t_seconds
   while time.time() < t_end:
@@ -184,14 +188,16 @@ def wait_for_service_add(t_seconds, target_service, listener):
 class MDNS_Browser:
   """Public class for this module.
 
-    Used for keeping the service browser running until the user decides to stop it
+    Used for keeping the service browser running until the user decides to
+    stop it
     """
   def __init__(self, logger, wifi_interfaces=[]):
     """Initialization requires a logger.
 
     Args:
       logger: initialized logger object.
-      if_addr: string, interface address for Zeroconf, None means all interfaces.
+      if_addr: string, interface address for Zeroconf, None means
+               all interfaces.
     """
     self.logger = logger
     self.l = _Listener(logger)
@@ -199,16 +205,19 @@ class MDNS_Browser:
       self.z = Zeroconf()
     else:
       self.z = Zeroconf(wifi_interfaces)
-    self.sb = ServiceBrowser(zc=self.z, type_='_privet._tcp.local.', listener=self.l)
+    self.sb = ServiceBrowser(zc=self.z, type_='_privet._tcp.local.',
+                             listener=self.l)
 
   def Wait_for_service_add(self, t_seconds, target_service):
     """Wait for a service to be added.
 
             Args:
-              t_seconds: Time to listen for mDNS records, in seconds.  Floating point ok.
+              t_seconds: Time to listen for mDNS records, in seconds.
+                         Floating point ok.
               service: string, The service to wait for, if found, return early
             Returns:
-              If Add event observed, return the Zeroconf information class; otherwise, return None
+              If Add event observed, return the Zeroconf information class;
+              otherwise, return None
           """
     return wait_for_service_add(t_seconds, target_service, self.l)
 
@@ -216,7 +225,8 @@ class MDNS_Browser:
     """Wait for a service to be removed.
 
         Args:
-          t_seconds: Time to listen for mDNS records, in seconds.  Floating point ok.
+          t_seconds: Time to listen for mDNS records, in seconds.
+                     Floating point ok.
           service: string, The service to wait for, if found, return early
         Returns:
           If Remove event observed, return the True; otherwise, return False
@@ -233,7 +243,8 @@ class MDNS_Browser:
   def Close(self):
     """Terminate the MDNS listening session by joining all threads"""
     self.sb.cancel()
-    self.z._GLOBAL_DONE = True  # Only method available to kill all threads pylint: disable=protected-access
+    self.z._GLOBAL_DONE = True  # Only method available to kill all 
+                                # threads pylint: disable=protected-access
     zeroconf_threads = _find_zeroconf_threads()
     while len(zeroconf_threads) > 1:
       time.sleep(0.01)
