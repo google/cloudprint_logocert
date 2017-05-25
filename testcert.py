@@ -546,8 +546,8 @@ class Privet(LogoCert):
     try:
       self.assertIn('update_url', _device.privet_info)
     except AssertionError:
-      notes = 'update_url not found in privet info.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      notes = '(OPTIONAL) update_url not found in privet info.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
       raise
     else:
       notes = 'update_url: %s' % _device.privet_info['update_url']
@@ -1443,8 +1443,8 @@ class Printer(LogoCert):
     try:
       self.assertIn('output_bin_unit', _device.cdd['caps'])
     except AssertionError:
-      notes = 'output_bin_unit not found in printer capabilities.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
+      notes = '(OPTIONAL) output_bin_unit not found in printer capabilities.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
       raise
     else:
       notes = 'output_bin_unit: %s' % _device.cdd['caps']['output_bin_unit']
