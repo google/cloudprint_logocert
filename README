@@ -58,7 +58,7 @@ The Python Zeroconf package is used to execute some of the mDNS tests. Install
 ZeroConf from the package located here:
 
 Using PIP:
-sudo pip install zeroconf
+sudo pip install --upgrade zeroconf
 
 Or download from one of the following:
 https://pypi.python.org/pypi/zeroconf
