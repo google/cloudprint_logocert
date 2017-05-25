@@ -2533,7 +2533,9 @@ class LocalPrinting(LogoCert):
     try:
       self.assertTrue(success)
     except AssertionError:
-      notes = 'Failed to detect update before timing out.'
+      notes = 'Failed to detect update before timing out.\n'
+      notes += ('Please confirm "CONVERSION_PRINT" param is correctly set in '
+               '_config.py.')
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     print 'Conversion printing successfully turned off'

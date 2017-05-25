@@ -457,6 +457,9 @@ class GCPService(object):
         print 'GCP Update call failed'
         return False
       else:
+        if key not in res['printer']['local_settings']['current']:
+          print 'ERROR: "%s" does not exist in local_settings' % key
+          return False
         cur_val = res['printer']['local_settings']['current'][key]
         if expected_value == cur_val:
           return True
