@@ -39,7 +39,7 @@ class GoogleDataMgr(object):
 
   def __init__(self, logger, creds, Constants):
     """ Use initialized objects from main module.
-    
+
     Args:
       logger: initialized logger object.
       creds: OAuth2Credentials.
