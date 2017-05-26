@@ -466,3 +466,28 @@ class GCPService(object):
       Sleep('POLL')
     return False
 
+
+  def WaitLocalJobExist(self, printer_id, job_title, timeout=60):
+    """Wait until the local print job is present in /job api.
+
+    Args:
+      printer_id: string, id of the printer
+      job_title: string, title of the print job.
+      timeout: integer, number of seconds to wait.
+    Returns:
+      boolean, True if job exists.
+
+    """
+    print ('Waiting up to %s seconds for the local print job to be reported to '
+           'GCP servers\n' % timeout)
+
+    end = time.time() + timeout
+
+    while time.time() < end:
+      res = self.Jobs(printer_id=printer_id, job_title=job_title)
+      if res['jobsCount'] > 0:
+        return True
+
+      Sleep('POLL')
+
+    return False

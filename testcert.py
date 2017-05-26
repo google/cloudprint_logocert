@@ -3001,7 +3001,7 @@ class LocalPrinting(LogoCert):
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
 
-  def test_19_LocalPrintUpdateGcpSever(self):
+  def test_19_LocalPrintUpdateGcpServer(self):
     """Verify printer successfully updates GCP servers for local print."""
     test_id = '48d084f7-13fa-4a69-aa29-268e998f343c'
     test_name = 'testLocalPrintUpdateGcpServer'
@@ -3019,8 +3019,9 @@ class LocalPrinting(LogoCert):
     else:
       try:
         # Local print jobs have no job_id's so we use job_title as the filter
-        res = _gcp.Jobs(printer_id=_device.dev_id, job_title=job_title)
-        self.assertTrue(res['jobsCount'] > 0)
+        job_exists = _gcp.WaitLocalJobExist(printer_id=_device.dev_id,
+                                            job_title=job_title)
+        self.assertTrue(job_exists)
       except AssertionError:
         notes = 'Local Print job not found using GCP /jobs api.'
         self.LogTest(test_id, test_name, 'Failed', notes)
