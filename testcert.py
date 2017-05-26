@@ -246,7 +246,7 @@ def getRasterImageFromCloud(pwg_path, img_path):
       """
 
   #
-  cjt = CloudJobTicket(_device.details['gcpVersion'])
+  cjt = CloudJobTicket()
   if Constants.CAPS['COLOR']:
     cjt.AddColorOption(GCPConstants.COLOR)
 
@@ -2373,7 +2373,7 @@ class LocalPrinting(LogoCert):
   """Tests of local printing functionality."""
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(_device.privet_info['version'])
+    self.cjt = CloudJobTicket()
 
   @classmethod
   def setUpClass(cls):
@@ -3489,7 +3489,7 @@ class JobState(LogoCert):
   """Test that print jobs are reported correctly from the printer."""
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(_device.details['gcpVersion'])
+    self.cjt = CloudJobTicket()
 
   @classmethod
   def setUpClass(cls):
@@ -4248,7 +4248,7 @@ class PostUnregistration(LogoCert):
     guest_device = Device(_logger, None, None, privet_port=_device.port)
     guest_device.GetDeviceCDDLocally()
 
-    cjt = CloudJobTicket(guest_device.privet_info['version'])
+    cjt = CloudJobTicket()
 
     job_id = guest_device.LocalPrint(test_name, Constants.IMAGES['PWG1'], cjt,
                                      'image/pwg-raster')
@@ -4296,7 +4296,7 @@ class CloudPrinting(LogoCert):
 
   def setUp(self):
     # Create a fresh CJT for each test case
-    self.cjt = CloudJobTicket(_device.details['gcpVersion'])
+    self.cjt = CloudJobTicket()
 
     # Refresh tokens if it's been more than 30 minutes (1800 seconds)
     # If Access tokens expire, GCP calls will fail

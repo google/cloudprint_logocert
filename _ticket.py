@@ -24,7 +24,7 @@ class CloudJobTicket(object):
      job submission."""
 
 
-  def __init__(self, version):
+  def __init__(self, version = '1.0'):
     """Get a reference to a logger object.
 
        Args:
