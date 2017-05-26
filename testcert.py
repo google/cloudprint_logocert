@@ -3001,6 +3001,33 @@ class LocalPrinting(LogoCert):
       print 'If not, fail this test.'
       self.ManualPass(test_id, test_name)
 
+  def test_19_LocalPrintUpdateGcpSever(self):
+    """Verify printer successfully updates GCP servers for local print."""
+    test_id = '48d084f7-13fa-4a69-aa29-268e998f343c'
+    test_name = 'testLocalPrintUpdateGcpServer'
+
+    # Use timestamp to create unique title
+    job_title = '%s-%s' % (test_name , time.time())
+    job_id = _device.LocalPrint(job_title, Constants.IMAGES['PWG1'], self.cjt,
+                                'image/pwg-raster')
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing PWG raster file.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      try:
+        # Local print jobs have no job_id's so we use job_title as the filter
+        res = _gcp.Jobs(printer_id=_device.dev_id, job_title=job_title)
+        self.assertTrue(res['jobsCount'] > 0)
+      except AssertionError:
+        notes = 'Local Print job not found using GCP /jobs api.'
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'Local Print job found using GCP /jobs api.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
 
 class PostRegistration(LogoCert):
   """Tests to run after _device is registered."""
