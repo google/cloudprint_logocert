@@ -59,7 +59,6 @@ class GCPService(object):
       auth_token: the authentication token to use for GCP requests
     """
     self.auth_token = auth_token
-    self.header = {'Authorization': 'Bearer %s' % auth_token}
     self.logger = _log.GetLogger('LogoCert')
     self.transport = Transport(self.logger)
 
@@ -93,7 +92,8 @@ class GCPService(object):
     """
     def GCPQuery(self, *args, **kwargs):
       url = query(self, *args, **kwargs)
-      res = self.transport.HTTPGet(url, headers=self.header)
+      headers = {'Authorization': 'Bearer %s' % self.auth_token}
+      res = self.transport.HTTPGet(url, headers=headers)
 
       response_dict = {}
       Extract(res.json(), response_dict)
@@ -114,7 +114,8 @@ class GCPService(object):
 
          """
     url = '%s/download?id=%s&forcepwg=1' % (Constants.GCP['MGT'], job_id)
-    r = self.transport.HTTPGet(url, headers=self.header)
+    headers = {'Authorization': 'Bearer %s' % self.auth_token}
+    r = self.transport.HTTPGet(url, headers=headers)
 
     if r is None or requests.codes.ok != r.status_code:
       if r is None:
@@ -166,6 +167,7 @@ class GCPService(object):
     content_type = 'url' if is_url else mimetypes.guess_type(name)[0]
     files = {"content": (name,content)}
     url = '%s/submit' % (Constants.GCP['MGT'])
+    headers = {'Authorization': 'Bearer %s' % self.auth_token}
 
     data = {'printerid': printer_id,
             'title': title,
@@ -176,8 +178,7 @@ class GCPService(object):
     print 'Attempting to submit a job through GCP for up to 60 seconds'
     t_end = time.time()+60
     while time.time() < t_end:
-      r = self.transport.HTTPPost(url, data=data, files=files,
-                                  headers=self.header)
+      r = self.transport.HTTPPost(url, data=data, files=files, headers=headers)
       if r is None:
         print 'ERROR! HTTP POST to /submit returned None type'
         return None
@@ -217,11 +218,12 @@ class GCPService(object):
           dictionary, response msg from the printer
         """
     url = '%s/update' % (Constants.GCP['MGT'])
+    headers = {'Authorization': 'Bearer %s' % self.auth_token}
 
     data = {'printerid': printer_id,
             'local_settings': dumps(setting)}
 
-    r = self.transport.HTTPPost(url, data=data, headers=self.header)
+    r = self.transport.HTTPPost(url, data=data, headers=headers)
 
     if r is None or requests.codes.ok != r.status_code:
       return False
