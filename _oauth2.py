@@ -17,6 +17,7 @@ Some functions to get OAuth2 credentials.
 """
 
 import httplib2
+import time
 
 from _config import Constants
 from _transport import Transport
@@ -62,6 +63,7 @@ class Oauth2(object):
     if 'access_token' in response:
       self.logger.info('Got new access token.')
       Constants.AUTH['ACCESS'] = response['access_token']
+      Constants.AUTH['PREV_TOKEN_TIME'] = time.time()
     else:
       self.logger.info('Using current access token.')
 

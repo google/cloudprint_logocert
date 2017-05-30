@@ -360,6 +360,15 @@ class LogoCert(unittest.TestCase):
       self.LogTest(test_id, test_name, 'Passed')
       return True
 
+  def CheckAndRefreshToken(self):
+    """Refresh oauth access token and updates dependent objects accordingly"""
+
+    # Oauth Access tokens expire in 1 hr, but we refresh every 30 minutes just
+    # to stay on the safe side
+    if time.time() > Constants.AUTH['PREV_TOKEN_TIME'] + 1800:
+      _oauth2.RefreshToken()
+      _device.auth_token = Constants.AUTH['ACCESS']
+      _gcp.auth_token = Constants.AUTH['ACCESS']
 
   def LogTest(self, test_id, test_name, result, notes=''):
     """Log a test result.
@@ -3153,6 +3162,10 @@ class PostRegistration(LogoCert):
 class PrinterState(LogoCert):
   """Test that printer state is reported correctly."""
 
+  def setUp(self):
+    # Refresh Oauth access token if necessary
+    self.CheckAndRefreshToken()
+
   @classmethod
   def setUpClass(cls):
     LogoCert.setUpClass(cls)
@@ -3520,6 +3533,8 @@ class JobState(LogoCert):
   def setUp(self):
     # Create a fresh CJT for each test case
     self.cjt = CloudJobTicket()
+    # Refresh Oauth access token if necessary
+    self.CheckAndRefreshToken()
 
   @classmethod
   def setUpClass(cls):
@@ -4327,14 +4342,8 @@ class CloudPrinting(LogoCert):
   def setUp(self):
     # Create a fresh CJT for each test case
     self.cjt = CloudJobTicket()
-
-    # Refresh tokens if it's been more than 30 minutes (1800 seconds)
-    # If Access tokens expire, GCP calls will fail
-    if time.time() > CloudPrinting._prev_token_time + 1800:
-      _oauth2.RefreshToken()
-      _device.auth_token = Constants.AUTH['ACCESS']
-      _gcp.auth_token = Constants.AUTH['ACCESS']
-      CloudPrinting._prev_token_time = time.time()
+    # Refresh Oauth access token if necessary
+    self.CheckAndRefreshToken()
 
 
   def waitForCloudPrintJobCompletion(self, test_id, test_name, output):
