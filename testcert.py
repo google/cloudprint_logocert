@@ -3003,8 +3003,10 @@ class LocalPrinting(LogoCert):
 
   def test_19_LocalPrintUpdateGcpServer(self):
     """Verify printer successfully updates GCP servers for local print."""
+    """This methods tests the same underlying GCP server mechanism used"""
+    """to update the Management page."""
     test_id = '48d084f7-13fa-4a69-aa29-268e998f343c'
-    test_name = 'testLocalPrintUpdateGcpServer'
+    test_name = 'LocalPrint.PrintJobStatusMgtPage'
 
     # Use timestamp to create unique title
     job_title = '%s-%s' % (test_name , time.time())
