@@ -3367,7 +3367,7 @@ class PrinterState(LogoCert):
     if not self.VerifyUiStateHealthy(test_id2, test_name2):
       raise
 
-  def testRemoveTonerCartridge(self):
+  def testTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
     test_id = '13c3cccd-0d72-4a04-8462-d4fa16992338'
     test_name = 'testRemoveTonerCartridge'
