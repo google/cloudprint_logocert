@@ -888,26 +888,18 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        PromptUserAction('ACCEPT the registration request on the Printer UI '
-                         'and wait...')
+        _device.claim_token = 'INVALID'
+        _device.automated_claim_url = (
+            'https://www.google.com/cloudprint/confirm?token=INVALID')
         try:
-          self.assertTrue(_device.GetPrivetClaimToken())
+          self.assertFalse(_device.SendClaimToken(Constants.AUTH['ACCESS']))
         except AssertionError:
-          notes = 'Error getting claim token.'
+          notes = 'Device accepted invalid claim token.'
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
         else:
-          _device.automated_claim_url = (
-              'https://www.google.com/cloudprint/confirm?token=INVALID')
-          try:
-            self.assertFalse(_device.SendClaimToken(Constants.AUTH['ACCESS']))
-          except AssertionError:
-            notes = 'Device accepted invalid claim token.'
-            self.LogTest(test_id, test_name, 'Failed', notes)
-            raise
-          else:
-            notes = 'Device did not accept invalid claim token.'
-            self.LogTest(test_id, test_name, 'Passed', notes)
+          notes = 'Device did not accept invalid claim token.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
         _device.CancelRegistration()
 
