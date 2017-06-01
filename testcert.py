@@ -915,9 +915,9 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        PromptUserAction('ACCEPT the registration request on the Printer UI '
-                         'and wait...')
-        print 'Note: some printers may not show a registration request.'
+        if Constants.CAPS['PRINTER_PANEL_UI'] or Constants.CAPS['WEB_URL_UI']:
+          PromptUserAction('ACCEPT the registration request on the Printer '
+                           'Panel or Web UI and wait...')
         try:
           self.assertTrue(_device.GetPrivetClaimToken())
         except AssertionError:
@@ -2047,8 +2047,10 @@ class Registration(LogoCert):
           notes = 'Simultaneous registration failed.'
           self.LogTest(test_id2, test_name2, 'Passed', notes)
 
-          PromptUserAction('ACCEPT the registration request from %s on the '
-                           'printer UI and wait...' % Constants.USER['EMAIL'])
+          if Constants.CAPS['PRINTER_PANEL_UI'] or Constants.CAPS['WEB_URL_UI']:
+            PromptUserAction('ACCEPT the registration request from %s on the '
+                             'Printer Panel or Web UI and wait...'
+                             % Constants.USER['EMAIL'])
           # Finish the registration process
           success = False
           if _device.GetPrivetClaimToken():

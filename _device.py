@@ -102,7 +102,7 @@ class Device(object):
                    confirmation dialog on the printer
       user: string, the user to register for
       use_token: boolean, use auth_token if True
-      no_action: boolean, if True, do not wait
+      no_action: boolean, if True, do not prompt with [ACTION] prefix
       wait_for_user: boolean, if True, wait for user to press UI button
     Returns:
       boolean: True = device registered, False = device not registered.
@@ -113,7 +113,8 @@ class Device(object):
       if no_action:
         print msg
       else:
-        PromptUserAction(msg)
+        if Constants.CAPS['PRINTER_PANEL_UI'] or Constants.CAPS['WEB_URL_UI']:
+          PromptUserAction(msg)
       if self.GetPrivetClaimToken(user=user, wait_for_user=wait_for_user):
         auth_token = self.auth_token if use_token else None
         if self.ConfirmRegistration(auth_token):
