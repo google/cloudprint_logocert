@@ -3032,14 +3032,20 @@ class LocalPrinting(LogoCert):
         # Local print jobs have no job_id's so we use job_title as the filter
         job_exists = _gcp.WaitLocalJobExist(printer_id=_device.dev_id,
                                             job_title=job_title)
-        self.assertTrue(job_exists)
       except AssertionError:
-        notes = 'Local Print job not found using GCP /jobs api.'
+        notes = 'GCP /jobs api failed.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
-        notes = 'Local Print job found using GCP /jobs api.'
-        self.LogTest(test_id, test_name, 'Passed', notes)
+        try:
+          self.assertTrue(job_exists)
+        except AssertionError:
+          notes = 'Local Print job not found using GCP /jobs api.'
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Local Print job found using GCP /jobs api.'
+          self.LogTest(test_id, test_name, 'Passed', notes)
 
 class PostRegistration(LogoCert):
   """Tests to run after _device is registered."""
