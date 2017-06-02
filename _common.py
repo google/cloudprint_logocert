@@ -94,7 +94,7 @@ def PromptAndWaitForUserAction(msg):
         string, user input string
   """
   PromptUserAction(msg)
-  return raw_input()
+  return raw_input(PurpleText('>>>  '))
 
 
 def Extract(dict_in, dict_out):

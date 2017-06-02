@@ -5004,11 +5004,25 @@ class CloudPrinting(LogoCert):
     try:
       self.assertTrue(output['success'])
     except AssertionError:
-      notes = 'Error printing letter margin test PDF file.'
+      notes = 'Error printing letter margin test PDF file 1.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      self.waitAndManualPass(test_id, test_name, output)
+      self.waitForCloudPrintJobCompletion(test_id, test_name, output)
+
+    output = self.submit(_device.dev_id, Constants.IMAGES['PDF6'], test_id,
+                         test_name, self.cjt)
+    try:
+      self.assertTrue(output['success'])
+    except AssertionError:
+      notes = 'Error printing letter margin test PDF file 2.'
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+    else:
+      prompt = 'Two margin test print jobs should be printed.\n'
+      prompt += 'Verify both pages that printed have acceptable print margins.\n'
+      self.waitAndManualPass(test_id, test_name, output,
+                             verification_prompt=prompt)
 
 
   def test_32_CloudPrintFilePdfSimpleLandscape(self):
