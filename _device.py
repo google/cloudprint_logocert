@@ -642,12 +642,12 @@ class Device(object):
       raise EnvironmentError
 
   def CancelJob(self, job_id):
-    #TODO: Posting a mismatch job seems to cancel the created job,
-    # find a better way to do this
-    url = self.privet_url['submitdoc'] + '?job_id=%s' % (job_id)
+    print 'Try to fail gracefully by cancelling the local print job'
+    print 'Cancelling is done by sending a string to be printed via /submitdoc'
 
+    url = self.privet_url['submitdoc'] + '?job_id=%s' % (job_id)
     headers = self.headers
     headers['Content-Type'] = 'image/pwg-raster'
 
-    self.transport.HTTPPost(url, data=Constants.IMAGES['PDF13'],
+    self.transport.HTTPPost(url, data='Logocert 2.0: CANCELLING LOCAL PRINT',
                             headers=headers)
