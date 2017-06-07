@@ -1701,13 +1701,21 @@ class Printer(LogoCert):
     test_id = 'f461801f-bc2e-416c-8949-d6d9971f05b1'
     test_name = 'CDD.resolvedIssues'
     try:
-      self.assertIn('resolvedIssues', _device.cdd)
+      # Three scenarios that can each pass this test
+      # 1) field is totally omitted
+      # 2) field is an empty list
+      # 3) field is a list with one element, an empty string
+      self.assertTrue('resolvedIssues' not in _device.cdd or  # omitted
+                      not _device.cdd['resolvedIssues'] or    # empty list
+                      (len(_device.cdd['resolvedIssues']) == 1 and  # empty str
+                       not _device.cdd['resolvedIssues'][0] ))
     except AssertionError:
-      notes = 'resolvedIssues not found in printer capabilities.'
+      notes = 'resolvedIssues found with elements in printer capabilities.'
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      notes = 'resolvedIssues found in printer capabilities.'
+      notes = ('resolvedIssues not found or found with an empty element in '
+               'printer capabilities.')
       self.LogTest(test_id, test_name, 'Passed', notes)
 
 class PreRegistration(LogoCert):
