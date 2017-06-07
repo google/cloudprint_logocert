@@ -2631,17 +2631,33 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print Jpg support')
       return
 
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['JPG12'], self.cjt,
+    regular_jpg = Constants.IMAGES['JPG12']
+    progressive_jpg = Constants.IMAGES['JPG7']
+
+    print 'Local printing a regular JPEG image'
+    job_id = _device.LocalPrint(test_name, regular_jpg, self.cjt, 'image/jpeg')
+    try:
+      self.assertIsNotNone(job_id)
+    except AssertionError:
+      notes = 'Error local printing regular JPEG: %s' % regular_jpg
+      self.LogTest(test_id, test_name, 'Failed', notes)
+      raise
+
+    PromptAndWaitForUserAction('Press ENTER when the document is completely '
+                               'printed')
+
+    print 'Local printing a progressive JPEG image'
+    job_id = _device.LocalPrint(test_name, progressive_jpg, self.cjt,
                                 'image/jpeg')
     try:
       self.assertIsNotNone(job_id)
     except AssertionError:
-      notes = 'Error local printing %s' % Constants.IMAGES['JPG12']
+      notes = 'Error local printing progressive JPEG: %s' % progressive_jpg
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      print 'JPG file should be printed.'
-      print 'Fail this test if print out has errors or quality issues.'
+      print '2 JPG files should be printed: 1 regular and 1 progressive.'
+      print 'Fail this test if print outs have errors or quality issues.'
       self.ManualPass(test_id, test_name)
 
   def test_07_LocalPrintPNG(self):
