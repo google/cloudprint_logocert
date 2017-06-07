@@ -4190,6 +4190,8 @@ class RunAfter24Hours(LogoCert):
     else:
       notes = 'Printer online after 24 hours.'
       self.LogTest(test_id, test_name, 'Passed', notes)
+    finally:
+      PromptAndWaitForUserAction('Press ENTER to continue testing.')
 
 class Unregister(LogoCert):
   """Test removing device from registered status."""
