@@ -1875,8 +1875,9 @@ class PreRegistration(LogoCert):
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on Printer Panel UI.'
 
-    registration_success = _device.Register('CANCEL the registration request '
-                                            'on Printer Panel UI and wait...')
+    registration_success = _device.detectRegisterCancel('CANCEL the '
+                                              'registration request on Printer '
+                                              'Panel UI and wait...')
     if not registration_success:
       # Confirm the user's account has no registered printers
       res = _gcp.Search(_device.name)
@@ -1912,8 +1913,9 @@ class PreRegistration(LogoCert):
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on Printer Web UI.'
 
-    registration_success = _device.Register('CANCEL the registration request '
-                                            'on Printer Web UI and wait...')
+    registration_success = _device.detectRegisterCancel('CANCEL the '
+                                              'registration request on Printer '
+                                              'Web UI and wait...')
     if not registration_success:
       # Confirm the user's account has no registered printers
       res = _gcp.Search(_device.name)

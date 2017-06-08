@@ -106,7 +106,7 @@ class Device(object):
       wait_for_user: boolean, if True, wait for user to press UI button
     Returns:
       boolean: True = device registered, False = device not registered.
-    Note, devices a required user input to accept or deny a registration
+    Note, devices require user input to accept or deny a registration
     request, so manual intervention is required.
     """
     if self.StartPrivetRegister(user=user):
@@ -123,6 +123,66 @@ class Device(object):
 
     return False
 
+  def detectRegisterCancel(self, msg, user=Constants.USER['EMAIL'],
+                           use_token=True, no_action=False, wait_for_user=True):
+    """Detect User Cancellation of Registration process using Privet.
+    Args:
+      msg: string, the instruction for the user about the registration
+                   confirmation dialog on the printer
+      user: string, the user to register for
+      use_token: boolean, use auth_token if True
+      no_action: boolean, if True, do not prompt with [ACTION] prefix
+      wait_for_user: boolean, if True, wait for user to press UI button
+    Returns:
+      boolean: True = device registered, False = device not registered.
+    Note, devices require user input to accept or deny a registration
+    request, so manual intervention is required.
+    """
+    if self.StartPrivetRegister(user=user):
+      if no_action:
+        print msg
+      else:
+        if Constants.CAPS['PRINTER_PANEL_UI'] or Constants.CAPS['WEB_URL_UI']:
+          PromptUserAction(msg)
+      # if self.GetUserResponse(user=user, wait_for_user=wait_for_user):
+      #   return True
+
+      print ('Waiting up to 60 seconds for printer UI interaction '
+             'then getting Privet Claim Token.')
+      t_end = time.time() + 60;
+      while time.time()<t_end:
+        url = self.privet_url['register']['getClaimToken']
+        params = {'user': user}
+        r = self.transport.HTTPPost(url, headers=self.headers, params=params)
+
+        if r is None:
+          raise
+        response = r.json()
+
+        if 'token' in response:
+          self.claim_token = response['token']
+          self.automated_claim_url = response['automated_claim_url']
+          self.claim_url = response['claim_url']
+          print 'Successfully got Claim Token for %s' % user
+          return True
+
+        if 'error' in response:
+          if response['error'] == 'pending_user_action':
+            if not wait_for_user:
+              # Should not return 'pending_user_action' when printer is not
+              # waiting for user interaction
+              print ("ERROR: getClaimToken() should not return "
+                     "'pending_user_action when user input is not expected'")
+              raise EnvironmentError
+          else:
+            return False
+        # Keep polling for user interaction at a configurable interval
+        time.sleep(Constants.SLEEP['POLL'])
+
+      print 'GetPrivetClaimToken() timed out from waiting for printer interaction'
+      return True
+
+    return False
 
   def GetDeviceCDDLocally(self):
     """Get device cdd and populate device object with the details via privet.
@@ -426,7 +486,7 @@ class Device(object):
     self.logger.error('Unable to delete printer from service.')
     return False
 
-  def LocalPrint(self, title, content, cjt, content_type, 
+  def LocalPrint(self, title, content, cjt, content_type,
                  check_supported_content = True):
     """Submit a local print job to the printer
 
