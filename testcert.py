@@ -447,6 +447,7 @@ class SystemUnderTest(LogoCert):
 
     notes = 'OS: %s\n' % os_type
     notes += 'Python: %s\n' % python_version
+    notes += 'Code Version: %s' % self.getCodeVersion()
     self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testPrinterDetails(self):
@@ -469,6 +470,14 @@ class SystemUnderTest(LogoCert):
       caps += "  '%s': %s,\n" % (k,v)
     caps += '}\n'
     return caps
+
+  def getCodeVersion(self):
+    if os.path.isfile('version'):
+      with open('version', ) as f:
+        code_version = f.read()
+    else:
+      code_version = 'N/A'
+    return code_version
 
 
 class Privet(LogoCert):
