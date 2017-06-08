@@ -2072,9 +2072,9 @@ class Registration(LogoCert):
             _device.CancelRegistration()
             raise
           else:
-            print 'Waiting up to 2 minutes to complete the registration.'
+            print 'Waiting up to 5 minutes to complete the registration.'
             success = waitForAdvertisementRegStatus(Constants.PRINTER['NAME'],
-                                                    True, 120)
+                                                    True, 300)
             try:
               self.assertTrue(success)
             except AssertionError:
@@ -4259,10 +4259,10 @@ class Unregister(LogoCert):
       self.LogTest(test_id, test_name, 'Passed', notes)
 
     PromptUserAction('Power on the printer and wait...')
-    print ('Wait up to 2 minutes for the printer to advertise as '
+    print ('Wait up to 5 minutes for the printer to advertise as '
            'an unregistered device')
     success = waitForAdvertisementRegStatus(Constants.PRINTER['NAME'],
-                                            False, 120)
+                                            False, 300)
     try:
       self.assertTrue(success)
     except AssertionError:
