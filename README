@@ -116,10 +116,37 @@ The following sections should be edited:
 -- CAPS --
 * This should reflect the actual capabilities of the printer. Set the
   following values to True or False, depending on if the printer supports them
-  or not: COLLATE, COLOR (False if monochrome printer), COPIES (True if copies
-  are supported), DUPLEX, LAYOUT_ISSUE (Currently Chrome has a bug so that the
-  printer must still provide page_orientation), LOCAL_PRINT (set to True if your
-  printer supports local printing before the printer is registered).
+  or not:
+    - COLLATE: If the printer supports the collate feature, set this to True.
+    - COLOR: Set to True for a color printer and False for a monochrome
+      printer.
+    - COPIES_LOCAL: If the printer supports copies for local printing, set this
+      to True.
+    - COPIES_CLOUD: If a printer supports copies for cloud printing, set this
+      to True.
+    - COVER: If the printer has a cover, set it to True. Not all printers
+      have a cover.
+    - DUPLEX: Set to True if the printer supports duplex printing.
+    - LAYOUT_ISSUE: Printer must set page orientation for local printing, so
+      page_orientation is still needed in the printer capabilities.
+    - LOCAL_PRINT: If the printer supports local printing without being
+      registered, set this to True.
+    - TONER: Set to false if printer is thermal or has no toner.
+    - TRAY_SENSOR: Set this to True if printer has sensor to detect if the
+      paper tray is open.
+    - MEDIA_SENSOR: Set this to True if printer has sensor to detect if the
+      paper tray is empty.
+    - MARGIN: Set this to True if a printer supports margin specifications.
+    - GOODBYE_PACKET: Set this to True if a printer sends a Privet goodbye
+      packet when the device is shut off.
+    - EMPTY_INK_SENSOR: Set this to True if a printer can sense when the
+      ink/toner is empty
+    - PRINTER_PANEL_UI: Set this to True if a printer supports registration
+      interaction through panel UI
+    - WEB_URL_UI: Set this to True if a printer supports registration
+      interaction through Web URL UI
+    - CONVERSION_PRINT: Set this to True if a printer supports the conversion
+      printing for local print jobs
 
 -- SLEEP --
 * This script tries its best to avoid using sleep but in the case that it is
@@ -151,7 +178,7 @@ The following sections should be edited:
   cloud-print-certification-team@google.com.
 
 * If you are on a Windows machine and running the tool out of an ANSI color
-  supporting console and want to enable color ouptut, set FORCE_COLOR_OUTPUT
+  supporting console and want to enable color output, set FORCE_COLOR_OUTPUT
   to True.
 
 -- USER --
@@ -162,7 +189,7 @@ The following sections should be edited:
 * Add the email address of the 2nd test account.
 
 Save the _config.py and then all of the preparatory work is completed. Now simply
-execute testcert.py (NOTE: The user account should have no GCP printers registered 
+execute testcert.py (NOTE: The user account should have no GCP printers registered
 under it before this script runs):
 
 ./testcert.py
@@ -175,10 +202,10 @@ to the testcert.py output as it will ask you to turn the printer on and off at
 various times during the test process. All prompt actions are highlighted and
 create a beep sound when they appear.
 
-If you need to remove some of the test suites, edit _config.py (TEST['RUN']), 
-and add a '#' infront of suite names you don't want to run. Pay attention
+If you need to remove some of the test suites, edit _config.py (TEST['RUN']),
+and add a '#' in front of suite names you don't want to run. Pay attention
 to the whether the printer is registered or not before isolating suites however.
-See the list below for the required initial condition of each suite. 
+See the list below for the required initial condition of each suite.
 
 The complete list of all testsuites and the order they should run is
 as follows:
@@ -219,7 +246,7 @@ debug information. And if TEST['SPREADSHEET'] = True, then the results will be
 placed in a Google spreadsheet for easy reading of the test results.
 
 For each test that are blocked or failed, a cmdline is provided in the Google
-spreadsheet for the individual test case to be run again only by itself. 
+spreadsheet for the individual test case to be run again only by itself.
 They follow this format:
     python -m unittest [moduleName].[testSuiteName].[testCaseName]
 Example:
