@@ -116,37 +116,9 @@ The following sections should be edited:
 -- CAPS --
 * This should reflect the actual capabilities of the printer. Set the
   following values to True or False, depending on if the printer supports them
-  or not:
-    - COLLATE: If the printer supports the collate feature, set this to True.
-    - COLOR: Set to True for a color printer and False for a monochrome
-      printer.
-    - COPIES_LOCAL: If the printer supports copies for local printing, set this
-      to True.
-    - COPIES_CLOUD: If a printer supports copies for cloud printing, set this
-      to True.
-    - COVER: If the printer has a cover, set it to True. Not all printers
-      have a cover.
-    - DUPLEX: Set to True if the printer supports duplex printing.
-    - LAYOUT_ISSUE: Printer must set page orientation for local printing, so
-      page_orientation is still needed in the printer capabilities.
-    - LOCAL_PRINT: If the printer supports local printing without being
-      registered, set this to True.
-    - TONER: Set to false if printer is thermal or has no toner.
-    - TRAY_SENSOR: Set this to True if printer has sensor to detect if the
-      paper tray is open.
-    - MEDIA_SENSOR: Set this to True if printer has sensor to detect if the
-      paper tray is empty.
-    - MARGIN: Set this to True if a printer supports margin specifications.
-    - GOODBYE_PACKET: Set this to True if a printer sends a Privet goodbye
-      packet when the device is shut off.
-    - EMPTY_INK_SENSOR: Set this to True if a printer can sense when the
-      ink/toner is empty
-    - PRINTER_PANEL_UI: Set this to True if a printer supports registration
-      interaction through panel UI
-    - WEB_URL_UI: Set this to True if a printer supports registration
-      interaction through Web URL UI
-    - CONVERSION_PRINT: Set this to True if a printer supports the conversion
-      printing for local print jobs
+  or not.
+
+  Please refer to _config.py for instructions to populating these fields.
 
 -- SLEEP --
 * This script tries its best to avoid using sleep but in the case that it is

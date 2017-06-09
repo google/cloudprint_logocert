@@ -123,18 +123,14 @@ class Device(object):
 
     return False
 
-  def detectRegisterCancel(self, msg, user=Constants.USER['EMAIL'],
-                           use_token=True):
+  def detectRegisterCancel(self, msg, user=Constants.USER['EMAIL']):
     """Detect User Cancellation of Registration process using Privet.
     Args:
-      msg: string, the instruction for the user about the registration cancel
-           dialog on the printer
+      msg: string, the instructional prompt for cancellation
       user: string, the user to register for
     Returns:
       boolean: True = device registration cancelled successfully
                False = device registration cancel failed
-    Note, devices require user input to accept or deny a registration
-    request, so manual intervention is required.
     """
     if self.StartPrivetRegister(user=user):
       PromptUserAction(msg)
@@ -152,6 +148,8 @@ class Device(object):
         response = r.json()
 
         if 'token' in response:
+          print "ERROR: Token found in response after cancellation."
+          print "Perhaps user clicked ACCEPT by accident"
           return False
 
         if 'error' in response:
@@ -160,7 +158,7 @@ class Device(object):
         # Keep polling for user interaction at a configurable interval
         time.sleep(Constants.SLEEP['POLL'])
 
-      print 'GetPrivetClaimToken() timed out from waiting for printer interaction'
+      print 'getClaimToken() did not detect user interactions in 60 seconds'
       return False
 
     print 'Unable to start the registration process using the Privet protocol'

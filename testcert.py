@@ -472,12 +472,11 @@ class SystemUnderTest(LogoCert):
     return caps
 
   def getCodeVersion(self):
+    version = 'N/A'
     if os.path.isfile('version'):
       with open('version', ) as f:
-        code_version = f.read()
-    else:
-      code_version = 'N/A'
-    return code_version
+        version = f.read()
+    return version
 
 
 class Privet(LogoCert):
