@@ -227,7 +227,7 @@ class MDNS_Browser:
         Args:
           t_seconds: Time to listen for mDNS records, in seconds.
                      Floating point ok.
-          service: string, The service to wait for, if found, return early
+          target_service: zeroconf service object, the service to wait for
         Returns:
           If Remove event observed, return the True; otherwise, return False
       """
@@ -257,7 +257,7 @@ class MDNS_Browser:
     """Get the printer service's DNS record's TTL
 
     Args:
-      name: String, name of the service to get the TTL for.
+      target_service: zeroconf service object, service to get the TTL for.
     Returns:
           integer, TTL if service is found, None otherwise.
     """
