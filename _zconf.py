@@ -235,7 +235,7 @@ class MDNS_Browser:
     while time.time() < t_end:
       services = self.l.removed_services()
       for service in services:
-        if target_service in service:
+        if target_service.name == service:
           return True
       time.sleep(1)
     return False
@@ -253,7 +253,7 @@ class MDNS_Browser:
     self.logger.info('All listeners have been stopped.')
     return
 
-  def Get_service_ttl(self, name):
+  def Get_service_ttl(self, target_service):
     """Get the printer service's DNS record's TTL
 
     Args:
@@ -262,7 +262,7 @@ class MDNS_Browser:
           integer, TTL if service is found, None otherwise.
     """
     for service in self.l.services():
-      service_name = service.name.lower()
-      if name.lower() in service_name:
+      if target_service.name == service.name:
+        service_name = service.name.lower()
         return self.sb.services[service_name].get_remaining_ttl(time.time()* 1000)
     return None

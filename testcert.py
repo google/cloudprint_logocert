@@ -2277,7 +2277,7 @@ class LocalDiscovery(LogoCert):
 
     PromptUserAction('Turn off the printer and wait...')
     is_off = mdns_browser.Wait_for_service_remove(120,
-                                                  Constants.PRINTER['NAME'])
+                                                  service)
     try:
       self.assertTrue(is_off)
     except AssertionError:
@@ -2321,11 +2321,11 @@ class LocalDiscovery(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       raise
     else:
-      start_ttl = mdns_browser.Get_service_ttl(Constants.PRINTER['NAME'])
+      start_ttl = mdns_browser.Get_service_ttl(service)
       # Monitor the local network for privet broadcasts.
       print 'Listening for network broadcasts for 60 seconds.'
       time.sleep(60)
-      end_ttl = mdns_browser.Get_service_ttl(Constants.PRINTER['NAME'])
+      end_ttl = mdns_browser.Get_service_ttl(service)
       try:
         self.assertTrue(start_ttl > end_ttl)
       except AssertionError:
