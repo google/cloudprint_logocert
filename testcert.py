@@ -3284,10 +3284,10 @@ class PrinterState(LogoCert):
     else:
       # Check state message.
       # Some input trays may not be opened and be normally empty.
-      success = self.VerifyUiStateMessages(test_id, test_name,
-                                           'input_tray_item',
-                                           ' is open',
-                                           (' is empty', '% full'))
+      self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                                 'input_tray_item',
+                                                 ' is open',
+                                                 (' is empty', '% full')))
 
     test_id2 = 'a158fe6a-125f-46e2-a382-9189eb06b5f0'
     test_name2 = 'Printer.ClosePaperTray'
@@ -3302,12 +3302,10 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      success = self.VerifyUiStateMessages(test_id2, test_name2,
-                                           'input_tray_item',
-                                           None,
-                                           (' is empty', '% full')) and success
-
-    self.assertTrue(success)
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'input_tray_item',
+                                                 None,
+                                                 (' is empty', '% full')))
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
@@ -3322,9 +3320,9 @@ class PrinterState(LogoCert):
     PromptAndWaitForUserAction('Press ENTER once all media is removed.')
     Sleep('PRINTER_STATE')
     _device.GetDeviceDetails()
-    success = self.VerifyUiStateMessages(test_id, test_name,
-                                         'input_tray_item',
-                                         ' is empty')
+    self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                               'input_tray_item',
+                                               ' is empty'))
 
     test_id2 = 'a0387dea-6b87-4418-9489-41c9b4cb68d9'
     test_name2 = 'Printer.PlaceMediaInTray'
@@ -3333,12 +3331,17 @@ class PrinterState(LogoCert):
                                'in paper tray.')
     Sleep('PRINTER_STATE')
     _device.GetDeviceDetails()
-    success = self.VerifyUiStateMessages(test_id2, test_name2,
-                                         'input_tray_item',
-                                         None,
-                                         '% full') and success
-
-    self.assertTrue(success)
+    try:
+      self.assertFalse(_device.error_state)
+    except AssertionError:
+      notes = 'Printer is in error after paper was placed.'
+      self.LogTest(test_id2, test_name2, 'Failed', notes)
+      raise
+    else:
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'input_tray_item',
+                                                 None,
+                                                 '% full'))
 
   def testTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
@@ -3442,9 +3445,9 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       success = False
     else:
-      success = self.VerifyUiStateMessages(test_id, test_name,
-                                           'cover_item',
-                                           ' is open')
+      self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                                 'cover_item',
+                                                 ' is open'))
 
     test_id2 = '57b2fd84-5328-4a39-a70e-e0ae250ff109'
     test_name2 = 'Printer.CloseCover'
@@ -3459,11 +3462,9 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      success = self.VerifyUiStateMessages(test_id2, test_name2,
-                                           'cover_item',
-                                           None) and success
-
-    self.assertTrue(success)
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'cover_item',
+                                                 None))
 
   def testPaperJam(self):
     """Verify printer properly reports a paper jam with correct state."""
@@ -3482,9 +3483,9 @@ class PrinterState(LogoCert):
       self.LogTest(test_id, test_name, 'Failed', notes)
       success = False
     else:
-      success = self.VerifyUiStateMessages(test_id, test_name,
-                                           'media_path_item',
-                                           'Paper jam')
+      self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                                 'media_path_item',
+                                                 'Paper jam'))
 
     test_id2 = 'd1b77fe3-9d1d-4d08-917a-6c7254ea3bd2'
     test_name2 = 'Printer.RemovePaperJam'
@@ -3500,11 +3501,9 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      success = self.VerifyUiStateMessages(test_id2, test_name2,
-                                           'media_path_item',
-                                           None) and success
-
-    self.assertTrue(success)
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'media_path_item',
+                                                 None))
 
 
 class JobState(LogoCert):
