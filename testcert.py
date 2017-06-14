@@ -3206,103 +3206,45 @@ class PrinterState(LogoCert):
     _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
-  def GetErrorMsg(self, printer_states):
-    """Loop through printer messages and find the first error message.
-
-    Args:
-      printer_states: dictionary, contains varies printer state objects
-    Returns:
-      string: error message if found, else None
-    """
-    for key, val in printer_states.iteritems():
-      for state in val:
-        if state['severity'] != 'NONE':
-          return state['message'].lower()
-    return None
-
-
-  def VerifyUiStateMessage(self, test_id, test_name, keywords_list,
-                           suffixes = None):
+  def VerifyUiStateMessages(self, test_id, test_name, category, required_suffix, allowed_suffixes=()):
     """Verify state messages.
 
     Args:
       test_id: integer, testid in TestTracker database.
       test_name: string, name of test.
-      keywords_list: array, list of strings that should be found in the uiState.
-                    each element in the array is looked for in the UI state
-                    elements can be slash separated for aliasing where only
-                    one term of the slash separated string needs to match.
-                    ie. ['door/cover', 'open']
-      suffixes: tuple or string, additional allowed suffixes of uiState messages
+      category: string, message category.
+      required_suffix: string, required suffix of state message, None if no required suffix.
+      allowed_suffixes: tuple or string, additional allowed suffixes of state messages,
+        empty if required suffix is only allowed.
     Returns:
       boolean: True = Pass, False = Fail.
     """
-    if 'uiState' in _device.cdd:
-      if 'caption' in _device.cdd['uiState']:
-        uiMsg = _device.cdd['uiState']['caption'].lower()
-        uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
-        uiMsg.strip()
-      elif 'printer' in _device.cdd['uiState']:
-        uiMsg = self.GetErrorMsg(_device.cdd['uiState']['printer'])
-        if uiMsg is None:
-          notes = ('No error messages found in uistate[caption] or '
-                   'uiState[printer]')
+    if ('uiState' in _device.cdd) and ('printer' in _device.cdd['uiState']) and \
+        (category in _device.cdd['uiState']['printer']):
+      elements = _device.cdd['uiState']['printer'][category]
+    else:
+      elements = []
+    
+    if required_suffix is None:
+      found = True
+    else:
+      found = False
+
+    for element in elements:
+      message = re.sub(r' \(.*\)$', '', element['message'])
+      if required_suffix and message.endswith(required_suffix):
+        found = True
+      else:
+        if not message.endswith(allowed_suffixes):
+          notes = 'ui state message "%s" is not allowed' % message
           self.LogTest(test_id, test_name, 'Failed', notes)
           return False
-        uiMsg = re.sub(r' \(.*\)$', '', uiMsg)
-        uiMsg.strip()
-      else:
-        notes = 'No \'caption\' attribute found inside uiState'
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        return False
-    else:
-      notes = 'No \'uiState\' attribute found inside cdd'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      return False
 
-    found = False
-    # check for keywords
-    for keywords in keywords_list:
-      found = False
-      for keyword in keywords.split('/'):
-        if keyword.lower() in uiMsg:
-          found = True
-          break
-      if not found:
-        notes = ('required keyword(s) "%s" not in UI state message: %s' %
-                 (keywords, _device.cdd['uiState']['caption']))
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        return False
-
-    if suffixes is not None:
-      # check for suffixes
-      if not uiMsg.endswith(suffixes):
-        notes = ('None of the required suffix(s) "%s" are found in the '
-                 'UI state message: '
-                 '%s' % (keywords, _device.cdd['uiState']['caption']))
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        return False
-
-    self.LogTest(test_id, test_name, 'Passed')
-    return True
-
-  def VerifyUiStateHealthy(self, test_id, test_name):
-    """Verify ui state has no error messages.
-
-    Args:
-      test_id: integer, testid in TestTracker database.
-      test_name: string, name of test.
-    Returns:
-      boolean: True = Pass, False = Fail.
-    """
-    is_healthy = False if 'caption' in _device.cdd['uiState'] else True
-
-    if is_healthy:
+    if found:
       self.LogTest(test_id, test_name, 'Passed')
       return True
     else:
-      notes = ('UI shows error state with message: %s' %
-               _device.cdd['uiState']['caption'])
+      notes = 'required suffix "%s" is not in ui state messages' % required_suffix
       self.LogTest(test_id, test_name, 'Failed', notes)
       return False
 
@@ -3348,15 +3290,14 @@ class PrinterState(LogoCert):
     except AssertionError:
       notes = 'Printer is not in error state with open paper tray.'
       self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+      success = False
     else:
       # Check state message.
       # Some input trays may not be opened and be normally empty.
-      if not self.VerifyUiStateMessage(test_id, test_name, ['input/tray'],
-                                       suffixes=('is open',
-                                                 'is empty',
-                                                 '% full')):
-        raise
+      self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                                 'input_tray_item',
+                                                 ' is open',
+                                                 (' is empty', '% full')))
 
     test_id2 = 'a158fe6a-125f-46e2-a382-9189eb06b5f0'
     test_name2 = 'Printer.ClosePaperTray'
@@ -3371,8 +3312,10 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      if not self.VerifyUiStateHealthy(test_id2, test_name2):
-        raise
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'input_tray_item',
+                                                 None,
+                                                 (' is empty', '% full')))
 
   def testNoMediaInTray(self):
     """Verify no media in paper tray reported correctly."""
@@ -3387,9 +3330,9 @@ class PrinterState(LogoCert):
     PromptAndWaitForUserAction('Press ENTER once all media is removed.')
     Sleep('PRINTER_STATE')
     _device.GetDeviceDetails()
-    if not self.VerifyUiStateMessage(test_id, test_name, ['input/tray'],
-                                     suffixes=('is empty')):
-      raise
+    self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                               'input_tray_item',
+                                               ' is empty'))
 
     test_id2 = 'a0387dea-6b87-4418-9489-41c9b4cb68d9'
     test_name2 = 'Printer.PlaceMediaInTray'
@@ -3398,8 +3341,17 @@ class PrinterState(LogoCert):
                                'in paper tray.')
     Sleep('PRINTER_STATE')
     _device.GetDeviceDetails()
-    if not self.VerifyUiStateHealthy(test_id2, test_name2):
+    try:
+      self.assertFalse(_device.error_state)
+    except AssertionError:
+      notes = 'Printer is in error after paper was placed.'
+      self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
+    else:
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'input_tray_item',
+                                                 None,
+                                                 '% full'))
 
   def testTonerCartridge(self):
     """Verify missing/empty toner cartridge is reported correctly."""
@@ -3424,12 +3376,10 @@ class PrinterState(LogoCert):
         'Press ENTER once toner is replaced in printer to continue testing.')
       raise
     else:
-      if not self.VerifyUiStateMessage(test_id, test_name, ['ink/toner'],
-                                       ('is removed',
-                                        'is empty',
-                                        'is low',
-                                        'pages remaining',
-                                        '%')):
+      if not self.VerifyUiStateMessages(test_id, test_name,
+                                        'marker_item',
+                                        ' is removed',
+                                        ('%', ' pages remaining', ' is low')):
         PromptAndWaitForUserAction(
           'Press ENTER once toner is replaced in printer to continue testing.')
         raise
@@ -3456,12 +3406,10 @@ class PrinterState(LogoCert):
           'testing.')
         raise
       else:
-        if not self.VerifyUiStateMessage(test_id2, test_name2, ['ink/toner'],
-                                         ('is removed',
-                                          'is empty',
-                                          'is low',
-                                          'pages remaining',
-                                          '%')):
+        if not self.VerifyUiStateMessages(test_id2, test_name2,
+                                          'marker_item',
+                                          ' is empty',
+                                          ('%', ' pages remaining', ' is low')):
           PromptAndWaitForUserAction(
             'Press ENTER once original toner is replaced in printer to '
             'continue testing.')
@@ -3481,7 +3429,10 @@ class PrinterState(LogoCert):
       self.LogTest(test_id3, test_name3, 'Failed', notes)
       raise
     else:
-      if not self.VerifyUiStateHealthy(test_id3, test_name3):
+      if not self.VerifyUiStateMessages(test_id3, test_name3,
+                                        'marker_item',
+                                        None,
+                                        ('%', ' pages remaining', ' is low')):
         raise
 
   def testCoverOpen(self):
@@ -3502,11 +3453,11 @@ class PrinterState(LogoCert):
     except AssertionError:
       notes = 'Printer is not in error state with open cover.'
       self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+      success = False
     else:
-      if not self.VerifyUiStateMessage(test_id, test_name, ['Door/Cover'],
-                                       suffixes=('is open')):
-        raise
+      self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                                 'cover_item',
+                                                 ' is open'))
 
     test_id2 = '57b2fd84-5328-4a39-a70e-e0ae250ff109'
     test_name2 = 'Printer.CloseCover'
@@ -3521,8 +3472,9 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      if not self.VerifyUiStateHealthy(test_id2, test_name2):
-        raise
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'cover_item',
+                                                 None))
 
   def testPaperJam(self):
     """Verify printer properly reports a paper jam with correct state."""
@@ -3539,10 +3491,11 @@ class PrinterState(LogoCert):
     except AssertionError:
       notes = 'Printer is not in error state with paper jam.'
       self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+      success = False
     else:
-      if not self.VerifyUiStateMessage(test_id, test_name, ['paper jam']):
-        raise
+      self.assertTrue(self.VerifyUiStateMessages(test_id, test_name,
+                                                 'media_path_item',
+                                                 'Paper jam'))
 
     test_id2 = 'd1b77fe3-9d1d-4d08-917a-6c7254ea3bd2'
     test_name2 = 'Printer.RemovePaperJam'
@@ -3558,8 +3511,9 @@ class PrinterState(LogoCert):
       self.LogTest(test_id2, test_name2, 'Failed', notes)
       raise
     else:
-      if not self.VerifyUiStateHealthy(test_id2, test_name2):
-        raise
+      self.assertTrue(self.VerifyUiStateMessages(test_id2, test_name2,
+                                                 'media_path_item',
+                                                 None))
 
 
 class JobState(LogoCert):
