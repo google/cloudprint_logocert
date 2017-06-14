@@ -472,11 +472,33 @@ class SystemUnderTest(LogoCert):
     return caps
 
   def getCodeVersion(self):
-    version = 'N/A'
     if os.path.isfile('version'):
       with open('version', ) as f:
-        version = f.read()
-    return version
+        version = f.readline().replace('\n', '')
+        if not version.startswith('$'):
+          return version
+    gitdir = '.git'
+    if os.path.isfile(gitdir):
+      with open(gitdir, ) as f:
+        line = f.readline().replace('\n', '')
+        if line.startswith('gitdir: '):
+          gitdir = line[8:]
+    commondir = gitdir
+    commondir_file = gitdir + '/commondir'
+    if os.path.isfile(commondir_file):
+      with open(commondir_file, ) as f:
+        commondir = gitdir + '/' + f.readline().replace('\n', '')
+    head = gitdir + '/HEAD'
+    if os.path.isfile(head):
+      with open(head, ) as f1:
+        ref = f1.readline().replace('\n', '')
+        if ref.startswith('ref: '):
+          ref = commondir + '/' + ref[5:]
+          if os.path.isfile(ref):
+            with open(ref, ) as f2:
+              version = f2.readline().replace('\n', '')
+              return version
+    return 'N/A'
 
 
 class Privet(LogoCert):
