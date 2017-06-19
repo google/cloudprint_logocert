@@ -3352,7 +3352,8 @@ class PrinterState(LogoCert):
     else:
       # Check state message.
       # Some input trays may not be opened and be normally empty.
-      if not self.VerifyUiStateMessage(test_id, test_name, ['input/tray'],
+      if not self.VerifyUiStateMessage(test_id, test_name,
+                                       ['input/tray/cassette'],
                                        suffixes=('is open',
                                                  'is empty',
                                                  '% full')):
@@ -3387,7 +3388,8 @@ class PrinterState(LogoCert):
     PromptAndWaitForUserAction('Press ENTER once all media is removed.')
     Sleep('PRINTER_STATE')
     _device.GetDeviceDetails()
-    if not self.VerifyUiStateMessage(test_id, test_name, ['input/tray'],
+    if not self.VerifyUiStateMessage(test_id, test_name,
+                                     ['input/tray/cassette'],
                                      suffixes=('is empty')):
       raise
 
