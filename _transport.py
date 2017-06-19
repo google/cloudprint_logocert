@@ -23,13 +23,15 @@ This module is dependent on modules from the LogoCert package.
 
 import socket  # In order to set a default timeout.
 import requests
+import time
+import _oauth2
 
 from _config import Constants
 
 
 class Transport(object):
   """Send and receive network messages and communication."""
-
+  
   def __init__(self, logger):
     """Get a reference to a logger object and JsonParser.
 
@@ -51,6 +53,7 @@ class Transport(object):
     Returns:
       dict: Response object, with keys code, headers, and data.
     """
+    _prev_token_time = None
     response = requests.post(url, headers=headers, params=params, data=data,
                              files=files)
 
@@ -59,7 +62,13 @@ class Transport(object):
       return None
 
     self.LogResponseData(response)
-
+    if headers is not None:
+      if 'Authorization' in headers:
+        if time.time() > Constants.AUTH['PREV_TOKEN_TIME'] +5:
+          Constants.AUTH['PREV_TOKEN_TIME']= time.time()
+          _oauth2.Oauth2.RefreshToken()
+          _device.auth_token = Constants.AUTH['ACCESS']
+          _gcp.auth_token = Constants.AUTH['ACCESS']
     return response
 
   def HTTPGet(self, url, headers=None, params=None):
@@ -79,7 +88,13 @@ class Transport(object):
       return None
 
     self.LogResponseData(response)
-
+    if headers is not None:
+      if 'Authorization' in headers:
+        if time.time() > Constants.AUTH['PREV_TOKEN_TIME'] +5:
+          Constants.AUTH['PREV_TOKEN_TIME']= time.time()
+          _oauth2.Oauth2.RefreshToken()
+          _device.auth_token = Constants.AUTH['ACCESS']
+          _gcp.auth_token = Constants.AUTH['ACCESS']
     return response
 
   def LogResponseData(self, response):
