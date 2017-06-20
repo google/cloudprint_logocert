@@ -31,6 +31,20 @@ from _config import Constants
 
 class Transport(object):
   """Send and receive network messages and communication."""
+
+  def refreshOauthToken():
+    """Check if the time token from the test is more than 30 mins and if so
+    refresh the oauth access token and update the respective objects.
+    
+    Oauth Access tokens expire in 1 hr, but we refresh every 30 minutes just
+    to stay on the safe side 
+    """
+    if headers is not None and 'Authorization' in headers:
+      if time.time() > Constants.AUTH['PREV_TOKEN_TIME'] + 1800:
+        Constants.AUTH['PREV_TOKEN_TIME'] = time.time()
+        _oauth2.Oauth2.RefreshToken()
+        _device.auth_token = Constants.AUTH['ACCESS']
+        _gcp.auth_token = Constants.AUTH['ACCESS']
   
   def __init__(self, logger):
     """Get a reference to a logger object and JsonParser.
@@ -53,7 +67,6 @@ class Transport(object):
     Returns:
       dict: Response object, with keys code, headers, and data.
     """
-    _prev_token_time = None
     response = requests.post(url, headers=headers, params=params, data=data,
                              files=files)
 
@@ -62,13 +75,7 @@ class Transport(object):
       return None
 
     self.LogResponseData(response)
-    if headers is not None:
-      if 'Authorization' in headers:
-        if time.time() > Constants.AUTH['PREV_TOKEN_TIME'] +5:
-          Constants.AUTH['PREV_TOKEN_TIME']= time.time()
-          _oauth2.Oauth2.RefreshToken()
-          _device.auth_token = Constants.AUTH['ACCESS']
-          _gcp.auth_token = Constants.AUTH['ACCESS']
+    refreshOauthToken()
     return response
 
   def HTTPGet(self, url, headers=None, params=None):
@@ -88,13 +95,7 @@ class Transport(object):
       return None
 
     self.LogResponseData(response)
-    if headers is not None:
-      if 'Authorization' in headers:
-        if time.time() > Constants.AUTH['PREV_TOKEN_TIME'] +5:
-          Constants.AUTH['PREV_TOKEN_TIME']= time.time()
-          _oauth2.Oauth2.RefreshToken()
-          _device.auth_token = Constants.AUTH['ACCESS']
-          _gcp.auth_token = Constants.AUTH['ACCESS']
+    refreshOauthToken()
     return response
 
   def LogResponseData(self, response):
