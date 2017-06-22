@@ -2524,7 +2524,7 @@ class LocalPrinting(LogoCert):
       raise
     print 'Local print successfully enabled'
 
-    success = _device.WaitForPrinterState('idle')
+    success = _device.WaitForPrivetPrinterState('idle')
     try:
       self.assertTrue(success)
     except AssertionError:
@@ -2612,7 +2612,7 @@ class LocalPrinting(LogoCert):
       raise
     print 'Conversion printing successfully enabled'
 
-    success = _device.WaitForPrinterState('idle')
+    success = _device.WaitForPrivetPrinterState('idle')
     try:
       self.assertTrue(success)
     except AssertionError:
@@ -3102,6 +3102,28 @@ class PostRegistration(LogoCert):
     _device.assertPrinterIsRegistered()
     LogoCert.GetDeviceDetails()
 
+  def waitForGcpPrinterState(self, state, timeout):
+    """Wait until the GCP printer state becomes the specified status
+
+    Args:
+      state: string, printer state to wait for
+      timeout: integer, number of seconds to wait.
+    Returns:
+      boolean, True if state is observed within timeout; otherwise, False.
+    """
+    print ('Waiting up to %s secs for printer to be in %s state.' %
+           (timeout, state))
+    print 'Polling every 5 seconds'
+    end = time.time() + timeout
+    while time.time() < end:
+      _device.GetDeviceDetails()
+      if state in _device.status:
+        break
+      # Not using Constant.SLEEP['POLL'] here since the status update
+      # actually takes a while
+      time.sleep(5)
+
+
   def testDeviceDetails(self):
     """Verify printer details are provided to Cloud Print Service."""
     test_id = '597a2e5d-9fe8-455b-aa3a-2f063621d2b2'
@@ -3126,17 +3148,7 @@ class PostRegistration(LogoCert):
     test_name = 'Privet.PowerOffRegistered'
 
     # Make sure device is in 'online' state before this test
-    print 'Waiting up to 120 seconds for printer to be in online state.'
-    print 'Polling every 5 seconds'
-    end = time.time() + 120
-    while time.time() < end:
-      _device.GetDeviceDetails()
-      if 'ONLINE' in _device.status:
-        break
-      # Not using Constant.SLEEP['POLL'] here since the status update
-      # actually takes a while
-      time.sleep(5)
-
+    self.waitForGcpPrinterState('ONLINE', 120)
     try:
       self.assertIsNotNone(_device.status)
     except AssertionError:
@@ -3151,31 +3163,23 @@ class PostRegistration(LogoCert):
       raise
     else:
       PromptAndWaitForUserAction('Press ENTER once printer is powered off')
-      print 'Waiting up to 10 minutes for printer status update.'
-      print 'Polling every 5 seconds'
-      end = time.time() + 600
-      while time.time() < end:
-        _device.GetDeviceDetails()
-        if 'OFFLINE' in _device.status:
-          break
-        # Not using Constant.SLEEP['POLL'] here since the status update
-        # actually takes a while
-        time.sleep(5)
+      self.waitForGcpPrinterState('OFFLINE', 600)
       try:
         self.assertIsNotNone(_device.status)
       except AssertionError:
         notes = 'Device has no status.'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
-      try:
-        self.assertIn('OFFLINE', _device.status)
-      except AssertionError:
-        notes = 'Device is not offline. Status: %s' % _device.status
-        self.LogTest(test_id, test_name, 'Failed', notes)
-        raise
       else:
-        notes = 'Status: %s' % _device.status
-        self.LogTest(test_id, test_name, 'Passed', notes)
+        try:
+          self.assertIn('OFFLINE', _device.status)
+        except AssertionError:
+          notes = 'Device is not offline. Status: %s' % _device.status
+          self.LogTest(test_id, test_name, 'Failed', notes)
+          raise
+        else:
+          notes = 'Status: %s' % _device.status
+          self.LogTest(test_id, test_name, 'Passed', notes)
       finally:
         PromptAndWaitForUserAction('Press ENTER to continue this testcase.')
         PromptUserAction('Power on the printer and wait...')
@@ -3187,8 +3191,13 @@ class PostRegistration(LogoCert):
           notes = 'Error receiving the power-on signal from the printer.'
           self.LogTest(test_id, test_name, 'Failed', notes)
           raise
-        # Get the new X-privet-token from the restart
-        _device.GetPrivetInfo()
+        else:
+          # Get the new X-privet-token from the restart
+          _device.GetPrivetInfo()
+          # Make sure device is in 'online' state before continuing testing
+          self.waitForGcpPrinterState('ONLINE', 120)
+
+
 
   def testRegisteredDeviceNotDiscoverableAfterPowerOn(self):
     """Verify power cycled registered device advertises as registered."""

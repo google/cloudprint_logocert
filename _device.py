@@ -482,7 +482,7 @@ class Device(object):
           int, the job id of the local print job that succeeded, else None
         """
     print '\nWait for idle state before starting a local print job'
-    success = self.WaitForPrinterState('idle')
+    success = self.WaitForPrivetPrinterState('idle')
 
     if not success:
       print 'Idle state not observed\n'
@@ -629,9 +629,9 @@ class Device(object):
       return info
 
 
-  def WaitForPrinterState(self, state,
+  def WaitForPrivetPrinterState(self, state,
                           timeout=Constants.TIMEOUT['PRINTER_STATUS']):
-    """Wait until the printer state becomes the specified status
+    """Wait until the privet printer state becomes the specified status
 
         Args:
           state: string, printer state to wait for
