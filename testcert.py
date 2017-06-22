@@ -1612,18 +1612,36 @@ class Printer(LogoCert):
         self.LogTest(test_id, test_name, 'Passed', notes)
 
   def testCapsMargins(self):
-    """Verify margin is not in printer capabilities."""
+    """Verify margin is appropriately set/unset in printer capabilities."""
     test_id = '7d60c7c7-08ed-45f2-9e39-1a50d45467a6'
-    test_name = 'NotInCDD.margins'
-    try:
-      self.assertNotIn('margins', _device.cdd['caps'])
-    except AssertionError:
-      notes = 'margins found in printer capabilities.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
+    test_name = 'OptionalInCDD.margins'
+    if not Constants.CAPS['MARGIN']:
+      print ('The Margins option in _config.py set to False, '
+             'so "margins" is NOT expected in the CDD')
+      try:
+        self.assertNotIn('margins', _device.cdd['caps'])
+      except AssertionError:
+        notes = ('"margins" found in printer capabilities. '
+                 'Ensure the Margins option in _config.py is correctly set.')
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'margins not found in printer capabilities.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
     else:
-      notes = 'margins not found in printer capabilities.'
-      self.LogTest(test_id, test_name, 'Passed', notes)
+      print ('The Margins option in _config.py set to True, '
+             'so "margins" is expected in the CDD')
+      try:
+        self.assertIn('margins', _device.cdd['caps'])
+      except AssertionError:
+        notes = ('"margins" not found in printer capabilities. '
+                 'Ensure the Margins option in _config.py is correctly set.')
+        self.LogTest(test_id, test_name, 'Failed', notes)
+        raise
+      else:
+        notes = 'margins found in printer capabilities.'
+        self.LogTest(test_id, test_name, 'Passed', notes)
+
 
   def testCapsFitToPage(self):
     """Verify fit_to_page is not in printer capabilities."""
