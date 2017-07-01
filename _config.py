@@ -133,7 +133,7 @@ class Constants(object):
       'HTML1': os.path.join(image_dir, 'ChromeOSPowerManagementSpec.html'),
       'JPG1': os.path.join(image_dir, 'b&w-test.jpg'),
       'JPG2': os.path.join(image_dir, 'colorkey.jpg'),
-      'JPG3': os.path.join(image_dir, 'GoogleArt.jpg'),
+      'JPG3': os.path.join(image_dir, 'Chartley_Castle-1.jpg'),
       'JPG4': os.path.join(image_dir, 'GoogleCampus.jpg'),
       'JPG5': os.path.join(image_dir, 'google-car.jpg'),
       'JPG6': os.path.join(image_dir, 'GoogleGlass.jpg'),
