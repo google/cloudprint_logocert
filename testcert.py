@@ -2817,28 +2817,9 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No Margin support')
       return
 
-    self.cjt.AddMarginOption(0, 0, 0, 0)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
-                                'application/pdf')
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with no margins.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    self.cjt.AddMarginOption(50000, 50000, 50000, 50000)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF9'], self.cjt,
-                                'application/pdf')
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error local printing with minimum margins.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-      raise
-    print 'The 1st print job should have no margins.'
-    print 'The 2nd print job should have minimum margins.'
-    print 'If the margins are not correct, fail this test.'
-    self.ManualPass(test_id, test_name)
+    self.LogTest(test_id, test_name, 'Skipped',
+                 'Local Print PDF Margin not required')
+    return
 
   def test_12_LocalPrintPDFLayout(self):
     """Verify printer respects layout settings for PDFs in local print."""
@@ -2882,19 +2863,9 @@ class LocalPrinting(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', 'No local print PDF support')
       return
 
-    self.cjt.AddPageRangeOption(2, end=2)
-    self.cjt.AddPageRangeOption(4, end=6)
-    job_id = _device.LocalPrint(test_name, Constants.IMAGES['PDF1'], self.cjt,
-                                'application/pdf')
-    try:
-      self.assertIsNotNone(job_id)
-    except AssertionError:
-      notes = 'Error printing with page range set to page 2 and 4-6.'
-      self.LogTest(test_id, test_name, 'Failed', notes)
-    else:
-      print 'The print job should only print pages 2, 4, 5, 6.'
-      print 'If this is not the case, fail this test.'
-      self.ManualPass(test_id, test_name)
+    self.LogTest(test_id, test_name, 'Skipped',
+                 'Local Print PDF page range not required')
+    return
 
   def test_14_LocalPrintPDFCopies(self):
     """Verify printer respects copy option for PDFs in local print."""
