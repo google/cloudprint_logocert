@@ -28,7 +28,7 @@ from _common import Sleep
 from _common import RedText
 from _common import PromptUserAction
 from json import dumps
-from os.path import basename
+import copy
 import requests
 import time
 
@@ -402,7 +402,7 @@ class Device(object):
       return False
     url = '%s/confirm?token=%s' % (Constants.GCP['MGT'], self.claim_token)
     params = {'user': Constants.USER['EMAIL']}
-    headers = self.headers
+    headers = copy.deepcopy(self.headers)
     headers['Authorization'] = 'Bearer %s' % auth_token
     r = self.transport.HTTPPost(url, headers=headers, params=params)
 
@@ -574,7 +574,7 @@ class Device(object):
       print 'List of supported types are: ', self.supported_types
       return None
 
-    headers = self.headers  # Get X-Privet_Token
+    headers = copy.deepcopy(self.headers)  # Get X-Privet_Token
     headers['Content-Type'] = content_type
 
     r = self.transport.HTTPPost(url, data=content, headers=headers)
@@ -686,7 +686,7 @@ class Device(object):
     print 'Cancelling is done by sending a string to be printed via /submitdoc'
 
     url = self.privet_url['submitdoc'] + '?job_id=%s' % (job_id)
-    headers = self.headers
+    headers = copy.deepcopy(self.headers)
     headers['Content-Type'] = 'image/pwg-raster'
 
     self.transport.HTTPPost(url, data='Logocert 2.0: CANCELLING LOCAL PRINT',
