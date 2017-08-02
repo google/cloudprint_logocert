@@ -193,8 +193,8 @@ def isPrinterAdvertisingAsRegistered(service):
                  False = advertising as unregistered,
                  None = advertisement not found
       """
-
-  return (service.properties['id'] and
+  return ('id' in service.properties and
+          service.properties['id'] and
           'online' in service.properties['cs'].lower())
 
 
