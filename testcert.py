@@ -3268,7 +3268,7 @@ class PrinterState(LogoCert):
           break
       if not found:
         notes = ('required keyword(s) "%s" not in UI state message: %s' %
-                 (keywords, _device.cdd['uiState']['caption']))
+                 (keywords, uiMsg))
         self.LogTest(test_id, test_name, 'Failed', notes)
         return False
 
@@ -3277,7 +3277,7 @@ class PrinterState(LogoCert):
       if not uiMsg.endswith(suffixes):
         notes = ('None of the required suffix(s) "%s" are found in the '
                  'UI state message: '
-                 '%s' % (keywords, _device.cdd['uiState']['caption']))
+                 '%s' % (keywords, uiMsg))
         self.LogTest(test_id, test_name, 'Failed', notes)
         return False
 
