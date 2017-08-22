@@ -56,8 +56,8 @@ class Constants(object):
       'LAYOUT_ISSUE': True,      # Printer must set page orientation for local
                                  # printing, so page_orientation is still needed
                                  # in the printer capabilities.
-      'LOCAL_PRINT': True,       # If a Printer supports local printing without
-                                 # being registered, set this to True.
+      'LOCAL_PRINT_WITHOUT_REG': True, # If a Printer supports local printing
+                                 #  without being registered, set this to True.
       'TONER': True,             # Set to false if printer is thermal or
                                  # has no toner.
       'TRAY_SENSOR': False,      # Set this to True if printer has a sensor to 

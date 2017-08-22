@@ -646,7 +646,7 @@ class Privet(LogoCert):
     test_id = 'ffa0d9dc-840f-486a-a890-91773fc2b12d'
     test_name = 'PrivetAPI.AccessToken'
     api = 'accesstoken'
-    if Constants.CAPS['LOCAL_PRINT']:
+    if Constants.CAPS['LOCAL_PRINT_WITHOUT_REG']:
       expected_return_code = 200
     else:
       expected_return_code = 404
@@ -681,7 +681,7 @@ class Privet(LogoCert):
     test_id = '3bd87d10-301d-43b4-b959-96ede9537526'
     test_name = 'PrivetAPI.Capabilities'
     api = 'capabilities'
-    if Constants.CAPS['LOCAL_PRINT']:
+    if Constants.CAPS['LOCAL_PRINT_WITHOUT_REG']:
       expected_return_code = 200
     else:
       expected_return_code = 404
@@ -4312,7 +4312,7 @@ class PostUnregistration(LogoCert):
     test_id = '379dcb9a-2287-41bc-a387-be0d8a132c25'
     test_name = 'PrivetLocalDestination.UnregisteredPrinterGuestUser'
 
-    if not Constants.CAPS['LOCAL_PRINT']:
+    if not Constants.CAPS['LOCAL_PRINT_WITHOUT_REG']:
       notes = 'Printer does not support unregistered local printing.'
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
