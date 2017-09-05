@@ -646,10 +646,7 @@ class Privet(LogoCert):
     test_id = 'ffa0d9dc-840f-486a-a890-91773fc2b12d'
     test_name = 'PrivetAPI.AccessToken'
     api = 'accesstoken'
-    if Constants.CAPS['LOCAL_PRINT_WITHOUT_REG']:
-      expected_return_code = 200
-    else:
-      expected_return_code = 404
+    expected_return_code = [200, 404]
     response = _transport.HTTPGet(_device.privet_url[api],
                                   headers=_device.headers)
     try:
@@ -660,14 +657,11 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertEqual(response.status_code, expected_return_code)
+        self.assertIn(response.status_code, expected_return_code)
       except AssertionError:
         notes = ('Incorrect return code from %s: Got %d, Expected %d.\n'
                  % (_device.privet_url[api], response.status_code,
                     expected_return_code))
-        notes += 'Please confirm LOCAL_PRINT is set correctly in _config.py\n'
-        if response.status_code == 404:
-          notes += 'Could also be fine since /privet/accesstoken is optional'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
@@ -681,10 +675,7 @@ class Privet(LogoCert):
     test_id = '3bd87d10-301d-43b4-b959-96ede9537526'
     test_name = 'PrivetAPI.Capabilities'
     api = 'capabilities'
-    if Constants.CAPS['LOCAL_PRINT_WITHOUT_REG']:
-      expected_return_code = 200
-    else:
-      expected_return_code = 404
+    expected_return_code = [200, 404]
     response = _transport.HTTPGet(_device.privet_url[api],
                                   headers=_device.headers)
     try:
@@ -695,14 +686,11 @@ class Privet(LogoCert):
       raise
     else:
       try:
-        self.assertEqual(response.status_code, expected_return_code)
+        self.assertIn(response.status_code, expected_return_code)
       except AssertionError:
         notes = ('Incorrect return code from %s: Got %d, Expected %d.\n'
                  % (_device.privet_url[api], response.status_code,
                     expected_return_code))
-        notes += 'Please confirm LOCAL_PRINT is set correctly in _config.py\n'
-        if response.status_code == 404:
-          notes += 'Could also be fine since /privet/capabilities is optional'
         self.LogTest(test_id, test_name, 'Failed', notes)
         raise
       else:
