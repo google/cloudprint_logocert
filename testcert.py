@@ -3913,13 +3913,18 @@ class JobState(LogoCert):
     test_id = '167ecac1-db45-4e2c-9352-98bff432d03b'
     test_name = 'GCP.JobStatePaperJam'
 
-    print 'This test will validate job state when there is a paper jam.'
-    print 'Place page inside print path to cause a paper jam.'
-    PromptAndWaitForUserAction('Press ENTER once printer reports paper jam.')
+    print 'This test validates that the job state correctly transitions to '
+    print '"STOPPED" when a GCP job causes a paper jam while printing.\n'
+    print 'Place page inside print path to cause a paper jam for the next job.'
+    PromptAndWaitForUserAction('Press ENTER once you have prepared the '
+                               'conditions for a paper jam. \n'
+                               'NOTE: Printer should not be jammed yet')
 
-    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF9'], test_name,
+    print 'Submitting a 7 page document through Cloud Print.'
+    output = _gcp.Submit(_device.dev_id, Constants.IMAGES['PDF1.7'], test_name,
                          self.cjt)
 
+    PromptUserAction('Cause a paper jam when the printer starts printing.')
     try:
       self.assertTrue(output['success'])
     except AssertionError:
