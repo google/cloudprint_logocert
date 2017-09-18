@@ -1494,7 +1494,11 @@ class Printer(LogoCert):
     test_id = '75fbbffe-5530-4523-a4b8-4dfd0b9aee08'
     test_name = 'CDD.duplex'
     if not Constants.CAPS['DUPLEX']:
-      if 'duplex' in _device.cdd['caps']:
+      if ('duplex' in _device.cdd['caps'] and
+          'option' in _device.cdd['caps']['duplex'] and
+          len(_device.cdd['caps']['duplex']['option']) > 1):
+        # Possible for printers with no duplex support to have the duplex
+        # option in the CDD but with only 1 type: "NO_DUPLEX"
         notes = 'Error in _config file, DUPLEX should be True'
         self.LogTest(test_id, test_name, 'Failed', notes)
       else:
