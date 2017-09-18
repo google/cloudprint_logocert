@@ -1877,6 +1877,16 @@ class PreRegistration(LogoCert):
       self.LogTest(test_id, test_name, 'Skipped', notes)
       return
 
+    print 'Does the printer panel have an option for cancelling registration?'
+    result = ''
+    while result.lower() not in ['y', 'n']:
+      result = PromptAndWaitForUserAction('Enter "y" or "n"')
+
+    if result == 'n':
+      notes = 'No support for registration cancellation.'
+      self.LogTest(test_id, test_name, 'Skipped', notes)
+      return
+
     print 'Testing printer registration cancellation.'
     print 'Do not accept printer registration request on Printer Panel UI.'
 
