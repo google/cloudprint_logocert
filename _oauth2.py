@@ -20,7 +20,7 @@ import httplib2
 import time
 
 from _config import Constants
-import _transport
+from _transport import Transport
 
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.file import Storage
@@ -39,7 +39,7 @@ class Oauth2(object):
     """
     self.logger = logger
     self.storage = Storage(Constants.AUTH['CRED_FILE'])
-    self.transport = _transport.Transport(self.logger)
+    self.transport = Transport(self.logger)
 
   def GetTokens(self):
     """Retrieve credentials."""
