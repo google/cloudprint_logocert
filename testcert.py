@@ -2631,6 +2631,16 @@ class LocalPrinting(LogoCert):
                 'printing is enabled.')
       self.LogTest(test_id, test_name, 'Failed', notes2)
       raise
+
+    try:
+      _device.WaitJobStateIn(job_id,
+                          GCPConstants.DONE,
+                          timeout=Constants.TIMEOUT['PRINTING'])
+    except AssertionError:
+      notes2 = ('Job state did not transition to Done within %s seconds.'
+               % (Constants.TIMEOUT['PRINTING']))
+      self.LogTest(test_id, test_name, 'Failed', notes2)
+      raise
     else:
       notes2 = ('Able to print an svg file via privet local printing when '
                'conversion printing is re-enabled.')
