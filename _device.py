@@ -604,6 +604,33 @@ class Device(object):
 
     return r.json()
 
+  def WaitJobStateIn(self, job_id, job_state, timeout=60):
+    """Wait until the job state becomes the specified state(s)
+
+    Args:
+      job_id: string, id of the print job.
+      job_state: string or list, job state(s) to wait for.
+      timeout: integer, number of seconds to wait.
+    Returns:
+      dict, current job.
+
+    """
+    print ('Waiting up to %s seconds for the job to have one of the following '
+           'job state(s): %s\n' % (timeout, job_state))
+
+    end = time.time() + timeout
+
+    while time.time() < end:
+      job = self.JobState(job_id)
+
+      if job is not None:
+        if job['semantic_state']['state']['type'] in job_state:
+          return job
+
+      Sleep('POLL')
+
+    raise AssertionError
+
 
   def Info(self):
     """Make call to the privet/info API to get the latest printer info
