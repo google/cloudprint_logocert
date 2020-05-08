@@ -1,6 +1,6 @@
 Google Cloud Print Logo Certification Tool
 
-The Logo Certification tool is a group of tests designed to aide in running
+The Logo Certification tool is a group of tests designed to aid in running
 Logo Certification tests that printers must pass in order to obtain Logo
 Certification. The tool is made up of a number of python files, and utilizes
 the python UnitTest module to actually execute the tests.
